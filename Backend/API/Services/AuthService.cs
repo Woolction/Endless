@@ -20,6 +20,8 @@ public class AuthService : IAuthService
     private readonly SymmetricSecurityKey securityKey;
     private readonly IPasswordHasher<User> passwordHasher;
 
+    private const int refreshTokenExpires = 14;
+
     public AuthService(EndlessContext context, IConfiguration configuration, IPasswordHasher<User> passwordHasher)
     {
         this.context = context;
@@ -73,6 +75,7 @@ public class AuthService : IAuthService
     #region GenerateTokens
     private async Task<AuthResponseDto> CraeteTokenResponse(User user)
     {
+        
         return new AuthResponseDto(GenerateJWTToken(user), await GenerateRefreshToken(user));
     }
     private string GenerateJWTToken(User user)
@@ -106,7 +109,7 @@ public class AuthService : IAuthService
         user.RefreshToken = new()
         {
             Token = token,
-            ValidityPeriod = DateTime.UtcNow.AddDays(7)
+            ValidityPeriod = DateTime.UtcNow.AddDays(refreshTokenExpires)
         };
 
         await context.SaveChangesAsync();
@@ -117,6 +120,9 @@ public class AuthService : IAuthService
 
     private async Task<User?> ValidateRefreshToken(RefreshTokenRequestDto requestDto)
     {
+        if (string.IsNullOrEmpty(requestDto.Token))
+            return null;
+            
         User? user = await context.Users.FirstOrDefaultAsync(user => user.RefreshToken!.Token == requestDto.Token);
 
         if (user is not null)

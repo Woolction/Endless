@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authorization;
+using Backend.API.Data.Components;
 using Microsoft.AspNetCore.Mvc;
 using Backend.API.Services;
 using Backend.API.Dtos;
@@ -16,24 +18,56 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("token")]
-    public async Task<IActionResult> Login([FromBody] AuthRequestDto requestDto)
+    public async Task<IActionResult> Login(AuthRequestDto requestDto)
     {
-        AuthResponseDto? token = await authService.LoginAsync(requestDto);
+        AuthResponseDto? responseDto = await authService.LoginAsync(requestDto);
 
-        if (token is null)
+        if (responseDto is null)
             return Unauthorized("Password or Email dont correct");
 
-        return Ok(token);
+        CraeteTokensInCookies(responseDto);
+
+        return Ok(responseDto);
     }
 
     [HttpPut("token")]
-    public async Task<IActionResult> RefreshToken(RefreshTokenRequestDto requestDto)
+    public async Task<IActionResult> RefreshToken()
     {
-        AuthResponseDto? responseDto = await authService.RefreshTokensAsync(requestDto);
+        RefreshTokenRequestDto refreshDto = new(Request.Cookies["RefreshToken"]!);
+
+        AuthResponseDto? responseDto = await authService.RefreshTokensAsync(refreshDto);
 
         if (responseDto is null || responseDto.Token is null || responseDto.RefreshToken is null)
             return Unauthorized("Invalid refresh token");
 
+        CraeteTokensInCookies(responseDto);
+
         return Ok(responseDto);
+    }
+
+    [HttpGet("admin")]
+    [Authorize(Roles = nameof(UserRole.Admin))]
+    public IActionResult TestAdmin()
+    {
+        return Ok("Hi Admin");
+    }
+
+    private void CraeteTokensInCookies(AuthResponseDto responseDto)
+    {
+        Response.Cookies.Append("AccessToken", responseDto.Token, new CookieOptions()
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Expires = DateTime.UtcNow.AddMinutes(15)
+        });
+
+        Response.Cookies.Append("RefreshToken", responseDto.RefreshToken, new CookieOptions()
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Expires = DateTime.UtcNow.AddDays(14)
+        });
     }
 }

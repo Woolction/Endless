@@ -30,7 +30,7 @@ public class UsersController : ControllerBase
         if (user == null)
             return BadRequest("");
 
-        return Ok(new UserResponseDto(user.Id, user.Name, user.Email, user.Role));
+        return Ok(new UserResponseDto(user.Name, user.Email, user.Role));
     }
 
     [HttpGet]
@@ -44,7 +44,7 @@ public class UsersController : ControllerBase
         if (user is null)
             return NotFound();
 
-        return Ok(new UserResponseDto(user.Id, user.Name, user.Email, user.Role));
+        return Ok(new UserResponseDto(user.Name, user.Email, user.Role));
     }
 
     [HttpPut]
@@ -65,7 +65,7 @@ public class UsersController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        return Ok(new UserResponseDto(user.Id, user.Name, user.Email, user.Role));
+        return Ok(new UserResponseDto(user.Name, user.Email, user.Role));
     }
 
     [HttpDelete]
