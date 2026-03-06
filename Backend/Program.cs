@@ -2,11 +2,11 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using Backend.API.Data.Components;
 using Backend.API.Data.Context;
-using Backend.API.Data.Model;
+using Backend.API.Data.Models;
 using Backend.API.Services;
 using Scalar.AspNetCore;
-using Microsoft.AspNetCore.Routing.Tree;
 using System.Text;
 
 namespace Backend;
@@ -17,8 +17,7 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        //Services
-        builder.Services.AddValidation();
+        #region --Services--
         builder.Services.AddControllers();
         builder.Services.AddOpenApi();
 
@@ -51,22 +50,25 @@ public class Program
             {
                 policy.RequireRole(nameof(UserRole.Creator), nameof(UserRole.Admin));
             });
+        #endregion +----------+
 
-        //DbContext
+        #region --DbContext--
+
         builder.Services.AddDbContext<EndlessContext>(context =>
             context.UseNpgsql(builder.Configuration.GetConnectionString("DB")));
 
-        //Custom Services
+        #endregion +----------+
+
+        #region --Custom Services--
+
         builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
         builder.Services.AddScoped<IAuthService, AuthService>();
 
+        #endregion +----------+
+
         var app = builder.Build();
 
-        //EndPoints
-        app.MapControllers();
-        app.MapGet("/", () => "Hello World!");
-
-        //Middleware
+        #region --Middleware--
         if (app.Environment.IsDevelopment())
         {
             app.MapOpenApi();
@@ -75,8 +77,17 @@ public class Program
 
         app.UseHttpsRedirection();
 
+        app.UseRouting();
+
         app.UseAuthentication();
         app.UseAuthorization();
+        #endregion +----------+
+
+        #region --EndPoints--
+        app.MapControllers();
+        app.MapGet("/", () => "Hello World!");
+
+        #endregion +----------+
 
         app.Run();
     }

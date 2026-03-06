@@ -1,10 +1,7 @@
-using Microsoft.AspNetCore.Identity; 
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
-using Backend.API.Data.Context;
-using Backend.API.Data.Model;
-using Backend.API.Dtos;
+using Backend.API.Data.Models;
 using Backend.API.Services;
+using Backend.API.Dtos;
 
 namespace Backend.API.EndPoints.Controllers;
 
@@ -26,6 +23,8 @@ public class UsersController : ControllerBase
         if (user == null)
             return BadRequest("");
 
-        return Ok("User Registred");
+        UserDto userDto = new(user.Id, user.Email);
+
+        return Ok($"User Registred: {userDto}");
     }
 }

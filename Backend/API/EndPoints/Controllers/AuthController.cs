@@ -1,11 +1,9 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Backend.API.Data.Context;
+using Microsoft.AspNetCore.Authorization;
+using Backend.API.Data.Components;
 using Microsoft.AspNetCore.Mvc;
-using Backend.API.Data.Model;
+using System.Security.Claims;
 using Backend.API.Services;
 using Backend.API.Dtos;
-using Microsoft.AspNetCore.Authorization;
 
 namespace Backend.API.EndPoints.Controllers;
 
@@ -23,25 +21,36 @@ public class AuthController : ControllerBase
     [HttpPost("token")]
     public async Task<IActionResult> Login([FromBody] AuthRequestDto requestDto)
     {
-        string? token = await authService.LoginAsync(requestDto);
+        AuthResponseDto? token = await authService.LoginAsync(requestDto);
 
         if (token is null)
             return Unauthorized("Password or Email dont correct");
 
-        return Ok(new AuthResponseDto(token));
+        return Ok(token);
+    }
+
+    [HttpPut("token")]
+    public async Task<IActionResult> RefreshToken(RefreshTokenRequestDto requestDto)
+    {
+        AuthResponseDto? responseDto = await authService.RefreshTokensAsync(requestDto);
+
+        if (responseDto is null || responseDto.Token is null || responseDto.RefreshToken is null)
+            return Unauthorized("Invalid refresh token");
+
+        return Ok(responseDto);
     }
 
     [HttpGet("users")]
     [Authorize]
     public IActionResult OnlyUsers()
     {
-        return Ok("Hi user");
+        return Ok($"Hi user: {User.FindFirst(ClaimTypes.NameIdentifier)?.Value}");
     }
 
     [HttpGet("admin")]
     [Authorize(Roles = nameof(UserRole.Admin))]
     public IActionResult OnlyAdmin()
     {
-        return Ok("Hi Admin");
+        return Ok($"Hi Admin: {User.FindFirst(ClaimTypes.NameIdentifier)?.Value}");
     }
 }

@@ -1,4 +1,4 @@
-namespace Backend.API.Data.Model;
+namespace Backend.API.Data.Components;
 
 public enum UserRole
 {
