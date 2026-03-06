@@ -1,3 +1,5 @@
+using Backend.API.Data.Components;
+
 namespace Backend.API.Dtos;
 
-public record class UserDto(Guid Id, string Email);
+public record class UserResponseDto(Guid Id, string Name, string Email, UserRole Role);

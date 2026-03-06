@@ -1,7 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
-using Backend.API.Data.Components;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using Backend.API.Services;
 using Backend.API.Dtos;
 
@@ -38,19 +35,5 @@ public class AuthController : ControllerBase
             return Unauthorized("Invalid refresh token");
 
         return Ok(responseDto);
-    }
-
-    [HttpGet("users")]
-    [Authorize]
-    public IActionResult OnlyUsers()
-    {
-        return Ok($"Hi user: {User.FindFirst(ClaimTypes.NameIdentifier)?.Value}");
-    }
-
-    [HttpGet("admin")]
-    [Authorize(Roles = nameof(UserRole.Admin))]
-    public IActionResult OnlyAdmin()
-    {
-        return Ok($"Hi Admin: {User.FindFirst(ClaimTypes.NameIdentifier)?.Value}");
     }
 }
