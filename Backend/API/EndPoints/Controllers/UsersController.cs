@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Backend.API.Data.Context;
 using Backend.API.Data.Model;
 using Backend.API.Dtos;
+using Backend.API.Services;
 
 namespace Backend.API.EndPoints.Controllers;
 
@@ -11,26 +12,19 @@ namespace Backend.API.EndPoints.Controllers;
 [Route("api/[controller]")]
 public class UsersController : ControllerBase
 {
-    private readonly EndlessContext context;
-    private readonly IPasswordHasher<User> passwordHasher;
-    public UsersController(EndlessContext context, IPasswordHasher<User> passwordHasher)
+    private readonly IAuthService authService;
+    public UsersController(IAuthService authService)
     {
-        this.context = context;
-        this.passwordHasher = passwordHasher;
+        this.authService = authService;
     }
     
     [HttpPost] 
     public async Task<IActionResult> UserRegistry([FromBody] AuthRequestDto requestDto)
     {
-        if (await context.Users.AnyAsync(users => users.Email == requestDto.Email))
+        User? user = await authService.RegistryAsync(requestDto);
+
+        if (user == null)
             return BadRequest("");
-
-        User user = new() { Email = requestDto.Email };
-        user.PasswordHash = passwordHasher.HashPassword(user, requestDto.Password);
-
-        await context.Users.AddAsync(user);
-
-        await context.SaveChangesAsync();
 
         return Ok("User Registred");
     }

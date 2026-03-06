@@ -1,10 +1,11 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Backend.API.Data.Context;
 using Microsoft.AspNetCore.Mvc;
+using Backend.API.Data.Model;
 using Backend.API.Services;
 using Backend.API.Dtos;
-using Backend.API.Data.Model;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Backend.API.EndPoints.Controllers;
 
@@ -12,34 +13,35 @@ namespace Backend.API.EndPoints.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly EndlessContext context;
+    private readonly IAuthService authService;
 
-    private readonly AuthService authService;
-    private readonly IPasswordHasher<User> passwordHasher;
-
-    public AuthController(EndlessContext context, AuthService authService, IPasswordHasher<User> passwordHasher)
+    public AuthController(IAuthService authService)
     {
-        this.context = context;
-
         this.authService = authService;
-        this.passwordHasher = passwordHasher;
     }
 
-    [HttpPost("token")] 
+    [HttpPost("token")]
     public async Task<IActionResult> Login([FromBody] AuthRequestDto requestDto)
     {
-        User? user = await context.Users.FirstOrDefaultAsync(user => user.Email == requestDto.Email);
+        string? token = await authService.LoginAsync(requestDto);
 
-        if (user == null)
+        if (token is null)
             return Unauthorized("Password or Email dont correct");
 
-        var result = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, requestDto.Password);
+        return Ok(new AuthResponseDto(token));
+    }
 
-        if (result == PasswordVerificationResult.Failed)
-            return Unauthorized("Password or Email dont correct");
+    [HttpGet("users")]
+    [Authorize]
+    public IActionResult OnlyUsers()
+    {
+        return Ok("Hi user");
+    }
 
-        string token = authService.GenerateToken();
-
-        return Ok(token);
+    [HttpGet("admin")]
+    [Authorize(Roles = nameof(UserRole.Admin))]
+    public IActionResult OnlyAdmin()
+    {
+        return Ok("Hi Admin");
     }
 }
