@@ -37,7 +37,7 @@ public class UsersController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetUser()
     {
-        Guid id = GetID();
+        Guid id = GetIDFromClaim();
 
         User? user = await context.Users.FindAsync(id);
 
@@ -51,7 +51,7 @@ public class UsersController : ControllerBase
     [Authorize]
     public async Task<IActionResult> UpdateUser(UserUpdateDto updateDto)
     {
-        Guid id = GetID();
+        Guid id = GetIDFromClaim();
 
         User? user = await context.Users.FindAsync(id);
 
@@ -72,14 +72,14 @@ public class UsersController : ControllerBase
     [Authorize]
     public async Task<IActionResult> DeleteUser()
     {
-        Guid id = GetID();
+        Guid id = GetIDFromClaim();
 
         await context.Users.Where(user => user.Id == id).ExecuteDeleteAsync();
 
         return NoContent();
     }
 
-    private Guid GetID()
+    private Guid GetIDFromClaim()
     {
         string id = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
