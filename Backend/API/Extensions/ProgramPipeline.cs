@@ -9,7 +9,7 @@ using Backend.API.Services;
 using Scalar.AspNetCore;
 using System.Text;
 using Microsoft.AspNetCore.RateLimiting;
-using System.Threading.RateLimiting;
+using Backend.API.Middleware;
 
 namespace Backend.API.Extensions;
 
@@ -109,6 +109,8 @@ public static class ProgramPipeline
         }
 
         app.UseHttpsRedirection();
+
+        app.UseMiddleware<ContentSecurityPolicy>();
 
         app.UseRouting();
 

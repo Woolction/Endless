@@ -3,6 +3,7 @@ using System;
 using Backend.API.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Backend.API.Data.Context.Migrations
 {
     [DbContext(typeof(EndlessContext))]
-    partial class EndlessContextModelSnapshot : ModelSnapshot
+    [Migration("20260307220047_NewColumnsInDomainUserContentComment")]
+    partial class NewColumnsInDomainUserContentComment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -65,12 +68,6 @@ namespace Backend.API.Data.Context.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<int>("ContentType")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("CreatorId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
@@ -91,14 +88,25 @@ namespace Backend.API.Data.Context.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("UserId1")
+                        .HasColumnType("uuid");
+
                     b.Property<long>("ViewsCount")
                         .HasColumnType("bigint");
 
+                    b.Property<int>("contentType")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("CreatorId");
-
                     b.HasIndex("DomainId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId1");
 
                     b.ToTable("Contents");
                 });
@@ -129,54 +137,6 @@ namespace Backend.API.Data.Context.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Domains");
-                });
-
-            modelBuilder.Entity("Backend.API.Data.Models.LikedContent", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ContentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("OwnerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("RegistryDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ContentId");
-
-                    b.HasIndex("OwnerId");
-
-                    b.ToTable("LikedContent");
-                });
-
-            modelBuilder.Entity("Backend.API.Data.Models.SavedContent", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ContentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("OwnerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("RegistryDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ContentId");
-
-                    b.HasIndex("OwnerId");
-
-                    b.ToTable("SavedContent");
                 });
 
             modelBuilder.Entity("Backend.API.Data.Models.User", b =>
@@ -220,21 +180,6 @@ namespace Backend.API.Data.Context.Migrations
 
             modelBuilder.Entity("DomainUser", b =>
                 {
-                    b.Property<Guid>("SignedDomainsId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("SignedUsersId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("SignedDomainsId", "SignedUsersId");
-
-                    b.HasIndex("SignedUsersId");
-
-                    b.ToTable("DomainSigned", (string)null);
-                });
-
-            modelBuilder.Entity("DomainUser1", b =>
-                {
                     b.Property<Guid>("DomainsId")
                         .HasColumnType("uuid");
 
@@ -246,6 +191,21 @@ namespace Backend.API.Data.Context.Migrations
                     b.HasIndex("OwnersId");
 
                     b.ToTable("DomainsOwners", (string)null);
+                });
+
+            modelBuilder.Entity("DomainUser1", b =>
+                {
+                    b.Property<Guid>("SignedDomainsId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SignedUsersId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("SignedDomainsId", "SignedUsersId");
+
+                    b.HasIndex("SignedUsersId");
+
+                    b.ToTable("DomainSigned", (string)null);
                 });
 
             modelBuilder.Entity("UserUser", b =>
@@ -284,59 +244,21 @@ namespace Backend.API.Data.Context.Migrations
 
             modelBuilder.Entity("Backend.API.Data.Models.Content", b =>
                 {
-                    b.HasOne("Backend.API.Data.Models.User", "Creator")
-                        .WithMany("Contents")
-                        .HasForeignKey("CreatorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Backend.API.Data.Models.Domain", "Domain")
                         .WithMany("Contents")
                         .HasForeignKey("DomainId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Creator");
+                    b.HasOne("Backend.API.Data.Models.User", null)
+                        .WithMany("LikedContent")
+                        .HasForeignKey("UserId");
+
+                    b.HasOne("Backend.API.Data.Models.User", null)
+                        .WithMany("SavedContent")
+                        .HasForeignKey("UserId1");
 
                     b.Navigation("Domain");
-                });
-
-            modelBuilder.Entity("Backend.API.Data.Models.LikedContent", b =>
-                {
-                    b.HasOne("Backend.API.Data.Models.Content", "Content")
-                        .WithMany()
-                        .HasForeignKey("ContentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Backend.API.Data.Models.User", "Owner")
-                        .WithMany("LikedContents")
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Content");
-
-                    b.Navigation("Owner");
-                });
-
-            modelBuilder.Entity("Backend.API.Data.Models.SavedContent", b =>
-                {
-                    b.HasOne("Backend.API.Data.Models.Content", "Content")
-                        .WithMany()
-                        .HasForeignKey("ContentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Backend.API.Data.Models.User", "Owner")
-                        .WithMany("SavedContents")
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Content");
-
-                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("Backend.API.Data.Models.User", b =>
@@ -368,13 +290,13 @@ namespace Backend.API.Data.Context.Migrations
                 {
                     b.HasOne("Backend.API.Data.Models.Domain", null)
                         .WithMany()
-                        .HasForeignKey("SignedDomainsId")
+                        .HasForeignKey("DomainsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Backend.API.Data.Models.User", null)
                         .WithMany()
-                        .HasForeignKey("SignedUsersId")
+                        .HasForeignKey("OwnersId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -383,13 +305,13 @@ namespace Backend.API.Data.Context.Migrations
                 {
                     b.HasOne("Backend.API.Data.Models.Domain", null)
                         .WithMany()
-                        .HasForeignKey("DomainsId")
+                        .HasForeignKey("SignedDomainsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Backend.API.Data.Models.User", null)
                         .WithMany()
-                        .HasForeignKey("OwnersId")
+                        .HasForeignKey("SignedUsersId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -423,11 +345,9 @@ namespace Backend.API.Data.Context.Migrations
                 {
                     b.Navigation("Comments");
 
-                    b.Navigation("Contents");
+                    b.Navigation("LikedContent");
 
-                    b.Navigation("LikedContents");
-
-                    b.Navigation("SavedContents");
+                    b.Navigation("SavedContent");
                 });
 #pragma warning restore 612, 618
         }

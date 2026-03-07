@@ -3,12 +3,12 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Cryptography;
+using Backend.API.Data.Components;
 using Backend.API.Data.Context;
 using Backend.API.Data.Models;
 using System.Security.Claims;
 using Backend.API.Dtos;
 using System.Text;
-using Backend.API.Data.Components;
 
 namespace Backend.API.Services;
 
@@ -39,7 +39,11 @@ public class AuthService : IAuthService
         if (await context.Users.AnyAsync(users => users.Email == requestDto.Email))
             return null;
 
-        User user = new() { Email = requestDto.Email }; //Id = Guid.NewGuid(),
+        User user = new()
+        {
+            Email = requestDto.Email,
+            RegistryData = DateTime.Now
+        }; 
         user.PasswordHash = passwordHasher.HashPassword(user, requestDto.Password);
 
         context.Users.Add(user);
