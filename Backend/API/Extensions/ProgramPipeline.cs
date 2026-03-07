@@ -8,6 +8,8 @@ using Backend.API.Data.Models;
 using Backend.API.Services;
 using Scalar.AspNetCore;
 using System.Text;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 namespace Backend.API.Extensions;
 
@@ -65,6 +67,31 @@ public static class ProgramPipeline
                 policy.RequireRole(nameof(UserRole.Creator), nameof(UserRole.Admin));
             });
 
+        //rate limiter
+        builder.Services.AddRateLimiter(options =>
+        {
+            options.OnRejected = async (context, token) =>
+            {
+                context.HttpContext.Response.StatusCode = 429;
+                await context.HttpContext.Response.WriteAsync("Too many requests", cancellationToken: token); 
+            };
+            options.AddSlidingWindowLimiter("LoginLimit", options =>
+            {
+                options.PermitLimit = 5;
+                options.QueueLimit = 0;
+                options.SegmentsPerWindow = 6;
+                options.Window = TimeSpan.FromMinutes(1);
+            });
+            options.AddTokenBucketLimiter("RegistryLimit", options =>
+            {
+                options.QueueLimit = 0;
+                options.TokenLimit = 3;
+                options.TokensPerPeriod = 1;
+                options.ReplenishmentPeriod = TimeSpan.FromDays(1);
+                options.AutoReplenishment = true;
+            });
+        });
+
         builder.Services.AddDbContext<EndlessContext>(context =>
             context.UseNpgsql(DbKey));
 
@@ -89,6 +116,8 @@ public static class ProgramPipeline
         app.UseAuthorization();
 
         app.UseCookiePolicy();
+
+        app.UseRateLimiter();
     }
     
     public static void EndPointsRegistry(this WebApplication app)

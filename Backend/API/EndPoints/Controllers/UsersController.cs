@@ -7,6 +7,7 @@ using System.Security.Claims;
 using Backend.API.Services;
 using Backend.API.Dtos;
 using Backend.API.Extensions;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Backend.API.EndPoints.Controllers;
 
@@ -24,6 +25,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost]
+    [EnableRateLimiting("RegistryLimit")]
     public async Task<IActionResult> CreateUser(AuthRequestDto requestDto)
     {
         AuthResponseDto? responseDto = await authService.RegistryAsync(requestDto);

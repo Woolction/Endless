@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Backend.API.Extensions;
 using Backend.API.Services;
 using Backend.API.Dtos;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Backend.API.EndPoints.Controllers;
 
@@ -19,12 +20,13 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("token")]
+    [EnableRateLimiting("LoginLimit")]
     public async Task<IActionResult> Login(AuthRequestDto requestDto)
     {
         AuthResponseDto? responseDto = await authService.LoginAsync(requestDto);
 
         if (responseDto is null)
-            return Unauthorized("Password or Email dont correct");
+            return BadRequest("Password or Email dont correct");
 
         this.CraeteTokensInCookies(responseDto);
 
@@ -39,7 +41,7 @@ public class AuthController : ControllerBase
         AuthResponseDto? responseDto = await authService.RefreshTokensAsync(refreshDto);
 
         if (responseDto is null || responseDto.Token is null || responseDto.RefreshToken is null)
-            return Unauthorized("Invalid refresh token");
+            return BadRequest("Invalid refresh token");
 
         this.CraeteTokensInCookies(responseDto);
 
