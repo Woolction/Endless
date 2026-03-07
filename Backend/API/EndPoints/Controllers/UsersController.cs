@@ -6,6 +6,7 @@ using Backend.API.Data.Models;
 using System.Security.Claims;
 using Backend.API.Services;
 using Backend.API.Dtos;
+using Backend.API.Extensions;
 
 namespace Backend.API.EndPoints.Controllers;
 
@@ -25,12 +26,14 @@ public class UsersController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateUser(AuthRequestDto requestDto)
     {
-        User? user = await authService.RegistryAsync(requestDto);
+        AuthResponseDto? responseDto = await authService.RegistryAsync(requestDto);
 
-        if (user == null)
+        if (responseDto is null)
             return BadRequest("");
 
-        return Ok(new UserResponseDto(user.Name, user.Email, user.Role));
+        this.CraeteTokensInCookies(responseDto);
+
+        return Ok(responseDto);
     }
 
     [HttpGet]
@@ -75,6 +78,8 @@ public class UsersController : ControllerBase
         Guid id = GetIDFromClaim();
 
         await context.Users.Where(user => user.Id == id).ExecuteDeleteAsync();
+
+        this.DeleteTokensInCookies();
 
         return NoContent();
     }

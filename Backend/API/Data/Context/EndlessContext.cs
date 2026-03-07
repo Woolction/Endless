@@ -13,7 +13,7 @@ public class EndlessContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
-        builder.Entity<User>().Property(p => p.Id).ValueGeneratedNever();
+        //builder.Entity<User>().Property(p => p.Id).ValueGeneratedNever();
         builder.Entity<User>().OwnsOne(c => c.RefreshToken);
     }
 }

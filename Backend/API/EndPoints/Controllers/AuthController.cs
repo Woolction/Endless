@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Backend.API.Data.Components;
 using Microsoft.AspNetCore.Mvc;
+using Backend.API.Extensions;
 using Backend.API.Services;
 using Backend.API.Dtos;
 
@@ -25,7 +26,7 @@ public class AuthController : ControllerBase
         if (responseDto is null)
             return Unauthorized("Password or Email dont correct");
 
-        CraeteTokensInCookies(responseDto);
+        this.CraeteTokensInCookies(responseDto);
 
         return Ok(responseDto);
     }
@@ -40,9 +41,18 @@ public class AuthController : ControllerBase
         if (responseDto is null || responseDto.Token is null || responseDto.RefreshToken is null)
             return Unauthorized("Invalid refresh token");
 
-        CraeteTokensInCookies(responseDto);
+        this.CraeteTokensInCookies(responseDto);
 
         return Ok(responseDto);
+    }
+
+    [Authorize]
+    [HttpDelete("token")]
+    public IActionResult Logout()
+    {
+        this.DeleteTokensInCookies();
+
+        return NoContent();
     }
 
     [HttpGet("admin")]
@@ -50,24 +60,5 @@ public class AuthController : ControllerBase
     public IActionResult TestAdmin()
     {
         return Ok("Hi Admin");
-    }
-
-    private void CraeteTokensInCookies(AuthResponseDto responseDto)
-    {
-        Response.Cookies.Append("AccessToken", responseDto.Token, new CookieOptions()
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Lax,
-            Expires = DateTime.UtcNow.AddMinutes(15)
-        });
-
-        Response.Cookies.Append("RefreshToken", responseDto.RefreshToken, new CookieOptions()
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Lax,
-            Expires = DateTime.UtcNow.AddDays(14)
-        });
     }
 }

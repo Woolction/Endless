@@ -34,19 +34,19 @@ public class AuthService : IAuthService
         this.passwordHasher = passwordHasher;
     }
 
-    public async Task<User?> RegistryAsync(AuthRequestDto requestDto)
+    public async Task<AuthResponseDto?> RegistryAsync(AuthRequestDto requestDto)
     {
         if (await context.Users.AnyAsync(users => users.Email == requestDto.Email))
             return null;
 
-        User user = new() { Id = Guid.NewGuid(), Email = requestDto.Email };
+        User user = new() { Email = requestDto.Email }; //Id = Guid.NewGuid(),
         user.PasswordHash = passwordHasher.HashPassword(user, requestDto.Password);
 
         context.Users.Add(user);
 
         await context.SaveChangesAsync();
 
-        return user;
+        return await CraeteTokenResponse(user);
     }
     public async Task<AuthResponseDto?> LoginAsync(AuthRequestDto requestDto)
     {
@@ -75,7 +75,6 @@ public class AuthService : IAuthService
     #region GenerateTokens
     private async Task<AuthResponseDto> CraeteTokenResponse(User user)
     {
-        
         return new AuthResponseDto(GenerateJWTToken(user), await GenerateRefreshToken(user));
     }
     private string GenerateJWTToken(User user)
