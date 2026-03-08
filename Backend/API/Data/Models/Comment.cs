@@ -11,9 +11,9 @@ public class Comment
     public Guid ContentId { get; set; }
     [ForeignKey(nameof(ContentId))] public Content? Content { get; set; }
 
-    public string Text { get; set; } = string.Empty;
+    public string? Text { get; set; }
 
-    public DateTime PublicationDate { get; set; }
+    public DateTime PublicatedDate { get; set; }
 
     public long LikeCount { get; set; }
     public long DizLikeCount { get; set; }

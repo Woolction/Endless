@@ -5,14 +5,18 @@ namespace Backend.API.Data.Models;
 public class User
 {
     public Guid Id { get; set; }
+    public RefreshToken? RefreshToken { get; set; }
+
     public string Name { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
+    public string Slug { get; set; } = string.Empty;
+    public string? Description { get; set; }
     public string Email { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
-    public UserRole Role { get; set; } = UserRole.User;
     public DateTime DateOfBirth { get; set; }
     public DateTime RegistryData { get; set; }
-    public RefreshToken? RefreshToken { get; set; }
+
+    public PrivateType PrivateType { get; set; } = PrivateType.Request;
+    public UserRole Role { get; set; } = UserRole.User;
 
     public List<SavedContent> SavedContents { get; set; } = new List<SavedContent>();
     public List<LikedContent> LikedContents { get; set; } = new List<LikedContent>();
@@ -22,9 +26,9 @@ public class User
     public List<Comment> Comments { get; set; } = new List<Comment>();
     public List<Content> Contents { get; set; } = new List<Content>();
 
-    public List<User> Subscribes { get; set; } = new List<User>();
-    public List<User> Subscriptions { get; set; } = new List<User>();
+    public List<UserSubscribtion> Followers { get; set; } = new List<UserSubscribtion>();
+    public List<UserSubscribtion> Following { get; set; } = new List<UserSubscribtion>();
 
-    public List<DomainOwner> OwnedDomains { get; set; } = new List<DomainOwner>();
-    public List<Domain> SignedDomains { get; set; } = new List<Domain>();
+    public List<DomainOwner> Owners { get; set; } = new List<DomainOwner>();
+    public List<DomainSubscription> DomainSubscriptions { get; set; } = new List<DomainSubscription>();
 }
