@@ -25,6 +25,6 @@ public class User
     public List<User> Subscribes { get; set; } = new List<User>();
     public List<User> Subscriptions { get; set; } = new List<User>();
 
-    public List<Domain> Domains { get; set; } = new List<Domain>();
+    public List<DomainOwner> OwnedDomains { get; set; } = new List<DomainOwner>();
     public List<Domain> SignedDomains { get; set; } = new List<Domain>();
 }

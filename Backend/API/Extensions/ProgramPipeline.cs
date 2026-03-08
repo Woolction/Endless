@@ -1,15 +1,15 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Backend.API.Data.Components;
 using Backend.API.Data.Context;
 using Backend.API.Data.Models;
+using Backend.API.Middleware;
 using Backend.API.Services;
 using Scalar.AspNetCore;
 using System.Text;
-using Microsoft.AspNetCore.RateLimiting;
-using Backend.API.Middleware;
 
 namespace Backend.API.Extensions;
 
