@@ -47,12 +47,12 @@ public class EndlessContext : DbContext
 
         EntityTypeBuilder<SavedContent> savedCBuilder = builder.Entity<SavedContent>();
         savedCBuilder.HasOne(sC => sC.Owner).WithMany(u => u.SavedContents).HasForeignKey(sC => sC.OwnerId);
-        savedCBuilder.HasOne(sC => sC.Content).WithMany(c => c.ContentSaveds).HasForeignKey(sC => sC.ContentId);
+        savedCBuilder.HasOne(sC => sC.Content).WithMany(c => c.ContentSavers).HasForeignKey(sC => sC.ContentId);
         savedCBuilder.HasKey(sC => new { sC.OwnerId, sC.ContentId });
 
         EntityTypeBuilder<LikedContent> likedCBuilder = builder.Entity<LikedContent>();
         likedCBuilder.HasOne(lC => lC.Owner).WithMany(u => u.LikedContents).HasForeignKey(lC => lC.OwnerId);
-        likedCBuilder.HasOne(lC => lC.Content).WithMany(c => c.ContentLikeds).HasForeignKey(lC => lC.ContentId);
+        likedCBuilder.HasOne(lC => lC.Content).WithMany(c => c.ContentLikers).HasForeignKey(lC => lC.ContentId);
         likedCBuilder.HasKey(lC => new { lC.OwnerId, lC.ContentId });
 
         EntityTypeBuilder<VideoMetaData> videoMetaBuilder = builder.Entity<VideoMetaData>();

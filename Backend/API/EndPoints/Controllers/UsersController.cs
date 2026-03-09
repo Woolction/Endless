@@ -39,8 +39,26 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet]
+    public async Task<IActionResult> GetUsersForSlug(string slug) //Searching
+    {
+        if (string.IsNullOrEmpty(slug))
+            return BadRequest("The name is empty");
+
+        slug.GenerateSlug();
+
+        List<UserResponseDto> users = await context.Users.Where(
+            user => user.Slug.Contains(slug)).Select(
+                user => new UserResponseDto(
+                    user.Id, user.Name, "@" + user.Slug, user.Description ?? "", user.RegistryData, user.Email, user.Role))
+                    .AsNoTracking().ToListAsync();
+
+        return Ok(users);
+    }
+
+    //Current User
     [Authorize]
-    public async Task<IActionResult> GetUser()
+    [HttpGet("current")]
+    public async Task<IActionResult> GetCurrentUser()
     {
         Guid currentUserId = this.GetIDFromClaim();
 
@@ -49,12 +67,13 @@ public class UsersController : ControllerBase
         if (user is null)
             return NotFound();
 
-        return Ok(new UserResponseDto(user.Name, user.Email, user.Role));
+        return Ok(new UserResponseDto(
+            user.Id, user.Name, "@" + user.Slug, user.Description ?? "", user.RegistryData, user.Email, user.Role));
     }
 
-    [HttpPut]
     [Authorize]
-    public async Task<IActionResult> UpdateUser(UserUpdateDto updateDto)
+    [HttpPut("current")]
+    public async Task<IActionResult> UpdateCurrentUser(UserUpdateDto updateDto)
     {
         Guid currentUserId = this.GetIDFromClaim();
 
@@ -65,17 +84,21 @@ public class UsersController : ControllerBase
 
         user.Name = updateDto.Name;
 
+         if (!string.IsNullOrEmpty(updateDto.Description))
+            user.Description = updateDto.Description;
+
         //for test
         user.Role = updateDto.Role;
-
+       
         await context.SaveChangesAsync();
 
-        return Ok(new UserResponseDto(user.Name, user.Email, user.Role));
+        return Ok(new UserResponseDto(
+            user.Id, user.Name, "@" + user.Slug, user.Description ?? "", user.RegistryData, user.Email, user.Role));
     }
 
-    [HttpDelete]
     [Authorize]
-    public async Task<IActionResult> DeleteUser()
+    [HttpDelete("current")]
+    public async Task<IActionResult> DeleteCurrentUser()
     {
         Guid currentUserId = this.GetIDFromClaim();
 

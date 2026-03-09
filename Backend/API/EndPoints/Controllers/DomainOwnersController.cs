@@ -16,7 +16,7 @@ public class DomainOwnersController : ControllerBase
     {
         this.context = context;
     }
-    
+
     [HttpGet("{DomainId}")]
     public async Task<IActionResult> GetDomainOwners(Guid DomainId)
     {
@@ -27,5 +27,10 @@ public class DomainOwnersController : ControllerBase
             owner.OwnerRole)).AsNoTracking().ToListAsync();
 
         return Ok(domainOwners);
+    }
+    
+    public async Task<IActionResult> CreateDomainOwner()
+    {
+        return Ok();
     }
 }

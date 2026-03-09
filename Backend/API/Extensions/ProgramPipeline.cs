@@ -25,6 +25,13 @@ public static class ProgramPipeline
         builder.Services.AddControllers();
         builder.Services.AddOpenApi();
 
+        //Logging
+        builder.Logging.ClearProviders();
+        builder.Logging.AddConsole();
+        builder.Logging.AddDebug();
+        builder.Logging.SetMinimumLevel(LogLevel.Information);
+
+        //Authentication
         builder.Services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -56,7 +63,7 @@ public static class ProgramPipeline
             };
         });
 
-        //authorization builder.Services
+        //Authorization builder.Services
         builder.Services.AddAuthorizationBuilder()
             .AddPolicy(nameof(UserRole.Creator), policy =>
             {
@@ -67,7 +74,7 @@ public static class ProgramPipeline
                 policy.RequireRole(nameof(UserRole.User), nameof(UserRole.Creator), nameof(UserRole.Admin));
             });
 
-        //rate limiter
+        //Rate limiter
         builder.Services.AddRateLimiter(options =>
         {
             options.OnRejected = async (context, token) =>
@@ -92,6 +99,7 @@ public static class ProgramPipeline
             });
         });
 
+        //Db context
         builder.Services.AddDbContext<EndlessContext>(context =>
             context.UseNpgsql(DbKey));
 

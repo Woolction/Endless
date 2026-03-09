@@ -14,9 +14,14 @@ namespace Backend.API.EndPoints.Controllers;
 public class DomainController : ControllerBase
 {
     private readonly EndlessContext context;
-    public DomainController(EndlessContext context)
+
+    private readonly ILogger<DomainController> logger;
+    
+    public DomainController(EndlessContext context, ILogger<DomainController> logger)
     {
         this.context = context;
+
+        this.logger = logger;
     }
 
     [HttpPost]
@@ -59,16 +64,64 @@ public class DomainController : ControllerBase
         await context.SaveChangesAsync();
 
         DomainResponseDto responseDto = new(domain.Id,
-            domain.Name, "@" + slug, domain.CreatedDate);
+                  domain.Name, "@" + domain.Slug, domain.Description ?? "", domain.CreatedDate,
+                  domain.Subsrcibers.Count, domain.TotalLikes, domain.TotalViews);
 
         return Ok(responseDto);
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetDomains() //Searching
+    [HttpGet("all")]
+    public async Task<IActionResult> GetAllDomains(SearchRequestDto queryDto)
     {
-        List<DomainResponseDto> domains = await context.Domains.Select(domain => new DomainResponseDto(domain.Id,
-                  domain.Name, "@" + domain.Slug, domain.CreatedDate)).AsNoTracking().ToListAsync();
+        IQueryable<Domain> query = context.Domains
+            .OrderByDescending(domain => domain.CreatedDate)
+            .AsQueryable();
+
+        if (queryDto.LastCreatedDate is not null)
+            query = query.Where(query => query.CreatedDate < queryDto.LastCreatedDate);
+
+        List<DomainResponseDto> domains = await query
+            .Take(queryDto.Take)
+            .Select(domain => new DomainResponseDto(
+                domain.Id, domain.Name,
+                "@" + domain.Slug,
+                domain.Description ?? "",
+                domain.CreatedDate,
+                domain.Subsrcibers.Count,
+                domain.TotalLikes,
+                domain.TotalViews))
+            .AsNoTracking().ToListAsync();
+
+        return Ok(domains);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetDomainsForSlug(SearchRequestDto queryDto) //Searching
+    {
+        if (string.IsNullOrEmpty(queryDto.Slug))
+            return BadRequest("The name is empty");
+
+        queryDto.Slug.GenerateSlug();
+
+        IQueryable<Domain> query = context.Domains
+            .OrderByDescending(domain => domain.CreatedDate)
+            .AsQueryable();
+
+        if (queryDto.LastCreatedDate is not null)
+            query = query.Where(query => query.CreatedDate < queryDto.LastCreatedDate && query.Slug.Contains(queryDto.Slug));
+
+        List<DomainResponseDto> domains = await query
+            .Take(queryDto.Take)
+            .Select(domain => new DomainResponseDto(
+                domain.Id,
+                domain.Name,
+                "@" + domain.Slug,
+                domain.Description ?? "",
+                domain.CreatedDate,
+                domain.Subsrcibers.Count,
+                domain.TotalLikes,
+                domain.TotalViews))
+            .AsNoTracking().ToListAsync();
 
         return Ok(domains);
     }
@@ -101,7 +154,8 @@ public class DomainController : ControllerBase
         await context.SaveChangesAsync();
 
         DomainResponseDto responseDto = new(domain.Id,
-                  domain.Name, "@" + slug, domain.CreatedDate);
+                  domain.Name, "@" + domain.Slug, domain.Description ?? "", domain.CreatedDate,
+                  domain.Subsrcibers.Count, domain.TotalLikes, domain.TotalViews);
 
         return Ok(responseDto);
     }

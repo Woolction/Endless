@@ -1,6 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Backend.API.Data.Components;
 using Backend.API.Data.Context;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.API.EndPoints.Controllers;
@@ -19,6 +19,7 @@ public class CommentController : ControllerBase
     [HttpGet("{ContentId}")]
     public async Task<IActionResult> GetComments(Guid ContentId)
     {
+    
         return Ok();
     }
 

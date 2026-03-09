@@ -18,10 +18,22 @@ public class User
     public PrivateType PrivateType { get; set; } = PrivateType.Request;
     public UserRole Role { get; set; } = UserRole.User;
 
+    public long TotalLikes { get; set; }
+
+    public long SavedContentsCount { get; set; }
+    public long LikedContentsCount { get; set; }
+    
+    public long CommentsCount { get; set; }
+    public long ContentsCount { get; set; }
+
+    public long FollowersCount { get; set; }
+    public long FollowingCount { get; set; }
+
+    public long OwnedDomainsCount { get; set; }
+    public long DomainSubscriptionsCount { get; set; }
+
     public List<SavedContent> SavedContents { get; set; } = new List<SavedContent>();
     public List<LikedContent> LikedContents { get; set; } = new List<LikedContent>();
-
-    public long TotalLikes { get; set; }
 
     public List<Comment> Comments { get; set; } = new List<Comment>();
     public List<Content> Contents { get; set; } = new List<Content>();
