@@ -5,8 +5,8 @@ namespace Backend.API.Data.Models;
 
 public class DomainOwner
 {
-    public Guid UserId { get; set; }
-    [ForeignKey(nameof(UserId))] public User? User { get; set; }
+    public Guid OwnerId { get; set; }
+    [ForeignKey(nameof(OwnerId))] public User? Owner { get; set; }
 
     public Guid DomainId { get; set; }
     [ForeignKey(nameof(DomainId))] public Domain? Domain { get; set; }

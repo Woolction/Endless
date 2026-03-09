@@ -34,9 +34,9 @@ public class EndlessContext : DbContext
         domainBuilder.HasIndex(d => d.Slug).IsUnique();
 
         EntityTypeBuilder<DomainOwner> domainOwnerBuilder = builder.Entity<DomainOwner>();
-        domainOwnerBuilder.HasOne(o => o.User).WithMany(u => u.Owners).HasForeignKey(o => o.UserId);
+        domainOwnerBuilder.HasOne(o => o.Owner).WithMany(u => u.OwnedDomains).HasForeignKey(o => o.OwnerId);
         domainOwnerBuilder.HasOne(o => o.Domain).WithMany(d => d.Owners).HasForeignKey(o => o.DomainId);
-        domainOwnerBuilder.HasKey(o => new { o.UserId, o.DomainId });
+        domainOwnerBuilder.HasKey(o => new { o.OwnerId, o.DomainId });
 
         EntityTypeBuilder<Content> contentBuilder = builder.Entity<Content>();
         contentBuilder.HasOne(c => c.Creator).WithMany(u => u.Contents).HasForeignKey(c => c.CreatorId);

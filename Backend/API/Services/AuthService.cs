@@ -126,13 +126,14 @@ public class AuthService : IAuthService
         if (string.IsNullOrEmpty(requestDto.Token))
             return null;
             
-        User? user = await context.Users.FirstOrDefaultAsync(user => user.RefreshToken!.Token == requestDto.Token);
+        User? user = await context.Users.Include(u => u.RefreshToken)
+                        .FirstOrDefaultAsync(user => user.RefreshToken!.Token == requestDto.Token);
 
         if (user is not null)
         {
             RefreshToken userRefreshToken = user.RefreshToken!;
 
-            if (userRefreshToken.Token == requestDto.Token && userRefreshToken.ValidityPeriod >= DateTime.UtcNow)
+            if (userRefreshToken.ValidityPeriod >= DateTime.UtcNow)
                 return user;
         }
 

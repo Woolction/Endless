@@ -56,11 +56,4 @@ public class AuthController : ControllerBase
 
         return NoContent();
     }
-
-    [HttpGet("admin")]
-    [Authorize(Roles = nameof(UserRole.Admin))]
-    public IActionResult TestAdmin()
-    {
-        return Ok("Hi Admin");
-    }
 }

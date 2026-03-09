@@ -58,13 +58,13 @@ public static class ProgramPipeline
 
         //authorization builder.Services
         builder.Services.AddAuthorizationBuilder()
-            .AddPolicy(nameof(UserRole.User), policy =>
-            {
-                policy.RequireRole(nameof(UserRole.User), nameof(UserRole.Creator), nameof(UserRole.Admin));
-            })
             .AddPolicy(nameof(UserRole.Creator), policy =>
             {
                 policy.RequireRole(nameof(UserRole.Creator), nameof(UserRole.Admin));
+            })
+            .AddPolicy(nameof(UserRole.User), policy =>
+            {
+                policy.RequireRole(nameof(UserRole.User), nameof(UserRole.Creator), nameof(UserRole.Admin));
             });
 
         //rate limiter
