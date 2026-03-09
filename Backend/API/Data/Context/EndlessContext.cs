@@ -9,9 +9,11 @@ public class EndlessContext : DbContext
     public EndlessContext(DbContextOptions<EndlessContext> options) : base(options) { }
 
     public DbSet<User> Users { get; set; }
+    public DbSet<UserSubscribtion> UserSubscribtions { get; set; }
     
     public DbSet<Domain> Domains { get; set; }
     public DbSet<DomainOwner> DomainOwners { get; set; }
+    public DbSet<DomainSubscription> DomainSubscriptions { get; set; }
 
     public DbSet<Content> Contents { get; set; }
     public DbSet<SavedContent> SavedContents { get; set; }
@@ -23,15 +25,29 @@ public class EndlessContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
+        base.OnModelCreating(builder);
+
+        builder.HasPostgresExtension("pg_trgm");
+
         EntityTypeBuilder<User> userBuilder = builder.Entity<User>();
         userBuilder.HasIndex(u => u.Email).IsUnique();
         userBuilder.HasIndex(u => u.Slug).IsUnique();
-        userBuilder.HasIndex(u => u.Name).IsUnique();
+        userBuilder.HasIndex(u => u.Name)
+            .HasMethod("gin")
+            .HasOperators("gin_trgm_ops");
         userBuilder.OwnsOne(u => u.RefreshToken);
 
+        EntityTypeBuilder<UserSubscribtion> userSubBuilder = builder.Entity<UserSubscribtion>();
+        userSubBuilder.HasOne(uS => uS.FollowedUser).WithMany(u => u.Followers).HasForeignKey(uS => uS.FollowerId);
+        userSubBuilder.HasOne(uS => uS.User).WithMany(u => u.Following).HasForeignKey(uS => uS.UserId);
+        userSubBuilder.HasKey(uS => new { uS.FollowerId, uS.UserId });
+
         EntityTypeBuilder<Domain> domainBuilder = builder.Entity<Domain>();
-        domainBuilder.HasIndex(d => d.Name).IsUnique();
-        domainBuilder.HasIndex(d => d.Slug).IsUnique();
+        domainBuilder.HasIndex(d => d.Name)
+            .HasMethod("gin")
+            .HasOperators("gin_trgm_ops");
+        domainBuilder.HasIndex(d => d.Slug)
+            .IsUnique();
 
         EntityTypeBuilder<DomainOwner> domainOwnerBuilder = builder.Entity<DomainOwner>();
         domainOwnerBuilder.HasOne(o => o.Owner).WithMany(u => u.OwnedDomains).HasForeignKey(o => o.OwnerId);
@@ -43,7 +59,9 @@ public class EndlessContext : DbContext
         contentBuilder.HasOne(c => c.Domain).WithMany(d => d.Contents).HasForeignKey(c => c.DomainId);
         contentBuilder.HasIndex(c => c.Slug).IsUnique();
         contentBuilder.HasIndex(c => c.CreatedDate);
-        contentBuilder.HasIndex(c => c.Title);
+        contentBuilder.HasIndex(c => c.Title)
+            .HasMethod("gin")
+            .HasOperators("gin_trgm_ops");
 
         EntityTypeBuilder<SavedContent> savedCBuilder = builder.Entity<SavedContent>();
         savedCBuilder.HasOne(sC => sC.Owner).WithMany(u => u.SavedContents).HasForeignKey(sC => sC.OwnerId);
@@ -66,12 +84,7 @@ public class EndlessContext : DbContext
 
         EntityTypeBuilder<DomainSubscription> domainSubBuilder = builder.Entity<DomainSubscription>();
         domainSubBuilder.HasOne(dS => dS.SubscribedUser).WithMany(d => d.DomainSubscriptions).HasForeignKey(uS => uS.SubscriberId);
-        domainSubBuilder.HasOne(dS => dS.Domain).WithMany(d => d.Subsrcibers).HasForeignKey(uS => uS.DomainId);
+        domainSubBuilder.HasOne(dS => dS.Domain).WithMany(d => d.Subscribers).HasForeignKey(uS => uS.DomainId);
         domainSubBuilder.HasKey(dS => new { dS.SubscriberId, dS.DomainId });
-
-        EntityTypeBuilder<UserSubscribtion> userSubBuilder = builder.Entity<UserSubscribtion>();
-        userSubBuilder.HasOne(uS => uS.FollowedUser).WithMany(u => u.Followers).HasForeignKey(uS => uS.FollowerId);
-        userSubBuilder.HasOne(uS => uS.User).WithMany(u => u.Following).HasForeignKey(uS => uS.UserId);
-        userSubBuilder.HasKey(uS => new { uS.FollowerId, uS.UserId });
     }
 }

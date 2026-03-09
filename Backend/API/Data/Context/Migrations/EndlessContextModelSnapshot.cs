@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Backend.API.Data.Context.Migrations
+namespace Backend.Migrations
 {
     [DbContext(typeof(EndlessContext))]
     partial class EndlessContextModelSnapshot : ModelSnapshot
@@ -20,6 +20,7 @@ namespace Backend.API.Data.Context.Migrations
                 .HasAnnotation("ProductVersion", "10.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
+            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "pg_trgm");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Backend.API.Data.Models.Comment", b =>
@@ -66,6 +67,15 @@ namespace Backend.API.Data.Context.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<long>("CommentsCount")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ContentLikersCount")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ContentSaversCount")
+                        .HasColumnType("bigint");
+
                     b.Property<int>("ContentType")
                         .HasColumnType("integer");
 
@@ -86,6 +96,9 @@ namespace Backend.API.Data.Context.Migrations
 
                     b.Property<Guid>("DomainId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("PrewievPhotoUrl")
+                        .HasColumnType("text");
 
                     b.Property<string>("Slug")
                         .IsRequired()
@@ -111,6 +124,9 @@ namespace Backend.API.Data.Context.Migrations
 
                     b.HasIndex("Title");
 
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Title"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Title"), new[] { "gin_trgm_ops" });
+
                     b.ToTable("Contents");
                 });
 
@@ -119,6 +135,9 @@ namespace Backend.API.Data.Context.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<long>("ContentsCount")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("timestamp with time zone");
@@ -130,9 +149,15 @@ namespace Backend.API.Data.Context.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<long>("OwnersCount")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Slug")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<long>("SubscribersCount")
+                        .HasColumnType("bigint");
 
                     b.Property<long>("TotalLikes")
                         .HasColumnType("bigint");
@@ -142,8 +167,10 @@ namespace Backend.API.Data.Context.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
-                        .IsUnique();
+                    b.HasIndex("Name");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Name"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Name"), new[] { "gin_trgm_ops" });
 
                     b.HasIndex("Slug")
                         .IsUnique();
@@ -153,7 +180,7 @@ namespace Backend.API.Data.Context.Migrations
 
             modelBuilder.Entity("Backend.API.Data.Models.DomainOwner", b =>
                 {
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid>("OwnerId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("DomainId")
@@ -165,7 +192,7 @@ namespace Backend.API.Data.Context.Migrations
                     b.Property<int>("OwnerRole")
                         .HasColumnType("integer");
 
-                    b.HasKey("UserId", "DomainId");
+                    b.HasKey("OwnerId", "DomainId");
 
                     b.HasIndex("DomainId");
 
@@ -190,7 +217,7 @@ namespace Backend.API.Data.Context.Migrations
 
                     b.HasIndex("DomainId");
 
-                    b.ToTable("DomainSubscription");
+                    b.ToTable("DomainSubscriptions");
                 });
 
             modelBuilder.Entity("Backend.API.Data.Models.LikedContent", b =>
@@ -235,19 +262,40 @@ namespace Backend.API.Data.Context.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<long>("CommentsCount")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ContentsCount")
+                        .HasColumnType("bigint");
+
                     b.Property<DateTime>("DateOfBirth")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
+                    b.Property<long>("DomainSubscriptionsCount")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<long>("FollowersCount")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("FollowingCount")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("LikedContentsCount")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<long>("OwnedDomainsCount")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -262,6 +310,9 @@ namespace Backend.API.Data.Context.Migrations
                     b.Property<int>("Role")
                         .HasColumnType("integer");
 
+                    b.Property<long>("SavedContentsCount")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Slug")
                         .IsRequired()
                         .HasColumnType("text");
@@ -274,8 +325,10 @@ namespace Backend.API.Data.Context.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.HasIndex("Name")
-                        .IsUnique();
+                    b.HasIndex("Name");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Name"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Name"), new[] { "gin_trgm_ops" });
 
                     b.HasIndex("Slug")
                         .IsUnique();
@@ -301,7 +354,7 @@ namespace Backend.API.Data.Context.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserSubscribtion");
+                    b.ToTable("UserSubscribtions");
                 });
 
             modelBuilder.Entity("Backend.API.Data.Models.VideoMetaData", b =>
@@ -363,21 +416,21 @@ namespace Backend.API.Data.Context.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Backend.API.Data.Models.User", "User")
-                        .WithMany("Owners")
-                        .HasForeignKey("UserId")
+                    b.HasOne("Backend.API.Data.Models.User", "Owner")
+                        .WithMany("OwnedDomains")
+                        .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Domain");
 
-                    b.Navigation("User");
+                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("Backend.API.Data.Models.DomainSubscription", b =>
                 {
                     b.HasOne("Backend.API.Data.Models.Domain", "Domain")
-                        .WithMany("Subsrcibers")
+                        .WithMany("Subscribers")
                         .HasForeignKey("DomainId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -396,7 +449,7 @@ namespace Backend.API.Data.Context.Migrations
             modelBuilder.Entity("Backend.API.Data.Models.LikedContent", b =>
                 {
                     b.HasOne("Backend.API.Data.Models.Content", "Content")
-                        .WithMany("ContentLikeds")
+                        .WithMany("ContentLikers")
                         .HasForeignKey("ContentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -415,7 +468,7 @@ namespace Backend.API.Data.Context.Migrations
             modelBuilder.Entity("Backend.API.Data.Models.SavedContent", b =>
                 {
                     b.HasOne("Backend.API.Data.Models.Content", "Content")
-                        .WithMany("ContentSaveds")
+                        .WithMany("ContentSavers")
                         .HasForeignKey("ContentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -490,9 +543,9 @@ namespace Backend.API.Data.Context.Migrations
                 {
                     b.Navigation("Comments");
 
-                    b.Navigation("ContentLikeds");
+                    b.Navigation("ContentLikers");
 
-                    b.Navigation("ContentSaveds");
+                    b.Navigation("ContentSavers");
 
                     b.Navigation("VideoMeta");
                 });
@@ -503,7 +556,7 @@ namespace Backend.API.Data.Context.Migrations
 
                     b.Navigation("Owners");
 
-                    b.Navigation("Subsrcibers");
+                    b.Navigation("Subscribers");
                 });
 
             modelBuilder.Entity("Backend.API.Data.Models.User", b =>
@@ -520,7 +573,7 @@ namespace Backend.API.Data.Context.Migrations
 
                     b.Navigation("LikedContents");
 
-                    b.Navigation("Owners");
+                    b.Navigation("OwnedDomains");
 
                     b.Navigation("SavedContents");
                 });

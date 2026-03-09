@@ -9,6 +9,9 @@ using Backend.API.Data.Models;
 using System.Security.Claims;
 using Backend.API.Dtos;
 using System.Text;
+using System.Reflection.Metadata.Ecma335;
+using Npgsql;
+using Backend.API.Extensions;
 
 namespace Backend.API.Services;
 
@@ -42,15 +45,32 @@ public class AuthService : IAuthService
         User user = new()
         {
             Email = requestDto.Email,
-            RegistryData = DateTime.Now
-        }; 
+            RegistryData = DateTime.UtcNow,
+        };
         user.PasswordHash = passwordHasher.HashPassword(user, requestDto.Password);
+
+        if (!string.IsNullOrEmpty(requestDto.Name))
+        {
+            user.Name = requestDto.Name;
+            user.Slug = requestDto.Name.GenerateSlug();
+        }
 
         context.Users.Add(user);
 
-        await context.SaveChangesAsync();
+        try
+        {
+            await context.SaveChangesAsync();
 
-        return await CraeteTokenResponse(user);
+            return await CraeteTokenResponse(user);
+        }
+        catch (DbUpdateException ex)
+        {
+            if (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
+                return null;
+
+            throw;
+        }
+
     }
     public async Task<AuthResponseDto?> LoginAsync(AuthRequestDto requestDto)
     {

@@ -42,5 +42,5 @@ public class User
     public List<UserSubscribtion> Following { get; set; } = new List<UserSubscribtion>();
 
     public List<DomainOwner> OwnedDomains { get; set; } = new List<DomainOwner>();
-    public List<DomainSubscription> DomainSubscriptions { get; set; } = new List<DomainSubscription>();
+    public List<DomainSubscription> DomainSubscriptions { get; set; } = new List<DomainSubscription>(); //Following the Domain
 }

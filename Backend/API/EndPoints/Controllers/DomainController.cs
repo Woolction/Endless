@@ -6,6 +6,7 @@ using Backend.API.Data.Context;
 using Backend.API.Data.Models;
 using Backend.API.Extensions;
 using Backend.API.Dtos;
+using Npgsql;
 
 namespace Backend.API.EndPoints.Controllers;
 
@@ -37,14 +38,11 @@ public class DomainController : ControllerBase
 
         string slug = createDto.Name.GenerateSlug();
 
-        bool NameExists = await context.Domains.AnyAsync(d => d.Name == createDto.Name || d.Slug == slug);
-
-        if (NameExists)
-            return BadRequest("Domain name or slug already exists");
-
         Domain domain = new()
         {
             Slug = slug,
+            OwnersCount = 1,
+            SubscribersCount = 1,
             Name = createDto.Name,
             CreatedDate = DateTime.UtcNow,
         };
@@ -57,37 +55,60 @@ public class DomainController : ControllerBase
             OwnerRole = DomainOwnerRole.Admin
         };
 
-        domain.Owners.Add(domainOwner);
+        DomainSubscription domainSubscription = new()
+        {
+            Domain = domain,
+            SubscribedUser = user,
+            SubscribedDate = DateTime.UtcNow,
+            Notification = false
+        };
 
+        user.OwnedDomainsCount++;
+        user.DomainSubscriptionsCount++;
+
+        context.DomainSubscriptions.Add(domainSubscription);
+        context.DomainOwners.Add(domainOwner);
         context.Domains.Add(domain);
 
-        await context.SaveChangesAsync();
+        try
+        {
+            await context.SaveChangesAsync();
 
-        DomainResponseDto responseDto = new(domain.Id,
-                  domain.Name, "@" + domain.Slug, domain.Description ?? "", domain.CreatedDate,
-                  domain.Subsrcibers.Count, domain.TotalLikes, domain.TotalViews);
+            DomainResponseDto responseDto = new(
+                domain.Id,
+                domain.Name,
+                "@" + domain.Slug,
+                domain.Description ?? "",
+                domain.CreatedDate,
+                domain.SubscribersCount,
+                domain.TotalLikes, domain.TotalViews);
 
-        return Ok(responseDto);
+            return Ok(responseDto);
+        }
+        catch (DbUpdateException ex)
+        {
+            if (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
+                return BadRequest("Domain name or slug already exists");
+
+            throw;
+        }
     }
 
-    [HttpGet("all")]
-    public async Task<IActionResult> GetAllDomains(SearchRequestDto queryDto)
+    [HttpGet("Recomentation")]
+    public async Task<IActionResult> GetDomainsForRecomendation(DomainRecomendationDto queryDto)
     {
         IQueryable<Domain> query = context.Domains
             .OrderByDescending(domain => domain.CreatedDate)
             .AsQueryable();
 
-        if (queryDto.LastCreatedDate is not null)
-            query = query.Where(query => query.CreatedDate < queryDto.LastCreatedDate);
-
         List<DomainResponseDto> domains = await query
-            .Take(queryDto.Take)
             .Select(domain => new DomainResponseDto(
-                domain.Id, domain.Name,
+                domain.Id,
+                domain.Name,
                 "@" + domain.Slug,
                 domain.Description ?? "",
                 domain.CreatedDate,
-                domain.Subsrcibers.Count,
+                domain.SubscribersCount,
                 domain.TotalLikes,
                 domain.TotalViews))
             .AsNoTracking().ToListAsync();
@@ -96,21 +117,22 @@ public class DomainController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetDomainsForSlug(SearchRequestDto queryDto) //Searching
+    public async Task<IActionResult> GetDomainsForSlug(DomainSearchRequestDto queryDto)
     {
-        if (string.IsNullOrEmpty(queryDto.Slug))
-            return BadRequest("The name is empty");
-
         queryDto.Slug.GenerateSlug();
 
         IQueryable<Domain> query = context.Domains
-            .OrderByDescending(domain => domain.CreatedDate)
+            .Where(domain => EF.Functions.TrigramsAreSimilar(domain.Slug, queryDto.Slug))
             .AsQueryable();
 
-        if (queryDto.LastCreatedDate is not null)
-            query = query.Where(query => query.CreatedDate < queryDto.LastCreatedDate && query.Slug.Contains(queryDto.Slug));
+        if (queryDto.LastSimilarity is not null)
+        {
+            query = query.Where(
+                domain => EF.Functions.TrigramsSimilarity(domain.Slug, queryDto.Slug) < queryDto.LastSimilarity);
+        }
 
         List<DomainResponseDto> domains = await query
+            .OrderByDescending(domain => EF.Functions.TrigramsSimilarity(domain.Slug, queryDto.Slug))
             .Take(queryDto.Take)
             .Select(domain => new DomainResponseDto(
                 domain.Id,
@@ -118,7 +140,7 @@ public class DomainController : ControllerBase
                 "@" + domain.Slug,
                 domain.Description ?? "",
                 domain.CreatedDate,
-                domain.Subsrcibers.Count,
+                domain.SubscribersCount,
                 domain.TotalLikes,
                 domain.TotalViews))
             .AsNoTracking().ToListAsync();
@@ -153,9 +175,15 @@ public class DomainController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        DomainResponseDto responseDto = new(domain.Id,
-                  domain.Name, "@" + domain.Slug, domain.Description ?? "", domain.CreatedDate,
-                  domain.Subsrcibers.Count, domain.TotalLikes, domain.TotalViews);
+        DomainResponseDto responseDto = new(
+            domain.Id,
+            domain.Name,
+            "@" + domain.Slug,
+            domain.Description ?? "",
+            domain.CreatedDate,
+            domain.SubscribersCount,
+            domain.TotalLikes,
+            domain.TotalViews);
 
         return Ok(responseDto);
     }
