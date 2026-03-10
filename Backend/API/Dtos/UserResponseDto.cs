@@ -8,4 +8,8 @@ public record class UserResponseDto(
     string Slug,
     string Description,
     DateTime RegistryDate,
-    string Email, UserRole Role);
+    string Email, UserRole Role,
+    long TotalLikes, long CommentsCount,
+    long ContentsCount, long FollowersCount,
+    long FollowingCount, long OwnedDomainsCount,
+    long DomainSubscriptionsCount);

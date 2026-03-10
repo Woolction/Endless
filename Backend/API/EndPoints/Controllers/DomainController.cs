@@ -81,7 +81,8 @@ public class DomainController : ControllerBase
                 domain.Description ?? "",
                 domain.CreatedDate,
                 domain.SubscribersCount,
-                domain.TotalLikes, domain.TotalViews);
+                domain.OwnersCount,
+                domain.TotalLikes, domain.TotalViews, 0);
 
             return Ok(responseDto);
         }
@@ -94,7 +95,7 @@ public class DomainController : ControllerBase
         }
     }
 
-    [HttpGet("Recomentation")]
+    [HttpGet("Recomendation")]
     public async Task<IActionResult> GetDomainsForRecomendation(DomainRecomendationDto queryDto)
     {
         IQueryable<Domain> query = context.Domains
@@ -109,30 +110,34 @@ public class DomainController : ControllerBase
                 domain.Description ?? "",
                 domain.CreatedDate,
                 domain.SubscribersCount,
+                domain.OwnersCount,
                 domain.TotalLikes,
-                domain.TotalViews))
+                domain.TotalViews, 0))
             .AsNoTracking().ToListAsync();
 
         return Ok(domains);
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetDomainsForSlug(DomainSearchRequestDto queryDto)
+    [HttpGet("search")]
+    public async Task<IActionResult> GetDomainsForName(DomainSearchRequestDto queryDto)
     {
-        queryDto.Slug.GenerateSlug();
-
         IQueryable<Domain> query = context.Domains
-            .Where(domain => EF.Functions.TrigramsAreSimilar(domain.Slug, queryDto.Slug))
-            .AsQueryable();
+            .Where(domain =>
+                EF.Functions.ILike(domain.Name, $"%{queryDto.Name}%") ||
+                EF.Functions.TrigramsSimilarity(domain.Name, queryDto.Name) > 0.2f ||
+                EF.Functions.FuzzyStringMatchLevenshtein(domain.Name, queryDto.Name) <= 3)
+            .AsQueryable(); 
+            
+            //EF.Functions.TrigramsAreSimilar(domain.Name, queryDto.Name))
 
         if (queryDto.LastSimilarity is not null)
         {
             query = query.Where(
-                domain => EF.Functions.TrigramsSimilarity(domain.Slug, queryDto.Slug) < queryDto.LastSimilarity);
+                domain => EF.Functions.TrigramsSimilarity(domain.Name, queryDto.Name) < queryDto.LastSimilarity);
         }
 
         List<DomainResponseDto> domains = await query
-            .OrderByDescending(domain => EF.Functions.TrigramsSimilarity(domain.Slug, queryDto.Slug))
+            .OrderByDescending(domain => EF.Functions.TrigramsSimilarity(domain.Name, queryDto.Name))
             .Take(queryDto.Take)
             .Select(domain => new DomainResponseDto(
                 domain.Id,
@@ -141,8 +146,33 @@ public class DomainController : ControllerBase
                 domain.Description ?? "",
                 domain.CreatedDate,
                 domain.SubscribersCount,
+                domain.OwnersCount,
                 domain.TotalLikes,
-                domain.TotalViews))
+                domain.TotalViews,
+                EF.Functions.TrigramsSimilarity(domain.Name, queryDto.Name)))
+            .AsNoTracking().ToListAsync();
+
+        return Ok(domains);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetDomains()
+    {
+        IQueryable<Domain> query = context.Domains
+            .OrderByDescending(domain => domain.CreatedDate)
+            .AsQueryable();
+
+        List<DomainResponseDto> domains = await query
+            .Select(domain => new DomainResponseDto(
+                domain.Id,
+                domain.Name,
+                "@" + domain.Slug,
+                domain.Description ?? "",
+                domain.CreatedDate,
+                domain.SubscribersCount,
+                domain.OwnersCount,
+                domain.TotalLikes,
+                domain.TotalViews, 0))
             .AsNoTracking().ToListAsync();
 
         return Ok(domains);
@@ -182,8 +212,9 @@ public class DomainController : ControllerBase
             domain.Description ?? "",
             domain.CreatedDate,
             domain.SubscribersCount,
+            domain.OwnersCount,
             domain.TotalLikes,
-            domain.TotalViews);
+            domain.TotalViews, 0);
 
         return Ok(responseDto);
     }

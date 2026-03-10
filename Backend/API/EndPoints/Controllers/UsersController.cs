@@ -8,6 +8,7 @@ using Backend.API.Services;
 using Backend.API.Dtos;
 using Backend.API.Extensions;
 using Microsoft.AspNetCore.RateLimiting;
+using Npgsql;
 
 namespace Backend.API.EndPoints.Controllers;
 
@@ -38,19 +39,44 @@ public class UsersController : ControllerBase
         return Ok(responseDto);
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetUsersForSlug(string slug) //Searching
+    [HttpGet("search")]
+    public async Task<IActionResult> GetUsersForName(string name) //Searching
     {
-        if (string.IsNullOrEmpty(slug))
+        if (string.IsNullOrEmpty(name))
             return BadRequest("The name is empty");
 
-        slug.GenerateSlug();
+        IQueryable<User> query = context.Users
+            .Where(user =>
+                EF.Functions.ILike(user.Name, $"%{name}%") ||
+                EF.Functions.TrigramsSimilarity(user.Name, name) > 0.2f ||
+                EF.Functions.FuzzyStringMatchLevenshtein(user.Name, name) <= 3)
+            .AsQueryable();
 
-        List<UserResponseDto> users = await context.Users.Where(
-            user => user.Slug.Contains(slug)).Select(
+        /*if (queryDto.LastSimilarity is not null)
+        {
+            query = query.Where(
+                user => EF.Functions.TrigramsSimilarity(user.Name, queryDto.Name) < queryDto.LastSimilarity);
+        }*/
+
+        List<UserResponseDto> users = await query
+            .OrderByDescending(user => EF.Functions.TrigramsSimilarity(user.Name, name))
+            .Take(5)
+            .Select(
                 user => new UserResponseDto(
-                    user.Id, user.Name, "@" + user.Slug, user.Description ?? "", user.RegistryData, user.Email, user.Role))
-                    .AsNoTracking().ToListAsync();
+                    user.Id,
+                    user.Name,
+                    "@" + user.Slug,
+                    user.Description ?? "",
+                    user.RegistryData,
+                    user.Email, user.Role,
+                    user.TotalLikes,
+                    user.CommentsCount,
+                    user.ContentsCount,
+                    user.FollowersCount,
+                    user.FollowingCount,
+                    user.OwnedDomainsCount,
+                    user.DomainSubscriptionsCount))
+                .AsNoTracking().ToListAsync();
 
         return Ok(users);
     }
@@ -68,7 +94,19 @@ public class UsersController : ControllerBase
             return NotFound();
 
         return Ok(new UserResponseDto(
-            user.Id, user.Name, "@" + user.Slug, user.Description ?? "", user.RegistryData, user.Email, user.Role));
+                    user.Id,
+                    user.Name,
+                    "@" + user.Slug,
+                    user.Description ?? "",
+                    user.RegistryData,
+                    user.Email, user.Role,
+                    user.TotalLikes,
+                    user.CommentsCount,
+                    user.ContentsCount,
+                    user.FollowersCount,
+                    user.FollowingCount,
+                    user.OwnedDomainsCount,
+                    user.DomainSubscriptionsCount));
     }
 
     [Authorize]
@@ -82,18 +120,45 @@ public class UsersController : ControllerBase
         if (user is null)
             return BadRequest();
 
-        user.Name = updateDto.Name;
+        if (!string.IsNullOrEmpty(updateDto.Name))
+        {
+            user.Name = updateDto.Name;
+            user.Slug = updateDto.Name.GenerateSlug();
+        }
 
-         if (!string.IsNullOrEmpty(updateDto.Description))
+        if (!string.IsNullOrEmpty(updateDto.Description))
             user.Description = updateDto.Description;
 
         //for test
         user.Role = updateDto.Role;
-       
-        await context.SaveChangesAsync();
 
-        return Ok(new UserResponseDto(
-            user.Id, user.Name, "@" + user.Slug, user.Description ?? "", user.RegistryData, user.Email, user.Role));
+        try
+        {
+            await context.SaveChangesAsync();
+
+            return Ok(new UserResponseDto(
+                    user.Id,
+                    user.Name,
+                    "@" + user.Slug,
+                    user.Description ?? "",
+                    user.RegistryData,
+                    user.Email, user.Role,
+                    user.TotalLikes,
+                    user.CommentsCount,
+                    user.ContentsCount,
+                    user.FollowersCount,
+                    user.FollowingCount,
+                    user.OwnedDomainsCount,
+                    user.DomainSubscriptionsCount));
+        }
+        catch (DbUpdateException ex)
+        {
+            if (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
+                return BadRequest($"This name {updateDto.Name} already existn");
+
+            throw;
+        }
+        
     }
 
     [Authorize]

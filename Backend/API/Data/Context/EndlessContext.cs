@@ -28,6 +28,7 @@ public class EndlessContext : DbContext
         base.OnModelCreating(builder);
 
         builder.HasPostgresExtension("pg_trgm");
+        builder.HasPostgresExtension("fuzzystrmatch");
 
         EntityTypeBuilder<User> userBuilder = builder.Entity<User>();
         userBuilder.HasIndex(u => u.Email).IsUnique();
