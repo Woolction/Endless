@@ -6,10 +6,10 @@ public class Comment
 {
     public Guid Id { get; set; }
     public Guid CommentatorId { get; set; }
-    [ForeignKey(nameof(CommentatorId))] public User? Commentator { get; set; }
+    public User? Commentator { get; set; }
 
     public Guid ContentId { get; set; }
-    [ForeignKey(nameof(ContentId))] public Content? Content { get; set; }
+    public Content? Content { get; set; }
 
     public string? Text { get; set; }
 

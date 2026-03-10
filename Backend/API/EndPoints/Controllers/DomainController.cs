@@ -82,7 +82,7 @@ public class DomainController : ControllerBase
                 domain.CreatedDate,
                 domain.SubscribersCount,
                 domain.OwnersCount,
-                domain.TotalLikes, domain.TotalViews, 0);
+                domain.TotalLikes, domain.TotalViews);
 
             return Ok(responseDto);
         }
@@ -95,51 +95,28 @@ public class DomainController : ControllerBase
         }
     }
 
-    [HttpGet("Recomendation")]
-    public async Task<IActionResult> GetDomainsForRecomendation(DomainRecomendationDto queryDto)
-    {
-        IQueryable<Domain> query = context.Domains
-            .OrderByDescending(domain => domain.CreatedDate)
-            .AsQueryable();
-
-        List<DomainResponseDto> domains = await query
-            .Select(domain => new DomainResponseDto(
-                domain.Id,
-                domain.Name,
-                "@" + domain.Slug,
-                domain.Description ?? "",
-                domain.CreatedDate,
-                domain.SubscribersCount,
-                domain.OwnersCount,
-                domain.TotalLikes,
-                domain.TotalViews, 0))
-            .AsNoTracking().ToListAsync();
-
-        return Ok(domains);
-    }
-
     [HttpGet("search")]
-    public async Task<IActionResult> GetDomainsForName(DomainSearchRequestDto queryDto)
+    public async Task<IActionResult> GetDomainsForName(DomainSearchRequestDto requestDto)
     {
-        IQueryable<Domain> query = context.Domains
-            .Where(domain =>
-                EF.Functions.ILike(domain.Name, $"%{queryDto.Name}%") ||
-                EF.Functions.TrigramsSimilarity(domain.Name, queryDto.Name) > 0.2f ||
-                EF.Functions.FuzzyStringMatchLevenshtein(domain.Name, queryDto.Name) <= 3)
-            .AsQueryable(); 
-            
-            //EF.Functions.TrigramsAreSimilar(domain.Name, queryDto.Name))
+        IQueryable<Domain> query = context.Domains.AsQueryable();
 
-        if (queryDto.LastSimilarity is not null)
+        if (requestDto.LastSimilarity is not null)
         {
             query = query.Where(
-                domain => EF.Functions.TrigramsSimilarity(domain.Name, queryDto.Name) < queryDto.LastSimilarity);
+                domain => EF.Functions.TrigramsSimilarity(domain.Name, requestDto.Name) < requestDto.LastSimilarity);
+        }
+        else
+        {
+            query = query.Where(domain =>
+                EF.Functions.ILike(domain.Name, $"%{requestDto.Name}%") ||
+                EF.Functions.TrigramsSimilarity(domain.Name, requestDto.Name) > 0.2f ||
+                EF.Functions.FuzzyStringMatchLevenshtein(domain.Name, requestDto.Name) <= 3);
         }
 
-        List<DomainResponseDto> domains = await query
-            .OrderByDescending(domain => EF.Functions.TrigramsSimilarity(domain.Name, queryDto.Name))
-            .Take(queryDto.Take)
-            .Select(domain => new DomainResponseDto(
+        List<DomainSearchResponseDto> domains = await query
+            .OrderByDescending(domain => EF.Functions.TrigramsSimilarity(domain.Name, requestDto.Name))
+            .Take(25)
+            .Select(domain => new DomainSearchResponseDto(
                 domain.Id,
                 domain.Name,
                 "@" + domain.Slug,
@@ -149,7 +126,7 @@ public class DomainController : ControllerBase
                 domain.OwnersCount,
                 domain.TotalLikes,
                 domain.TotalViews,
-                EF.Functions.TrigramsSimilarity(domain.Name, queryDto.Name)))
+                EF.Functions.TrigramsSimilarity(domain.Name, requestDto.Name)))
             .AsNoTracking().ToListAsync();
 
         return Ok(domains);
@@ -172,7 +149,7 @@ public class DomainController : ControllerBase
                 domain.SubscribersCount,
                 domain.OwnersCount,
                 domain.TotalLikes,
-                domain.TotalViews, 0))
+                domain.TotalViews))
             .AsNoTracking().ToListAsync();
 
         return Ok(domains);
@@ -214,7 +191,7 @@ public class DomainController : ControllerBase
             domain.SubscribersCount,
             domain.OwnersCount,
             domain.TotalLikes,
-            domain.TotalViews, 0);
+            domain.TotalViews);
 
         return Ok(responseDto);
     }

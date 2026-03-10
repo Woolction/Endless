@@ -1,13 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Backend.API.Data.Context;
 using Backend.API.Data.Models;
-using System.Security.Claims;
+using Backend.API.Extensions;
 using Backend.API.Services;
 using Backend.API.Dtos;
-using Backend.API.Extensions;
-using Microsoft.AspNetCore.RateLimiting;
 using Npgsql;
 
 namespace Backend.API.EndPoints.Controllers;
@@ -39,30 +38,38 @@ public class UsersController : ControllerBase
         return Ok(responseDto);
     }
 
-    [HttpGet("search")]
-    public async Task<IActionResult> GetUsersForName(string name) //Searching
+    [HttpGet]
+    public async Task<IActionResult> GetUsers()
     {
-        if (string.IsNullOrEmpty(name))
+        return Ok();
+    }
+
+    [HttpGet("search")]
+    public async Task<IActionResult> GetUsersForName(UserSearchRequestDto requestDto) //Searching
+    {
+        if (string.IsNullOrEmpty(requestDto.Name))
             return BadRequest("The name is empty");
 
-        IQueryable<User> query = context.Users
-            .Where(user =>
-                EF.Functions.ILike(user.Name, $"%{name}%") ||
-                EF.Functions.TrigramsSimilarity(user.Name, name) > 0.2f ||
-                EF.Functions.FuzzyStringMatchLevenshtein(user.Name, name) <= 3)
-            .AsQueryable();
+        IQueryable<User> query = context.Users.AsQueryable();
 
-        /*if (queryDto.LastSimilarity is not null)
+        if (requestDto.LastSimilarity is not null)
         {
             query = query.Where(
-                user => EF.Functions.TrigramsSimilarity(user.Name, queryDto.Name) < queryDto.LastSimilarity);
-        }*/
+                user => EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name) < requestDto.LastSimilarity);
+        }
+        else
+        {
+            query = query.Where(user =>
+                EF.Functions.ILike(user.Name, $"%{requestDto.Name}%") ||
+                EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name) > 0.2f ||
+                EF.Functions.FuzzyStringMatchLevenshtein(user.Name, requestDto.Name) <= 3);
+        }
 
-        List<UserResponseDto> users = await query
-            .OrderByDescending(user => EF.Functions.TrigramsSimilarity(user.Name, name))
-            .Take(5)
+        List<UserSearchResponseDto> users = await query
+            .OrderByDescending(user => EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name))
+            .Take(25)
             .Select(
-                user => new UserResponseDto(
+                user => new UserSearchResponseDto(
                     user.Id,
                     user.Name,
                     "@" + user.Slug,
@@ -75,7 +82,8 @@ public class UsersController : ControllerBase
                     user.FollowersCount,
                     user.FollowingCount,
                     user.OwnedDomainsCount,
-                    user.DomainSubscriptionsCount))
+                    user.DomainSubscriptionsCount,
+                    EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name)))
                 .AsNoTracking().ToListAsync();
 
         return Ok(users);

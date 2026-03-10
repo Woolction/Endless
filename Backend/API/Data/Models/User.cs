@@ -43,4 +43,7 @@ public class User
 
     public List<DomainOwner> OwnedDomains { get; set; } = new List<DomainOwner>();
     public List<DomainSubscription> DomainSubscriptions { get; set; } = new List<DomainSubscription>(); //Following the Domain
+
+    public List<UserGenreVector> Vectors { get; set; } = new List<UserGenreVector>();
+    public List<UserInterationContent> UserInterations { get; set; } = new List<UserInterationContent>();
 }
