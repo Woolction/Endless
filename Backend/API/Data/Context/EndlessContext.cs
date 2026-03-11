@@ -21,8 +21,8 @@ public class EndlessContext : DbContext
     public DbSet<LikedContent> LikedContents { get; set; }
 
     public DbSet<Genre> Genres { get; set; }
-    public DbSet<UserGenreVector> GenreVectors { get; set; }
-    public DbSet<ContentGenreVector> ContentGenreVectors { get; set; }
+    public DbSet<UserGenreVector> UserVectors { get; set; }
+    public DbSet<ContentGenreVector> ContentVectors { get; set; }
 
     public DbSet<VideoMetaData> VideoMetas { get; set; }
     
@@ -86,16 +86,17 @@ public class EndlessContext : DbContext
         contentBuilder.HasIndex(c => c.Title)
             .HasMethod("gin")
             .HasOperators("gin_trgm_ops");
+        contentBuilder.HasIndex(c => c.RandomKey);
 
         EntityTypeBuilder<SavedContent> savedCBuilder = builder.Entity<SavedContent>();
         savedCBuilder.HasOne(sC => sC.Owner).WithMany(u => u.SavedContents).HasForeignKey(sC => sC.OwnerId);
-        savedCBuilder.HasOne(sC => sC.Content).WithMany(c => c.ContentSavers).HasForeignKey(sC => sC.ContentId);
+        savedCBuilder.HasOne(sC => sC.Content).WithMany(c => c.Savers).HasForeignKey(sC => sC.ContentId);
         savedCBuilder.HasKey(sC => new { sC.OwnerId, sC.ContentId });
         savedCBuilder.HasIndex(sC => sC.ContentId);
 
         EntityTypeBuilder<LikedContent> likedCBuilder = builder.Entity<LikedContent>();
         likedCBuilder.HasOne(lC => lC.Owner).WithMany(u => u.LikedContents).HasForeignKey(lC => lC.OwnerId);
-        likedCBuilder.HasOne(lC => lC.Content).WithMany(c => c.ContentLikers).HasForeignKey(lC => lC.ContentId);
+        likedCBuilder.HasOne(lC => lC.Content).WithMany(c => c.Likers).HasForeignKey(lC => lC.ContentId);
         likedCBuilder.HasKey(lC => new { lC.OwnerId, lC.ContentId });
         likedCBuilder.HasIndex(lC => lC.ContentId);
 
@@ -112,7 +113,7 @@ public class EndlessContext : DbContext
         genreUsBuilder.HasIndex(gU => gU.GenreId);
 
         EntityTypeBuilder<ContentGenreVector> genreCoBuilder = builder.Entity<ContentGenreVector>();
-        genreCoBuilder.HasOne(gC => gC.Content).WithMany(c => c.ContentGenreVectors).HasForeignKey(gC => gC.ContentId);
+        genreCoBuilder.HasOne(gC => gC.Content).WithMany(c => c.Vectors).HasForeignKey(gC => gC.ContentId);
         genreCoBuilder.HasOne(gC => gC.Genre).WithMany().HasForeignKey(gC => gC.GenreId);
         genreCoBuilder.HasKey(gC => new { gC.ContentId, gC.GenreId });
         genreCoBuilder.HasIndex(gC => gC.GenreId);

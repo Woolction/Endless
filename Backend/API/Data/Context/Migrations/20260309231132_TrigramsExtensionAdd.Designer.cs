@@ -9,7 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Backend.Migrations
+namespace Backend.API.Data.Context.Migrations
 {
     [DbContext(typeof(EndlessContext))]
     [Migration("20260309231132_TrigramsExtensionAdd")]

@@ -135,11 +135,7 @@ public class DomainController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetDomains()
     {
-        IQueryable<Domain> query = context.Domains
-            .OrderByDescending(domain => domain.CreatedDate)
-            .AsQueryable();
-
-        List<DomainResponseDto> domains = await query
+        List<DomainResponseDto> domains = await context.Domains
             .Select(domain => new DomainResponseDto(
                 domain.Id,
                 domain.Name,
@@ -211,6 +207,9 @@ public class DomainController : ControllerBase
             return Forbid("You doesn't owner the Domain");
 
         await context.Domains.Where(domain => domain.Id == DomainId).ExecuteDeleteAsync();
+
+        user.DomainSubscriptionsCount--;
+        user.OwnedDomainsCount--;
 
         return NoContent();
     }

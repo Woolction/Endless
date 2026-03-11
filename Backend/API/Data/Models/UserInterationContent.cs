@@ -9,7 +9,7 @@ public class UserInterationContent
     public Guid ContentId { get; set; }
     public Content? Content { get; set; }
 
-    public float WatchTime { get; set; }
+    public int WatchTimeSeconds { get; set; }
 
     public bool Liked { get; set; }
 

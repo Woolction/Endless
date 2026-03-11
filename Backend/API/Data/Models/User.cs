@@ -32,6 +32,9 @@ public class User
     public long OwnedDomainsCount { get; set; }
     public long DomainSubscriptionsCount { get; set; }
 
+    public long VectorsCount { get; set; }
+    public long UserInterationsCount { get; set; }
+
     public List<SavedContent> SavedContents { get; set; } = new List<SavedContent>();
     public List<LikedContent> LikedContents { get; set; } = new List<LikedContent>();
 

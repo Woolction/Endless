@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Backend.Migrations
+namespace Backend.API.Data.Context.Migrations
 {
     /// <inheritdoc />
     public partial class PreparationForRecommendationAlgorithm : Migration

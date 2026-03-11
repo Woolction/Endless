@@ -25,13 +25,13 @@ public static class ProgramPipeline
         builder.Services.AddControllers();
         builder.Services.AddOpenApi();
 
-        //Logging
+        // Logging
         builder.Logging.ClearProviders();
         builder.Logging.AddConsole();
         builder.Logging.AddDebug();
         builder.Logging.SetMinimumLevel(LogLevel.Information);
 
-        //Authentication
+        // Authentication
         builder.Services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -63,7 +63,7 @@ public static class ProgramPipeline
             };
         });
 
-        //Authorization builder.Services
+        // Authorization builder.Services
         builder.Services.AddAuthorizationBuilder()
             .AddPolicy(nameof(UserRole.Creator), policy =>
             {
@@ -74,7 +74,7 @@ public static class ProgramPipeline
                 policy.RequireRole(nameof(UserRole.User), nameof(UserRole.Creator), nameof(UserRole.Admin));
             });
 
-        //Rate limiter
+        // Rate limiter
         builder.Services.AddRateLimiter(options =>
         {
             options.OnRejected = async (context, token) =>
@@ -99,13 +99,21 @@ public static class ProgramPipeline
             });
         });
 
-        //Db context
+        // Db context
         builder.Services.AddDbContext<EndlessContext>(context =>
             context.UseNpgsql(DbKey));
 
-        //custum builder.Services
+        // Custum builder.Services
+        
+        //      Scoped
         builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
         builder.Services.AddScoped<IAuthService, AuthService>();
+
+        //      Singleton
+        builder.Services.AddSingleton<IInteractionService, InteractionService>();
+        builder.Services.AddSingleton<IRecommendationService, RecommendationService>();
+
+        //      Transient
     }
 
     public static void MiddlewareRegistry(this WebApplication app)

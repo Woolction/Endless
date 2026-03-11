@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace Backend.Migrations
+namespace Backend.API.Data.Context.Migrations
 {
     /// <inheritdoc />
     public partial class FuzzyStrMatchAdd : Migration
