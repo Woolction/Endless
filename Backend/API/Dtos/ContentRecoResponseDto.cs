@@ -1,3 +1,3 @@
 namespace Backend.API.Dtos;
 
-public record class ContentRecoResponseDto(ContentRecoDto[] RecoDto, float? LastScore);
+public record class ContentRecoResponseDto(ContentRecoDto[] RecoDto); //,float? LastScore);

@@ -9,10 +9,10 @@ public class Content
     public Guid Id { get; set; }
 
     public Guid DomainId { get; set; }
-    [ForeignKey(nameof(DomainId))] public Domain? Domain { get; set; }
+    public Domain? Domain { get; set; }
 
     public Guid CreatorId { get; set; }
-    [ForeignKey(nameof(CreatorId))] public User? Creator { get; set; }
+    public User? Creator { get; set; }
 
     public string Title { get; set; } = string.Empty;
     public string Slug { get; set; } = string.Empty;

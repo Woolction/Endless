@@ -1,4 +1,3 @@
-using System.Reflection.Metadata.Ecma335;
 using Backend.API.Data.Components;
 using Backend.API.Data.Context;
 using Backend.API.Data.Models;
@@ -18,17 +17,19 @@ public class ContentController : ControllerBase
     private readonly EndlessContext context;
 
     private readonly IRecommendationService recommendation;
+    private readonly IFfmpegService ffmpegService;
 
-    public ContentController(EndlessContext context, IRecommendationService recommendation)
+    public ContentController(EndlessContext context, IRecommendationService recommendation, IFfmpegService ffmpegService)
     {
         this.context = context;
 
         this.recommendation = recommendation;
+        this.ffmpegService = ffmpegService;
     }
 
     [HttpGet]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<IActionResult> GetContentForRecommendation(ContentRecoRequestDto requestDto)
+    public async Task<IActionResult> GetContentForRecommendation()//ContentSearchRequestDto requestDto)
     {
         Guid id = this.GetIDFromClaim();
 
@@ -67,7 +68,7 @@ public class ContentController : ControllerBase
 
         ContentRecoScoreDto[] recommended = [];
 
-        if (requestDto.LastRecommendScore is not null)
+        /*if (requestDto.LastRecommendScore is not null)
         {
             recommended = candidates
                 .Select(c => new ContentRecoScoreDto(
@@ -76,17 +77,20 @@ public class ContentController : ControllerBase
                    c.Score < requestDto.LastRecommendScore)
                 .OrderByDescending(x => x.Score)
                 .Take(16)
-                .ToArray();
-        }
-        else
-        {
-            recommended = candidates
+                .ToArray();   
+        } else {}
+        var LastRecommended = recommended.LastOrDefault();
+        float? lastScore = null;
+
+        if (LastRecommended is not null)
+            lastScore = LastRecommended.Score;*/
+
+        recommended = candidates
                 .Select(c => new ContentRecoScoreDto(
                     c, recommendation.Recommend(currentUser, c)))
                 .OrderByDescending(x => x.Score)
                 .Take(16)
                 .ToArray();
-        }
 
         var recommendedIds = recommended.Select(x => x.Content.Id).ToHashSet();
 
@@ -96,38 +100,87 @@ public class ContentController : ControllerBase
             .Take(4)
             .ToListAsync();
 
-        var LastRecommended = recommended.LastOrDefault();
-        float? lastScore = null;
-
-        if (LastRecommended is not null)
-            lastScore = LastRecommended.Score;
-
         var combined = recommended
             .Select(x => new ContentRecoDto(
-                x.Content.Title, x.Content.Slug,
-                x.Content.Description, x.Content.CreatedDate,
-                x.Content.ContentType, Random.Shared.NextDouble()))
-            .Concat(random.Select(c => new ContentRecoDto(
-                c.Title, c.Slug,
-                c.Description, c.CreatedDate,
-                c.ContentType, Random.Shared.NextDouble())))
-            .OrderBy(x => x.RandomKey)
-            .ToArray();
+                x.Content.Id, x.Content.DomainId, x.Content.CreatorId,
+                x.Content.Title, x.Content.Slug, x.Content.Description,
+                x.Content.CreatedDate, x.Content.ContentType, Random.Shared.NextDouble(),
+                x.Content.VideoMeta, x.Content.ContentUrl, x.Content.PrewievPhotoUrl,
+                x.Content.SavesCount, x.Content.LikesCount, x.Content.CommentsCount,
+                x.Content.DizLikesCount, x.Content.ViewsCount))
+            .Concat(random.Select(content => new ContentRecoDto(
+                content.Id, content.DomainId, content.CreatorId,
+                content.Title, content.Slug, content.Description,
+                content.CreatedDate, content.ContentType, Random.Shared.NextDouble(),
+                content.VideoMeta, content.ContentUrl, content.PrewievPhotoUrl,
+                content.SavesCount, content.LikesCount, content.CommentsCount,
+                content.DizLikesCount, content.ViewsCount)))
+            .OrderBy(x => x.RandomKey).ToArray();
 
-        return Ok(new ContentRecoResponseDto(combined, lastScore));
+        return Ok(new ContentRecoResponseDto(combined)); //, lastScore));
     }
 
     [HttpGet("search")]
-    public async Task<IActionResult> GetContentForName()
+    public async Task<IActionResult> GetContentForName(SearchRequestDto requestDto)
     {
-        return Ok();
+        IQueryable<Content> query = context.Contents.AsQueryable();
+
+        if (requestDto.LastSimilarity is not null)
+        {
+            query = query.Where(
+                content => EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name) < requestDto.LastSimilarity);
+        }
+        else
+        {
+            query = query.Where(content =>
+                EF.Functions.ILike(content.Title, $"%{requestDto.Name}%") ||
+                EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name) > 0.2f ||
+                EF.Functions.FuzzyStringMatchLevenshtein(content.Title, requestDto.Name) <= 3);
+        }
+
+        ContentResponseDto[] contents = await query
+            .OrderByDescending(content => EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name))
+            .Take(20)
+            .Select(content => new ContentResponseDto(
+                content.Id, content.DomainId, content.CreatorId,
+                content.Title, content.Slug, content.Description,
+                content.CreatedDate, content.ContentType,
+                content.VideoMeta, content.ContentUrl, content.PrewievPhotoUrl,
+                content.SavesCount, content.LikesCount, content.CommentsCount,
+                content.DizLikesCount, content.ViewsCount))
+            .AsNoTracking().ToArrayAsync();
+
+        ContentResponseDto? lastDomain = contents.LastOrDefault();
+        double? lastSimiratity = null;
+
+        if (lastDomain is not null)
+            lastSimiratity = EF.Functions.TrigramsSimilarity(lastDomain.Title, requestDto.Name);
+
+        return Ok(new ContentSearchResponseDto(contents, lastSimiratity));
     }
 
     [HttpPost]
     [Authorize(Policy = nameof(UserRole.Creator))]
-    public async Task<IActionResult> CreateContent()
+    public async Task<IActionResult> CreateContent(IFormFile file)
     {
-        return Ok();
+        if (file == null || file.Length == 0)
+            return BadRequest();
+
+        string tempPath = Path.Combine(
+            Path.GetTempPath(),
+            Guid.NewGuid() + Path.GetExtension(file.FileName)
+        );
+
+        using (var stream = new FileStream(tempPath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        var url = await ffmpegService.UploadGeneratedVideos(tempPath);
+
+        System.IO.File.Delete(tempPath);
+
+        return Ok(new { url });
     }
 
     [HttpPut]

@@ -10,6 +10,7 @@ using Backend.API.Middleware;
 using Backend.API.Services;
 using Scalar.AspNetCore;
 using System.Text;
+using Microsoft.AspNetCore.StaticFiles;
 
 namespace Backend.API.Extensions;
 
@@ -113,11 +114,25 @@ public static class ProgramPipeline
         builder.Services.AddSingleton<IInteractionService, InteractionService>();
         builder.Services.AddSingleton<IRecommendationService, RecommendationService>();
 
+        builder.Services.AddSingleton<IR2Service, R2Service>();
+        builder.Services.AddSingleton<IFfmpegService, FfmpegService>();
+
         //      Transient
     }
 
     public static void MiddlewareRegistry(this WebApplication app)
-    {
+    {   
+        // Static Files
+        var provider = new FileExtensionContentTypeProvider();
+
+        provider.Mappings[".m3u8"] = "application/vnd.apple.mpegurl";
+        provider.Mappings[".ts"] = "video/mp2t";
+
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            ContentTypeProvider = provider
+        });
+
         if (app.Environment.IsDevelopment())
         {
             app.MapOpenApi();

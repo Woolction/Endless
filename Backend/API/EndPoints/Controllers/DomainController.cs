@@ -96,7 +96,7 @@ public class DomainController : ControllerBase
     }
 
     [HttpGet("search")]
-    public async Task<IActionResult> GetDomainsForName(DomainSearchRequestDto requestDto)
+    public async Task<IActionResult> GetDomainsForName(SearchRequestDto requestDto)
     {
         IQueryable<Domain> query = context.Domains.AsQueryable();
 
@@ -113,10 +113,10 @@ public class DomainController : ControllerBase
                 EF.Functions.FuzzyStringMatchLevenshtein(domain.Name, requestDto.Name) <= 3);
         }
 
-        List<DomainSearchResponseDto> domains = await query
+        DomainResponseDto[] domains = await query
             .OrderByDescending(domain => EF.Functions.TrigramsSimilarity(domain.Name, requestDto.Name))
-            .Take(25)
-            .Select(domain => new DomainSearchResponseDto(
+            .Take(20)
+            .Select(domain => new DomainResponseDto(
                 domain.Id,
                 domain.Name,
                 "@" + domain.Slug,
@@ -125,11 +125,16 @@ public class DomainController : ControllerBase
                 domain.SubscribersCount,
                 domain.OwnersCount,
                 domain.TotalLikes,
-                domain.TotalViews,
-                EF.Functions.TrigramsSimilarity(domain.Name, requestDto.Name)))
-            .AsNoTracking().ToListAsync();
+                domain.TotalViews))
+            .AsNoTracking().ToArrayAsync();
 
-        return Ok(domains);
+        DomainResponseDto? lastDomain = domains.LastOrDefault();
+        double? lastSimiratity = null;
+
+        if (lastDomain is not null)
+            lastSimiratity = EF.Functions.TrigramsSimilarity(lastDomain.Name, requestDto.Name);
+
+        return Ok(new DomainSearchResponseDto(domains, lastSimiratity));
     }
 
     [HttpGet]
