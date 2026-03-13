@@ -18,7 +18,7 @@ public class User
     public PrivateType PrivateType { get; set; } = PrivateType.Request;
     public UserRole Role { get; set; } = UserRole.User;
 
-    public string AvatarPhotoUrl { get; set; } = string.Empty;
+    public string? AvatarPhotoUrl { get; set; }
 
     public long TotalLikes { get; set; }
 

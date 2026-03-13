@@ -7,6 +7,8 @@ using Backend.API.Data.Models;
 using Backend.API.Extensions;
 using Backend.API.Dtos;
 using Npgsql;
+using Backend.API.Services;
+using System.Runtime.InteropServices;
 
 namespace Backend.API.EndPoints.Controllers;
 
@@ -17,12 +19,14 @@ public class DomainController : ControllerBase
     private readonly EndlessContext context;
 
     private readonly ILogger<DomainController> logger;
+    private readonly IR2Service r2Service;
     
-    public DomainController(EndlessContext context, ILogger<DomainController> logger)
+    public DomainController(EndlessContext context, ILogger<DomainController> logger, IR2Service r2Service)
     {
         this.context = context;
 
         this.logger = logger;
+        this.r2Service = r2Service;
     }
 
     [HttpPost]
@@ -46,6 +50,17 @@ public class DomainController : ControllerBase
             Name = createDto.Name,
             CreatedDate = DateTime.UtcNow,
         };
+
+        if (createDto.AvatarPhoto is not null && createDto.AvatarPhoto.Length != 0)
+        {
+            string photoPath = await r2Service.SaveFormFileAsync(createDto.AvatarPhoto, "Images", ".jpeg");
+
+            string photoUrl = await r2Service.SaveImage(photoPath);
+
+            domain.AvatarPhotoUrl = photoUrl;
+
+            System.IO.File.Delete(photoPath);
+        }
 
         DomainOwner domainOwner = new()
         {
@@ -74,17 +89,7 @@ public class DomainController : ControllerBase
         {
             await context.SaveChangesAsync();
 
-            DomainResponseDto responseDto = new(
-                domain.Id,
-                domain.Name,
-                "@" + domain.Slug,
-                domain.Description ?? "",
-                domain.CreatedDate,
-                domain.SubscribersCount,
-                domain.OwnersCount,
-                domain.TotalLikes, domain.TotalViews);
-
-            return Ok(responseDto);
+            return Ok(domain.GetDomainResponseDto());
         }
         catch (DbUpdateException ex)
         {
@@ -116,16 +121,7 @@ public class DomainController : ControllerBase
         DomainResponseDto[] domains = await query
             .OrderByDescending(domain => EF.Functions.TrigramsSimilarity(domain.Name, requestDto.Name))
             .Take(20)
-            .Select(domain => new DomainResponseDto(
-                domain.Id,
-                domain.Name,
-                "@" + domain.Slug,
-                domain.Description ?? "",
-                domain.CreatedDate,
-                domain.SubscribersCount,
-                domain.OwnersCount,
-                domain.TotalLikes,
-                domain.TotalViews))
+            .Select(domain => domain.GetDomainResponseDto())
             .AsNoTracking().ToArrayAsync();
 
         DomainResponseDto? lastDomain = domains.LastOrDefault();
@@ -141,16 +137,7 @@ public class DomainController : ControllerBase
     public async Task<IActionResult> GetDomains()
     {
         List<DomainResponseDto> domains = await context.Domains
-            .Select(domain => new DomainResponseDto(
-                domain.Id,
-                domain.Name,
-                "@" + domain.Slug,
-                domain.Description ?? "",
-                domain.CreatedDate,
-                domain.SubscribersCount,
-                domain.OwnersCount,
-                domain.TotalLikes,
-                domain.TotalViews))
+            .Select(domain => domain.GetDomainResponseDto())
             .AsNoTracking().ToListAsync();
 
         return Ok(domains);
@@ -183,18 +170,7 @@ public class DomainController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        DomainResponseDto responseDto = new(
-            domain.Id,
-            domain.Name,
-            "@" + domain.Slug,
-            domain.Description ?? "",
-            domain.CreatedDate,
-            domain.SubscribersCount,
-            domain.OwnersCount,
-            domain.TotalLikes,
-            domain.TotalViews);
-
-        return Ok(responseDto);
+        return Ok(domain.GetDomainResponseDto());
     }
 
     [HttpDelete("{DomainId}")]

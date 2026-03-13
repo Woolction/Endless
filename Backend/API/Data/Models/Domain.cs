@@ -9,7 +9,7 @@ public class Domain
     public string? Description { get; set; }
     public DateTime CreatedDate { get; set; }
 
-    public string AvatarPhotoUrl { get; set; } = string.Empty;
+    public string? AvatarPhotoUrl { get; set; }
     
     public long TotalViews { get; set; }
     public long TotalLikes { get; set; }

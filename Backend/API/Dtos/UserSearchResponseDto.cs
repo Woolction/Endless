@@ -9,7 +9,12 @@ public record class UserSearchResponseDto(
     string Description,
     DateTime RegistryDate,
     string Email, UserRole Role,
-    long TotalLikes, long CommentsCount,
-    long ContentsCount, long FollowersCount,
-    long FollowingCount, long OwnedDomainsCount,
-    long DomainSubscriptionsCount, double LastSimilarity);
+    string? AvatarPhotoUrl,
+    long TotalLikes,
+    long CommentsCount,
+    long ContentsCount,
+    long FollowersCount,
+    long FollowingCount,
+    long OwnedDomainsCount,
+    long DomainSubscriptionsCount,
+    double LastSimilarity);

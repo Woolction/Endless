@@ -29,6 +29,26 @@ public class ContentController : ControllerBase
         this.r2Service = r2Service;
     }
 
+    [HttpGet("{ContentId}")]
+    public async Task<IActionResult> GetChangedContent(Guid ContentId)
+    {
+        Content? changedContent = await context.Contents
+            .AsNoTracking()
+            .Include(content => content.VideoMeta)
+            .Include(content => content.Creator)
+            .Include(content => content.Domain)
+            .FirstOrDefaultAsync(content => content.Id == ContentId);
+
+        if (changedContent is null)
+            return BadRequest("Content not found");
+
+        DomainResponseDto domainResponseDto = changedContent.Domain!.GetDomainResponseDto();
+        ContentResponseDto contentResponseDto = changedContent.GetContentResponseDto();
+        UserResponseDto userResponseDto = changedContent.Creator!.GetUserResponseDto();
+
+        return Ok(new { domainResponseDto, contentResponseDto, userResponseDto });
+    }
+
     [HttpGet]
     [Authorize(Policy = nameof(UserRole.User))]
     public async Task<IActionResult> GetContentForRecommendation()//ContentSearchRequestDto requestDto)
@@ -51,8 +71,7 @@ public class ContentController : ControllerBase
             .Include(c => c.Vectors)
             .Include(c => c.VideoMeta)
             .OrderBy(c => c.RandomKey)
-            .Take(300)
-            .ToListAsync();
+            .Take(300).ToListAsync();
 
         if (candidates.Count < 300)
         {
@@ -91,32 +110,18 @@ public class ContentController : ControllerBase
                 .Select(c => new ContentRecoScoreDto(
                     c, recommendation.Recommend(currentUser, c)))
                 .OrderByDescending(x => x.Score)
-                .Take(16)
-                .ToArray();
+                .Take(16).ToArray();
 
         var recommendedIds = recommended.Select(x => x.Content.Id).ToHashSet();
 
         var random = await context.Contents
             .Where(x => !recommendedIds.Contains(x.Id))
             .OrderBy(x => x.RandomKey >= r)
-            .Take(4)
-            .ToListAsync();
+            .Take(4).ToListAsync();
 
         var combined = recommended
-            .Select(x => new ContentRecoDto(
-                x.Content.Id, x.Content.DomainId, x.Content.CreatorId,
-                x.Content.Title, x.Content.Slug, x.Content.Description,
-                x.Content.CreatedDate, x.Content.ContentType, Random.Shared.NextDouble(),
-                x.Content.VideoMeta, x.Content.ContentUrl, x.Content.PrewievPhotoUrl,
-                x.Content.SavesCount, x.Content.LikesCount, x.Content.CommentsCount,
-                x.Content.DizLikesCount, x.Content.ViewsCount))
-            .Concat(random.Select(content => new ContentRecoDto(
-                content.Id, content.DomainId, content.CreatorId,
-                content.Title, content.Slug, content.Description,
-                content.CreatedDate, content.ContentType, Random.Shared.NextDouble(),
-                content.VideoMeta, content.ContentUrl, content.PrewievPhotoUrl,
-                content.SavesCount, content.LikesCount, content.CommentsCount,
-                content.DizLikesCount, content.ViewsCount)))
+            .Select(x => x.Content.GetContentRecoDto())
+            .Concat(random.Select(content => content.GetContentRecoDto()))
             .OrderBy(x => x.RandomKey).ToArray();
 
         return Ok(new ContentRecoResponseDto(combined)); //, lastScore));
@@ -142,14 +147,7 @@ public class ContentController : ControllerBase
 
         ContentResponseDto[] contents = await query
             .OrderByDescending(content => EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name))
-            .Take(20)
-            .Select(content => new ContentResponseDto(
-                content.Id, content.DomainId, content.CreatorId,
-                content.Title, content.Slug, content.Description,
-                content.CreatedDate, content.ContentType,
-                content.VideoMeta, content.ContentUrl, content.PrewievPhotoUrl,
-                content.SavesCount, content.LikesCount, content.CommentsCount,
-                content.DizLikesCount, content.ViewsCount))
+            .Take(20).Select(content => content.GetContentResponseDto())
             .AsNoTracking().ToArrayAsync();
 
         ContentResponseDto? lastDomain = contents.LastOrDefault();
@@ -163,9 +161,9 @@ public class ContentController : ControllerBase
 
     [HttpPost("{DomainId}")]
     [Authorize(Policy = nameof(UserRole.Creator))]
-    public async Task<IActionResult> CreateContent(IFormFile contentFile, IFormFile? prewievPhoto, Guid DomainId, ContentCreateDto createDto)
+    public async Task<IActionResult> CreateContent(Guid DomainId, ContentCreateDto createDto)
     {
-        if (contentFile == null || contentFile.Length == 0)
+        if (createDto.ContentFile == null || createDto.ContentFile.Length == 0)
             return BadRequest("Empty contentFile");
 
         Guid currentUserId = this.GetIDFromClaim();
@@ -190,14 +188,14 @@ public class ContentController : ControllerBase
         if (domainOwner.OwnerRole <= DomainOwnerRole.ContentEditor)
             return BadRequest("You do not have sufficient rights");
 
-        string videoPath = await r2Service.SaveFormFileAsync(contentFile, "Video");
+        string videoPath = await r2Service.SaveFormFileAsync(createDto.ContentFile, "Video");
         string videoUrl = await ffmpegService.UploadGeneratedVideos(videoPath);
 
         string photoUrl = null!;
 
-        if (prewievPhoto is not null)
+        if (createDto.PrewievPhoto is not null)
         {
-            string photoPath = await r2Service.SaveFormFileAsync(prewievPhoto, "Images", ".jpeg");
+            string photoPath = await r2Service.SaveFormFileAsync(createDto.PrewievPhoto, "Images", ".jpeg");
             photoUrl = await r2Service.SaveImage(photoPath);
 
             System.IO.File.Delete(photoPath);
@@ -212,7 +210,8 @@ public class ContentController : ControllerBase
             ContentUrl = videoUrl,
             PrewievPhotoUrl = photoUrl,
             CreatedDate = DateTime.UtcNow,
-            RandomKey = Random.Shared.NextDouble()
+            RandomKey = Random.Shared.NextDouble(),
+            ContentType = ContentType.Video
         };
         content.Vectors.AddRange(await context.ContentVectors.ToListAsync());
         content.VectorsCount = content.Vectors.Count;
@@ -230,15 +229,7 @@ public class ContentController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        ContentResponseDto responseDto = new (
-            content.Id, content.DomainId, content.CreatorId,
-            content.Title, content.Slug, content.Description,
-            content.CreatedDate, content.ContentType,
-            metaData, content.ContentUrl, content.PrewievPhotoUrl,
-            content.SavesCount, content.LikesCount, content.CommentsCount,
-            content.DizLikesCount, content.ViewsCount);
-
-        return Ok(responseDto);
+        return Ok(content.GetContentResponseDto());
     }
 
     [HttpPut]

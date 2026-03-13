@@ -18,10 +18,13 @@ public class UsersController : ControllerBase
     private readonly EndlessContext context;
 
     private readonly IAuthService authService;
-    public UsersController(EndlessContext context, IAuthService authService)
+    private readonly IR2Service r2Service;
+    public UsersController(EndlessContext context, IAuthService authService, IR2Service r2Service)
     {
         this.context = context;
+
         this.authService = authService;
+        this.r2Service = r2Service;
     }
 
     [HttpPost]
@@ -36,12 +39,6 @@ public class UsersController : ControllerBase
         this.CraeteTokensInCookies(responseDto);
 
         return Ok(responseDto);
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> GetUsers()
-    {
-        return Ok();
     }
 
     [HttpGet("search")]
@@ -67,24 +64,8 @@ public class UsersController : ControllerBase
 
         List<UserSearchResponseDto> users = await query
             .OrderByDescending(user => EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name))
-            .Take(25)
-            .Select(
-                user => new UserSearchResponseDto(
-                    user.Id,
-                    user.Name,
-                    "@" + user.Slug,
-                    user.Description ?? "",
-                    user.RegistryData,
-                    user.Email, user.Role,
-                    user.TotalLikes,
-                    user.CommentsCount,
-                    user.ContentsCount,
-                    user.FollowersCount,
-                    user.FollowingCount,
-                    user.OwnedDomainsCount,
-                    user.DomainSubscriptionsCount,
-                    EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name)))
-                .AsNoTracking().ToListAsync();
+            .Take(25).Select(user => user.GetUserSearchResponseDto(requestDto.Name))
+            .AsNoTracking().ToListAsync();
 
         return Ok(users);
     }
@@ -101,20 +82,7 @@ public class UsersController : ControllerBase
         if (user is null)
             return NotFound();
 
-        return Ok(new UserResponseDto(
-                    user.Id,
-                    user.Name,
-                    "@" + user.Slug,
-                    user.Description ?? "",
-                    user.RegistryData,
-                    user.Email, user.Role,
-                    user.TotalLikes,
-                    user.CommentsCount,
-                    user.ContentsCount,
-                    user.FollowersCount,
-                    user.FollowingCount,
-                    user.OwnedDomainsCount,
-                    user.DomainSubscriptionsCount));
+        return Ok(user.GetUserResponseDto());
     }
 
     [Authorize]
@@ -126,7 +94,7 @@ public class UsersController : ControllerBase
         User? user = await context.Users.FindAsync(currentUserId);
 
         if (user is null)
-            return BadRequest();
+            return BadRequest("User not found");
 
         if (!string.IsNullOrEmpty(updateDto.Name))
         {
@@ -137,6 +105,17 @@ public class UsersController : ControllerBase
         if (!string.IsNullOrEmpty(updateDto.Description))
             user.Description = updateDto.Description;
 
+        if (updateDto.AvatarPhoto is not null && updateDto.AvatarPhoto.Length != 0)
+        {
+            string photoPath = await r2Service.SaveFormFileAsync(updateDto.AvatarPhoto, "Images", ".jpeg");
+
+            string photoUrl = await r2Service.SaveImage(photoPath);
+
+            user.AvatarPhotoUrl = photoUrl;
+
+            System.IO.File.Delete(photoPath);
+        }
+
         //for test
         user.Role = updateDto.Role;
 
@@ -144,20 +123,7 @@ public class UsersController : ControllerBase
         {
             await context.SaveChangesAsync();
 
-            return Ok(new UserResponseDto(
-                    user.Id,
-                    user.Name,
-                    "@" + user.Slug,
-                    user.Description ?? "",
-                    user.RegistryData,
-                    user.Email, user.Role,
-                    user.TotalLikes,
-                    user.CommentsCount,
-                    user.ContentsCount,
-                    user.FollowersCount,
-                    user.FollowingCount,
-                    user.OwnedDomainsCount,
-                    user.DomainSubscriptionsCount));
+            return Ok(user.GetUserResponseDto());
         }
         catch (DbUpdateException ex)
         {
