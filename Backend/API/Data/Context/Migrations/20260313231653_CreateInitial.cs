@@ -6,12 +6,13 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Backend.API.Data.Context.Migrations
 {
     /// <inheritdoc />
-    public partial class TrigramsExtensionAdd : Migration
+    public partial class CreateInitial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterDatabase()
+                .Annotation("Npgsql:PostgresExtension:fuzzystrmatch", ",,")
                 .Annotation("Npgsql:PostgresExtension:pg_trgm", ",,");
 
             migrationBuilder.CreateTable(
@@ -23,6 +24,7 @@ namespace Backend.API.Data.Context.Migrations
                     Slug = table.Column<string>(type: "text", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    AvatarPhotoUrl = table.Column<string>(type: "text", nullable: true),
                     TotalViews = table.Column<long>(type: "bigint", nullable: false),
                     TotalLikes = table.Column<long>(type: "bigint", nullable: false),
                     SubscribersCount = table.Column<long>(type: "bigint", nullable: false),
@@ -32,6 +34,18 @@ namespace Backend.API.Data.Context.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Domains", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Genres",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Genres", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -50,6 +64,7 @@ namespace Backend.API.Data.Context.Migrations
                     RegistryData = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     PrivateType = table.Column<int>(type: "integer", nullable: false),
                     Role = table.Column<int>(type: "integer", nullable: false),
+                    AvatarPhotoUrl = table.Column<string>(type: "text", nullable: true),
                     TotalLikes = table.Column<long>(type: "bigint", nullable: false),
                     SavedContentsCount = table.Column<long>(type: "bigint", nullable: false),
                     LikedContentsCount = table.Column<long>(type: "bigint", nullable: false),
@@ -58,7 +73,9 @@ namespace Backend.API.Data.Context.Migrations
                     FollowersCount = table.Column<long>(type: "bigint", nullable: false),
                     FollowingCount = table.Column<long>(type: "bigint", nullable: false),
                     OwnedDomainsCount = table.Column<long>(type: "bigint", nullable: false),
-                    DomainSubscriptionsCount = table.Column<long>(type: "bigint", nullable: false)
+                    DomainSubscriptionsCount = table.Column<long>(type: "bigint", nullable: false),
+                    VectorsCount = table.Column<long>(type: "bigint", nullable: false),
+                    UserInterationsCount = table.Column<long>(type: "bigint", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -73,17 +90,19 @@ namespace Backend.API.Data.Context.Migrations
                     DomainId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatorId = table.Column<Guid>(type: "uuid", nullable: false),
                     Title = table.Column<string>(type: "text", nullable: false),
-                    Slug = table.Column<string>(type: "text", nullable: false),
+                    Slug = table.Column<Guid>(type: "uuid", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     ContentType = table.Column<int>(type: "integer", nullable: false),
                     ContentUrl = table.Column<string>(type: "text", nullable: true),
                     PrewievPhotoUrl = table.Column<string>(type: "text", nullable: true),
-                    DizLikeCount = table.Column<long>(type: "bigint", nullable: false),
+                    SavesCount = table.Column<long>(type: "bigint", nullable: false),
+                    LikesCount = table.Column<long>(type: "bigint", nullable: false),
+                    CommentsCount = table.Column<long>(type: "bigint", nullable: false),
+                    DizLikesCount = table.Column<long>(type: "bigint", nullable: false),
                     ViewsCount = table.Column<long>(type: "bigint", nullable: false),
-                    ContentSaversCount = table.Column<long>(type: "bigint", nullable: false),
-                    ContentLikersCount = table.Column<long>(type: "bigint", nullable: false),
-                    CommentsCount = table.Column<long>(type: "bigint", nullable: false)
+                    VectorsCount = table.Column<long>(type: "bigint", nullable: false),
+                    RandomKey = table.Column<double>(type: "double precision", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -159,21 +178,47 @@ namespace Backend.API.Data.Context.Migrations
                 columns: table => new
                 {
                     FollowerId = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    FollowedUserId = table.Column<Guid>(type: "uuid", nullable: false),
                     FollowedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Notification = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_UserSubscribtions", x => new { x.FollowerId, x.UserId });
+                    table.PrimaryKey("PK_UserSubscribtions", x => new { x.FollowerId, x.FollowedUserId });
+                    table.ForeignKey(
+                        name: "FK_UserSubscribtions_Users_FollowedUserId",
+                        column: x => x.FollowedUserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_UserSubscribtions_Users_FollowerId",
                         column: x => x.FollowerId,
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserVectors",
+                columns: table => new
+                {
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    GenreId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Order = table.Column<int>(type: "integer", nullable: false),
+                    Value = table.Column<float>(type: "real", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserVectors", x => new { x.UserId, x.GenreId });
                     table.ForeignKey(
-                        name: "FK_UserSubscribtions_Users_UserId",
+                        name: "FK_UserVectors_Genres_GenreId",
+                        column: x => x.GenreId,
+                        principalTable: "Genres",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_UserVectors_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
@@ -206,6 +251,34 @@ namespace Backend.API.Data.Context.Migrations
                         name: "FK_Comments_Users_CommentatorId",
                         column: x => x.CommentatorId,
                         principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ContentVectors",
+                columns: table => new
+                {
+                    ContentId = table.Column<Guid>(type: "uuid", nullable: false),
+                    GenreId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Order = table.Column<int>(type: "integer", nullable: false),
+                    AuthorVector = table.Column<float>(type: "real", nullable: false),
+                    AudienceVector = table.Column<float>(type: "real", nullable: false),
+                    FinalVector = table.Column<float>(type: "real", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ContentVectors", x => new { x.ContentId, x.GenreId });
+                    table.ForeignKey(
+                        name: "FK_ContentVectors_Contents_ContentId",
+                        column: x => x.ContentId,
+                        principalTable: "Contents",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ContentVectors_Genres_GenreId",
+                        column: x => x.GenreId,
+                        principalTable: "Genres",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -261,11 +334,40 @@ namespace Backend.API.Data.Context.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "UserInterationContents",
+                columns: table => new
+                {
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ContentId = table.Column<Guid>(type: "uuid", nullable: false),
+                    WatchTimeSeconds = table.Column<int>(type: "integer", nullable: false),
+                    Liked = table.Column<bool>(type: "boolean", nullable: false),
+                    Saved = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserInterationContents", x => new { x.UserId, x.ContentId });
+                    table.ForeignKey(
+                        name: "FK_UserInterationContents_Contents_ContentId",
+                        column: x => x.ContentId,
+                        principalTable: "Contents",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_UserInterationContents_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "VideoMetas",
                 columns: table => new
                 {
                     ContentId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Duration = table.Column<TimeSpan>(type: "interval", nullable: false)
+                    DurationSeconds = table.Column<int>(type: "integer", nullable: false),
+                    AverageWatchTimeSeconds = table.Column<int>(type: "integer", nullable: false),
+                    AverageWatchRatio = table.Column<float>(type: "real", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -309,6 +411,11 @@ namespace Backend.API.Data.Context.Migrations
                 column: "DomainId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Contents_RandomKey",
+                table: "Contents",
+                column: "RandomKey");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Contents_Slug",
                 table: "Contents",
                 column: "Slug",
@@ -320,6 +427,11 @@ namespace Backend.API.Data.Context.Migrations
                 column: "Title")
                 .Annotation("Npgsql:IndexMethod", "gin")
                 .Annotation("Npgsql:IndexOperators", new[] { "gin_trgm_ops" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ContentVectors_GenreId",
+                table: "ContentVectors",
+                column: "GenreId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_DomainOwners_DomainId",
@@ -345,6 +457,13 @@ namespace Backend.API.Data.Context.Migrations
                 column: "DomainId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Genres_Name",
+                table: "Genres",
+                column: "Name")
+                .Annotation("Npgsql:IndexMethod", "gin")
+                .Annotation("Npgsql:IndexOperators", new[] { "gin_trgm_ops" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_LikedContents_ContentId",
                 table: "LikedContents",
                 column: "ContentId");
@@ -352,6 +471,11 @@ namespace Backend.API.Data.Context.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_SavedContents_ContentId",
                 table: "SavedContents",
+                column: "ContentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserInterationContents_ContentId",
+                table: "UserInterationContents",
                 column: "ContentId");
 
             migrationBuilder.CreateIndex(
@@ -374,9 +498,14 @@ namespace Backend.API.Data.Context.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserSubscribtions_UserId",
+                name: "IX_UserSubscribtions_FollowedUserId",
                 table: "UserSubscribtions",
-                column: "UserId");
+                column: "FollowedUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserVectors_GenreId",
+                table: "UserVectors",
+                column: "GenreId");
         }
 
         /// <inheritdoc />
@@ -384,6 +513,9 @@ namespace Backend.API.Data.Context.Migrations
         {
             migrationBuilder.DropTable(
                 name: "Comments");
+
+            migrationBuilder.DropTable(
+                name: "ContentVectors");
 
             migrationBuilder.DropTable(
                 name: "DomainOwners");
@@ -398,10 +530,19 @@ namespace Backend.API.Data.Context.Migrations
                 name: "SavedContents");
 
             migrationBuilder.DropTable(
+                name: "UserInterationContents");
+
+            migrationBuilder.DropTable(
                 name: "UserSubscribtions");
 
             migrationBuilder.DropTable(
+                name: "UserVectors");
+
+            migrationBuilder.DropTable(
                 name: "VideoMetas");
+
+            migrationBuilder.DropTable(
+                name: "Genres");
 
             migrationBuilder.DropTable(
                 name: "Contents");

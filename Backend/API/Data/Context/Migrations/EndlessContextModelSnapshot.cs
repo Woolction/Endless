@@ -98,19 +98,18 @@ namespace Backend.API.Data.Context.Migrations
                     b.Property<string>("PrewievPhotoUrl")
                         .HasColumnType("text");
 
+                    b.Property<double>("RandomKey")
+                        .HasColumnType("double precision");
+
                     b.Property<long>("SavesCount")
                         .HasColumnType("bigint");
 
-                    b.Property<string>("Slug")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<Guid>("Slug")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<float>("TrendingScore")
-                        .HasColumnType("real");
 
                     b.Property<long>("VectorsCount")
                         .HasColumnType("bigint");
@@ -125,6 +124,8 @@ namespace Backend.API.Data.Context.Migrations
                     b.HasIndex("CreatorId");
 
                     b.HasIndex("DomainId");
+
+                    b.HasIndex("RandomKey");
 
                     b.HasIndex("Slug")
                         .IsUnique();
@@ -154,6 +155,9 @@ namespace Backend.API.Data.Context.Migrations
                     b.Property<float>("FinalVector")
                         .HasColumnType("real");
 
+                    b.Property<int>("Order")
+                        .HasColumnType("integer");
+
                     b.HasKey("ContentId", "GenreId");
 
                     b.HasIndex("GenreId");
@@ -166,6 +170,9 @@ namespace Backend.API.Data.Context.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<string>("AvatarPhotoUrl")
+                        .HasColumnType("text");
 
                     b.Property<long>("ContentsCount")
                         .HasColumnType("bigint");
@@ -313,6 +320,9 @@ namespace Backend.API.Data.Context.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AvatarPhotoUrl")
+                        .HasColumnType("text");
+
                     b.Property<long>("CommentsCount")
                         .HasColumnType("bigint");
 
@@ -400,6 +410,9 @@ namespace Backend.API.Data.Context.Migrations
 
                     b.Property<Guid>("GenreId")
                         .HasColumnType("uuid");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("integer");
 
                     b.Property<float>("Value")
                         .HasColumnType("real");
