@@ -18,6 +18,8 @@ public class User
     public PrivateType PrivateType { get; set; } = PrivateType.Request;
     public UserRole Role { get; set; } = UserRole.User;
 
+    public string AvatarPhotoUrl { get; set; } = string.Empty;
+
     public long TotalLikes { get; set; }
 
     public long SavedContentsCount { get; set; }

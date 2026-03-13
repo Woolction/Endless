@@ -102,8 +102,8 @@ public class DomainController : ControllerBase
 
         if (requestDto.LastSimilarity is not null)
         {
-            query = query.Where(
-                domain => EF.Functions.TrigramsSimilarity(domain.Name, requestDto.Name) < requestDto.LastSimilarity);
+            query = query.Where(domain =>
+            EF.Functions.TrigramsSimilarity(domain.Name, requestDto.Name) < requestDto.LastSimilarity);
         }
         else
         {

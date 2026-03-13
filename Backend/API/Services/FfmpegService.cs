@@ -206,7 +206,7 @@ public class FfmpegService : IFfmpegService
         };
     }
 
-    public int GetVideoDuration(string filePath)
+    public async Task<int> GetVideoDuration(string filePath)
     {
         var psi = new ProcessStartInfo
         {
@@ -220,7 +220,7 @@ public class FfmpegService : IFfmpegService
 
         string output = process.StandardOutput.ReadToEnd();
 
-        process.WaitForExit();
+        await process.WaitForExitAsync();
 
         double seconds = double.Parse(output, CultureInfo.InvariantCulture);
 

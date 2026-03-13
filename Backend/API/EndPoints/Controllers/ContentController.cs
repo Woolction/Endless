@@ -18,13 +18,15 @@ public class ContentController : ControllerBase
 
     private readonly IRecommendationService recommendation;
     private readonly IFfmpegService ffmpegService;
+    private readonly IR2Service r2Service;
 
-    public ContentController(EndlessContext context, IRecommendationService recommendation, IFfmpegService ffmpegService)
+    public ContentController(EndlessContext context, IRecommendationService recommendation, IFfmpegService ffmpegService, IR2Service r2Service)
     {
         this.context = context;
 
         this.recommendation = recommendation;
         this.ffmpegService = ffmpegService;
+        this.r2Service = r2Service;
     }
 
     [HttpGet]
@@ -127,8 +129,8 @@ public class ContentController : ControllerBase
 
         if (requestDto.LastSimilarity is not null)
         {
-            query = query.Where(
-                content => EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name) < requestDto.LastSimilarity);
+            query = query.Where(content =>
+                EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name) < requestDto.LastSimilarity);
         }
         else
         {
@@ -159,28 +161,84 @@ public class ContentController : ControllerBase
         return Ok(new ContentSearchResponseDto(contents, lastSimiratity));
     }
 
-    [HttpPost]
+    [HttpPost("{DomainId}")]
     [Authorize(Policy = nameof(UserRole.Creator))]
-    public async Task<IActionResult> CreateContent(IFormFile file)
+    public async Task<IActionResult> CreateContent(IFormFile contentFile, IFormFile? prewievPhoto, Guid DomainId, ContentCreateDto createDto)
     {
-        if (file == null || file.Length == 0)
-            return BadRequest();
+        if (contentFile == null || contentFile.Length == 0)
+            return BadRequest("Empty contentFile");
 
-        string tempPath = Path.Combine(
-            Path.GetTempPath(),
-            Guid.NewGuid() + Path.GetExtension(file.FileName)
-        );
+        Guid currentUserId = this.GetIDFromClaim();
 
-        using (var stream = new FileStream(tempPath, FileMode.Create))
+        Domain? domain = await context.Domains
+            .AsNoTracking()
+            .FirstOrDefaultAsync(domain =>
+                domain.Id == DomainId);
+
+        if (domain is null)
+            return BadRequest("Domain not found");
+
+        DomainOwner? domainOwner = await context.DomainOwners
+            .AsNoTracking()
+            .FirstOrDefaultAsync(owner =>
+                owner.OwnerId == currentUserId &&
+                owner.DomainId == domain.Id);
+
+        if (domainOwner is null)
+            return BadRequest("User not found");
+
+        if (domainOwner.OwnerRole <= DomainOwnerRole.ContentEditor)
+            return BadRequest("You do not have sufficient rights");
+
+        string videoPath = await r2Service.SaveFormFileAsync(contentFile, "Video");
+        string videoUrl = await ffmpegService.UploadGeneratedVideos(videoPath);
+
+        string photoUrl = null!;
+
+        if (prewievPhoto is not null)
         {
-            await file.CopyToAsync(stream);
+            string photoPath = await r2Service.SaveFormFileAsync(prewievPhoto, "Images", ".jpeg");
+            photoUrl = await r2Service.SaveImage(photoPath);
+
+            System.IO.File.Delete(photoPath);
         }
 
-        var url = await ffmpegService.UploadGeneratedVideos(tempPath);
+        Content content = new()
+        {
+            CreatorId = currentUserId,
+            DomainId = domain.Id,
+            Title = createDto.Title,
+            Slug = Guid.NewGuid(),
+            ContentUrl = videoUrl,
+            PrewievPhotoUrl = photoUrl,
+            CreatedDate = DateTime.UtcNow,
+            RandomKey = Random.Shared.NextDouble()
+        };
+        content.Vectors.AddRange(await context.ContentVectors.ToListAsync());
+        content.VectorsCount = content.Vectors.Count;
 
-        System.IO.File.Delete(tempPath);
+        VideoMetaData metaData = new()
+        {
+            Content = content,
+            DurationSeconds = await ffmpegService.GetVideoDuration(videoPath)
+        };
 
-        return Ok(new { url });
+        System.IO.File.Delete(videoPath);
+
+        context.Contents.Add(content);
+        context.VideoMetas.Add(metaData);
+
+        await context.SaveChangesAsync();
+
+        ContentResponseDto responseDto = new (
+            content.Id, content.DomainId, content.CreatorId,
+            content.Title, content.Slug, content.Description,
+            content.CreatedDate, content.ContentType,
+            metaData, content.ContentUrl, content.PrewievPhotoUrl,
+            content.SavesCount, content.LikesCount, content.CommentsCount,
+            content.DizLikesCount, content.ViewsCount);
+
+        return Ok(responseDto);
     }
 
     [HttpPut]

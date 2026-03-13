@@ -78,4 +78,24 @@ public class R2Service : IR2Service
         return $"/files/images/{id}{ext}";
     }
 
+    public async Task<string> SaveFormFileAsync(IFormFile file, string folderName, string ext = null!)
+    {
+        /*if (file == null || file.Length == 0)
+            throw new ArgumentException("File is empty");*/
+
+        string id = Guid.NewGuid().ToString();
+        string projectRoot = Directory.GetCurrentDirectory();
+        string folder = Path.Combine(projectRoot, "files", folderName);
+
+        Directory.CreateDirectory(folder);
+
+        string extension = ext ?? Path.GetExtension(file.FileName);
+        string filePath = Path.Combine(folder, id + extension);
+
+        await using var stream = new FileStream(filePath, FileMode.Create);
+        await file.CopyToAsync(stream);
+
+        return filePath;
+    }
+
 }

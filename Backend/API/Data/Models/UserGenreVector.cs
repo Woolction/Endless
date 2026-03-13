@@ -9,5 +9,7 @@ public class UserGenreVector
     public Guid GenreId { get; set; }
     public Genre? Genre { get; set; }
 
+    public int Order { get; set; }
+
     public float Value { get; set; }
 }
