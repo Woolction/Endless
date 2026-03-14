@@ -29,8 +29,6 @@ public class Content
     public long DizLikesCount { get; set; }
     public long ViewsCount { get; set; }
 
-    public long VectorsCount { get; set; }
-
     public double RandomKey { get; set; }
 
     public List<ContentGenreVector> Vectors { get; set; } = new List<ContentGenreVector>();

@@ -21,6 +21,7 @@ public class EndlessContext : DbContext
     public DbSet<LikedContent> LikedContents { get; set; }
 
     public DbSet<Genre> Genres { get; set; }
+    public DbSet<GenreInfo> GenreInfos { get; set; }
     public DbSet<UserGenreVector> UserVectors { get; set; }
     public DbSet<ContentGenreVector> ContentVectors { get; set; }
 

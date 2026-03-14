@@ -47,22 +47,38 @@ public class UserInteractionController : ControllerBase
             {
                 UserId = currentUserId,
                 ContentId = content.Id,
-
-                Liked = await context.LikedContents
-                    .AsNoTracking()
-                    .AnyAsync(l => l.OwnerId == currentUserId && l.ContentId == content.Id),
-
-                Saved = await context.SavedContents
-                    .AsNoTracking()
-                    .AnyAsync(s => s.OwnerId == currentUserId && s.ContentId == content.Id)
             };
+
+            context.UserInterationContents.Add(userInteration);
         }
+
+        userInteration.Liked = await context.LikedContents
+            .AsNoTracking()
+            .AnyAsync(l => l.OwnerId == currentUserId && l.ContentId == content.Id);
+
+        userInteration.Saved = await context.SavedContents
+            .AsNoTracking()
+            .AnyAsync(s => s.OwnerId == currentUserId && s.ContentId == content.Id);
 
         userInteration.WatchTimeSeconds = watchTimeSeconds;
 
         await context.SaveChangesAsync();
 
-        interaction.Interaction(currentUser, content, userInteration);
+        UserGenreVector[] userGenres = await context.UserVectors
+            .Include(uG => uG.Genre)
+            .OrderBy(uG => uG.Genre!.Order)
+            .Where(uG => uG.UserId == currentUserId)
+            .ToArrayAsync();
+
+        ContentGenreVector[] contentGenres = await context.ContentVectors
+            .Include(cG => cG.Genre)
+            .OrderBy(cG => cG.Genre!.Order)
+            .Where(cG => cG.ContentId == content.Id)
+            .ToArrayAsync();
+
+        GenreInfo genreInfo = await context.GenreInfos.AsNoTracking().FirstAsync();
+
+        interaction.Interaction(userGenres, content, contentGenres, userInteration, genreInfo.Count);
 
         return Ok();
     }

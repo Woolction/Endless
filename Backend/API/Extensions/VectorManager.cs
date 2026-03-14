@@ -4,7 +4,7 @@ namespace Backend.API.Extensions;
 
 public static class VectorManager
 {
-    public static float Dot<T, B>(List<T> a, List<B> b, long count, Func<T, float> selector, Func<B, float> selectorB)
+    public static float Dot<T, B>(T[] a, B[] b, long count, Func<T, float> selector, Func<B, float> selectorB)
     {
         float sum = 0;
         for (int i = 0; i < count; i++)
@@ -13,7 +13,7 @@ public static class VectorManager
         return sum;
     }
 
-    public static float Magnitude<T>(List<T> v, Func<T, float> selector)
+    public static float Magnitude<T>(T[] v, Func<T, float> selector)
     {
         float sum = 0;
 
@@ -23,7 +23,7 @@ public static class VectorManager
         return MathF.Sqrt(sum);
     }
 
-    public static float CosineSimilarity<T, B>(List<T> a, List<B> b, long count, Func<T, float> selector, Func<B, float> selectorB)
+    public static float CosineSimilarity<T, B>(T[] a, B[] b, long count, Func<T, float> selector, Func<B, float> selectorB)
     {
         float magT = Magnitude(a, selector);
         float magB = Magnitude(b, selectorB);
@@ -35,7 +35,7 @@ public static class VectorManager
             (magT * magB);
     }
 
-    public static float CosineSimilarityNormalized<T, B>(List<T> a, List<B> b, long count, Func<T, float> sa, Func<B, float> sb)
+    public static float CosineSimilarityNormalized<T, B>(T[] a, B[] b, long count, Func<T, float> sa, Func<B, float> sb)
     {
         float sum = 0;
 
@@ -45,7 +45,7 @@ public static class VectorManager
         return sum;
     }
 
-    public static void Normalize<T>(List<T> v, long count, Func<T, float> getter, Action<T, float> setter)
+    public static void Normalize<T>(T[] v, long count, Func<T, float> getter, Action<T, float> setter)
     {
         float mag = Magnitude(v, getter);
         if (mag == 0) return;

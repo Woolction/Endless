@@ -5,10 +5,10 @@ namespace Backend.API.Services;
 
 public class RecommendationService : IRecommendationService
 {
-    public float Recommend(User user, Content content)
+    public float Recommend(UserGenreVector[] userGenres, Content content, ContentGenreVector[] contentGenres, int vectorsCount)
     {
         float similarity = VectorManager.CosineSimilarity(
-            user.Vectors, content.Vectors, user.VectorsCount, x => x.Value, b => b.FinalVector);
+            userGenres, contentGenres, vectorsCount, x => x.Value, b => b.FinalVector);
 
         float trending = CalculateTrending(content);
 

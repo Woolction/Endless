@@ -4,5 +4,5 @@ namespace Backend.API.Services;
 
 public interface IInteractionService
 {
-    void Interaction(User user, Content content, UserInterationContent interaction);
+    void Interaction(UserGenreVector[] userVectors, Content content, ContentGenreVector[] contentVectors, UserInterationContent interaction, int Count);
 }

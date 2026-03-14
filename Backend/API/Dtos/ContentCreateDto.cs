@@ -4,4 +4,4 @@ using Backend.API.Data.Models;
 namespace Backend.API.Dtos;
 
 public record class ContentCreateDto(IFormFile ContentFile, IFormFile? PrewievPhoto,
-    string Title, string? Description);
+    string Title, string? Description, ContentType ContentType);

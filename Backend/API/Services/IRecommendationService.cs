@@ -4,5 +4,5 @@ namespace Backend.API.Services;
 
 public interface IRecommendationService
 {
-    float Recommend(User user, Content content);
+    float Recommend(UserGenreVector[] userGenres, Content content, ContentGenreVector[] contentGenres, int vectorsCount);
 }

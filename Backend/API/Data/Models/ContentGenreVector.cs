@@ -9,8 +9,6 @@ public class ContentGenreVector
     public Guid GenreId { get; set; }
     public Genre? Genre { get; set; }
 
-    public int Order { get; set; }
-
     public float AuthorVector { get; set; }
     public float AudienceVector { get; set; }
     public float FinalVector { get; set; }

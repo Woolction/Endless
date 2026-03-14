@@ -6,7 +6,7 @@ namespace Backend.API.Services;
 public class InteractionService : IInteractionService
 {
     //call when user exits the video
-    public void Interaction(User user, Content content, UserInterationContent interaction)
+    public void Interaction(UserGenreVector[] userVectors, Content content, ContentGenreVector[] contentVectors, UserInterationContent interaction, int Count)
     {
         VideoMetaData videoMeta = content.VideoMeta!;
 
@@ -24,51 +24,51 @@ public class InteractionService : IInteractionService
             0.2f * (interaction.Liked ? 1 : 0) +
             0.1f * (interaction.Saved ? 1 : 0);
 
-        UpdateUserVector(user, content, weight);
-        UpdatecontentAudienceVector(user, content, weight);
+        UpdateUserVector(userVectors, content, weight, Count);
+        UpdatecontentAudienceVector(userVectors, contentVectors, weight, Count);
 
-        UpdateFinalcontentVector(content);
+        UpdateFinalcontentVector(contentVectors, Count);
 
         UpdateWatchStats(content, interaction.WatchTimeSeconds);
     }
 
-    private void UpdateUserVector(User user, Content content, float weight)
+    private void UpdateUserVector(UserGenreVector[] userVectors, Content content, float weight, int Count)
     {
         //if (!user.AutoLearningEnabled) return; opcinional
 
-        for (int i = 0; i < user.VectorsCount; i++)
+        for (int i = 0; i < Count; i++)
         {
-            user.Vectors[i].Value =
-                0.9f * user.Vectors[i].Value +
+            userVectors[i].Value =
+                0.9f * userVectors[i].Value +
                 0.1f * weight * content.Vectors[i].FinalVector;
         }
 
         VectorManager.Normalize(
-            user.Vectors, user.VectorsCount, x => x.Value, (x, value) => x.Value = value);
+            userVectors, Count, x => x.Value, (x, value) => x.Value = value);
     }
 
-    private void UpdatecontentAudienceVector(User user, Content content, float weight)
+    private void UpdatecontentAudienceVector(UserGenreVector[] userVectors, ContentGenreVector[] contentVectors, float weight, int Count)
     {
-        for (int i = 0; i < content.VectorsCount; i++)
+        for (int i = 0; i < Count; i++)
         {
-            content.Vectors[i].AudienceVector += weight * user.Vectors[i].Value;
+            contentVectors[i].AudienceVector += weight * userVectors[i].Value;
         }
 
         VectorManager.Normalize(
-            content.Vectors, content.VectorsCount, x => x.AudienceVector, (x, value) => x.AudienceVector = value);
+            contentVectors, Count, x => x.AudienceVector, (x, value) => x.AudienceVector = value);
     }
 
-    private void UpdateFinalcontentVector(Content content)
+    private void UpdateFinalcontentVector(ContentGenreVector[] contentVectors, int Count)
     {
-        for (int i = 0; i < content.VectorsCount; i++)
+        for (int i = 0; i < Count; i++)
         {
-            content.Vectors[i].FinalVector =
-                0.5f * content.Vectors[i].AuthorVector +
-                0.5f * content.Vectors[i].AudienceVector;
+            contentVectors[i].FinalVector =
+                0.5f * contentVectors[i].AuthorVector +
+                0.5f * contentVectors[i].AudienceVector;
         }
 
         VectorManager.Normalize(
-            content.Vectors, content.VectorsCount, x => x.FinalVector, (x, value) => x.FinalVector = value);
+            contentVectors, Count, x => x.FinalVector, (x, value) => x.FinalVector = value);
     }
 
     private void UpdateWatchStats(Content content, int watchTimeSeconds)

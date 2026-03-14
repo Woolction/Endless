@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Backend.API.Data.Components;
 using Backend.API.Data.Context;
 using Backend.API.Data.Models;
@@ -27,136 +28,6 @@ public class ContentController : ControllerBase
         this.recommendation = recommendation;
         this.ffmpegService = ffmpegService;
         this.r2Service = r2Service;
-    }
-
-    [HttpGet("{ContentId}")]
-    public async Task<IActionResult> GetChangedContent(Guid ContentId)
-    {
-        Content? changedContent = await context.Contents
-            .AsNoTracking()
-            .Include(content => content.VideoMeta)
-            .Include(content => content.Creator)
-            .Include(content => content.Domain)
-            .FirstOrDefaultAsync(content => content.Id == ContentId);
-
-        if (changedContent is null)
-            return BadRequest("Content not found");
-
-        DomainResponseDto domainResponseDto = changedContent.Domain!.GetDomainResponseDto();
-        ContentResponseDto contentResponseDto = changedContent.GetContentResponseDto();
-        UserResponseDto userResponseDto = changedContent.Creator!.GetUserResponseDto();
-
-        return Ok(new { domainResponseDto, contentResponseDto, userResponseDto });
-    }
-
-    [HttpGet]
-    [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<IActionResult> GetContentForRecommendation()//ContentSearchRequestDto requestDto)
-    {
-        Guid id = this.GetIDFromClaim();
-
-        User? currentUser = await context.Users
-            .Include(u => u.Vectors)
-            .AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Id == id);
-
-        if (currentUser is null)
-            return BadRequest("User Not found");
-
-        double r = Random.Shared.NextDouble();
-
-        var candidates = await context.Contents
-            .AsNoTracking()
-            .Where(c => c.RandomKey >= r)
-            .Include(c => c.Vectors)
-            .Include(c => c.VideoMeta)
-            .OrderBy(c => c.RandomKey)
-            .Take(300).ToListAsync();
-
-        if (candidates.Count < 300)
-        {
-            var extra = await context.Contents
-                .AsNoTracking()
-                .Where(c => c.RandomKey < r)
-                .Include(c => c.Vectors)
-                .Include(c => c.VideoMeta)
-                .OrderBy(c => c.RandomKey)
-                .Take(300 - candidates.Count)
-                .ToListAsync();
-
-            candidates.AddRange(extra);
-        }
-
-        ContentRecoScoreDto[] recommended = [];
-
-        /*if (requestDto.LastRecommendScore is not null)
-        {
-            recommended = candidates
-                .Select(c => new ContentRecoScoreDto(
-                    c, recommendation.Recommend(currentUser, c)))
-                .Where(c =>
-                   c.Score < requestDto.LastRecommendScore)
-                .OrderByDescending(x => x.Score)
-                .Take(16)
-                .ToArray();   
-        } else {}
-        var LastRecommended = recommended.LastOrDefault();
-        float? lastScore = null;
-
-        if (LastRecommended is not null)
-            lastScore = LastRecommended.Score;*/
-
-        recommended = candidates
-                .Select(c => new ContentRecoScoreDto(
-                    c, recommendation.Recommend(currentUser, c)))
-                .OrderByDescending(x => x.Score)
-                .Take(16).ToArray();
-
-        var recommendedIds = recommended.Select(x => x.Content.Id).ToHashSet();
-
-        var random = await context.Contents
-            .Where(x => !recommendedIds.Contains(x.Id))
-            .OrderBy(x => x.RandomKey >= r)
-            .Take(4).ToListAsync();
-
-        var combined = recommended
-            .Select(x => x.Content.GetContentRecoDto())
-            .Concat(random.Select(content => content.GetContentRecoDto()))
-            .OrderBy(x => x.RandomKey).ToArray();
-
-        return Ok(new ContentRecoResponseDto(combined)); //, lastScore));
-    }
-
-    [HttpGet("search")]
-    public async Task<IActionResult> GetContentForName(SearchRequestDto requestDto)
-    {
-        IQueryable<Content> query = context.Contents.AsQueryable();
-
-        if (requestDto.LastSimilarity is not null)
-        {
-            query = query.Where(content =>
-                EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name) < requestDto.LastSimilarity);
-        }
-        else
-        {
-            query = query.Where(content =>
-                EF.Functions.ILike(content.Title, $"%{requestDto.Name}%") ||
-                EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name) > 0.2f ||
-                EF.Functions.FuzzyStringMatchLevenshtein(content.Title, requestDto.Name) <= 3);
-        }
-
-        ContentResponseDto[] contents = await query
-            .OrderByDescending(content => EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name))
-            .Take(20).Select(content => content.GetContentResponseDto())
-            .AsNoTracking().ToArrayAsync();
-
-        ContentResponseDto? lastDomain = contents.LastOrDefault();
-        double? lastSimiratity = null;
-
-        if (lastDomain is not null)
-            lastSimiratity = EF.Functions.TrigramsSimilarity(lastDomain.Title, requestDto.Name);
-
-        return Ok(new ContentSearchResponseDto(contents, lastSimiratity));
     }
 
     [HttpPost("{DomainId}")]
@@ -211,10 +82,16 @@ public class ContentController : ControllerBase
             PrewievPhotoUrl = photoUrl,
             CreatedDate = DateTime.UtcNow,
             RandomKey = Random.Shared.NextDouble(),
-            ContentType = ContentType.Video
+            ContentType = createDto.ContentType
         };
-        content.Vectors.AddRange(await context.ContentVectors.ToListAsync());
-        content.VectorsCount = content.Vectors.Count;
+
+        content.Vectors.AddRange(await context.Genres
+            .Select(genre => new ContentGenreVector() {
+                Content = content,
+                Genre = genre })
+            .AsNoTracking()
+            .ToListAsync()
+        );
 
         VideoMetaData metaData = new()
         {
@@ -232,9 +109,148 @@ public class ContentController : ControllerBase
         return Ok(content.GetContentResponseDto());
     }
 
-    [HttpPut]
+    [HttpGet("{ContentId}")]
+    public async Task<IActionResult> GetChangedContent(Guid ContentId)
+    {
+        Content? changedContent = await context.Contents
+            .AsNoTracking()
+            .Include(content => content.VideoMeta)
+            .Include(content => content.Creator)
+            .Include(content => content.Domain)
+            .FirstOrDefaultAsync(content => content.Id == ContentId);
+
+        if (changedContent is null)
+            return BadRequest("Content not found");
+
+        DomainResponseDto domainResponseDto = changedContent.Domain!.GetDomainResponseDto();
+        ContentResponseDto contentResponseDto = changedContent.GetContentResponseDto();
+        UserResponseDto userResponseDto = changedContent.Creator!.GetUserResponseDto();
+
+        return Ok(new { domainResponseDto, contentResponseDto, userResponseDto });
+    }
+
+    [HttpGet]
+    [Authorize(Policy = nameof(UserRole.User))]
+    public async Task<IActionResult> GetContentForRecommendation()//ContentSearchRequestDto requestDto)
+    {
+        Guid currentUserId = this.GetIDFromClaim();
+
+        if (!await context.Users
+                .AsNoTracking()
+                .AnyAsync(u => u.Id == currentUserId))
+            return BadRequest("User Not found");
+
+        double r = Random.Shared.NextDouble();
+
+        var candidates = await context.Contents
+            .AsNoTracking()
+            .Where(c => c.RandomKey >= r)
+            .Include(c => c.Vectors)
+            .Include(c => c.VideoMeta)
+            .OrderBy(c => c.RandomKey)
+            .Take(300).ToListAsync();
+
+        if (candidates.Count < 300)
+        {
+            var extra = await context.Contents
+                .AsNoTracking()
+                .Where(c => c.RandomKey < r)
+                .Include(c => c.Vectors)
+                .Include(c => c.VideoMeta)
+                .OrderBy(c => c.RandomKey)
+                .Take(300 - candidates.Count)
+                .ToListAsync();
+
+            candidates.AddRange(extra);
+        }
+
+        ContentRecoScoreDto[] recommended = [];
+
+        /*if (requestDto.LastRecommendScore is not null)
+        {
+            recommended = candidates
+                .Select(c => new ContentRecoScoreDto(
+                    c, recommendation.Recommend(currentUser, c)))
+                .Where(c =>
+                   c.Score < requestDto.LastRecommendScore)
+                .OrderByDescending(x => x.Score)
+                .Take(16)
+                .ToArray();   
+        } else {}
+        var LastRecommended = recommended.LastOrDefault();
+        float? lastScore = null;
+
+        if (LastRecommended is not null)
+            lastScore = LastRecommended.Score;*/
+
+        UserGenreVector[] userGenres = await context.UserVectors
+            .Include(uG => uG.Genre)
+            .OrderBy(uG => uG.Genre!.Order)
+            .Where(uG => uG.UserId == currentUserId)
+            .ToArrayAsync();
+
+        GenreInfo genreInfo = await context.GenreInfos.AsNoTracking().FirstAsync();
+
+        recommended = candidates
+                .Select(c => new ContentRecoScoreDto(
+                    c, recommendation.Recommend(userGenres, c, context.ContentVectors
+                        .Include(cG => cG.Genre)
+                        .OrderBy(cG => cG.Genre!.Order)
+                        .Where(cG => cG.ContentId == c.Id)
+                        .ToArray(), genreInfo.Count)))
+                .OrderByDescending(x => x.Score)
+                .Take(16).ToArray();
+
+        var recommendedIds = recommended.Select(x => x.Content.Id).ToHashSet();
+
+        var random = await context.Contents
+            .Where(x => !recommendedIds.Contains(x.Id))
+            .OrderBy(x => x.RandomKey >= r)
+            .Take(4).ToListAsync();
+
+        var combined = recommended
+            .Select(x => x.Content.GetContentRecoDto())
+            .Concat(random.Select(content => content.GetContentRecoDto()))
+            .OrderBy(x => x.RandomKey).ToArray();
+
+        return Ok(new ContentRecoResponseDto(combined)); //, lastScore));
+    }
+
+    [HttpGet("search")]
+    public async Task<IActionResult> GetContentForName(SearchRequestDto requestDto)
+    {
+        IQueryable<Content> query = context.Contents.AsQueryable();
+
+        if (requestDto.LastSimilarity is not null)
+        {
+            query = query.Where(content =>
+                EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name) < requestDto.LastSimilarity);
+        }
+        else
+        {
+            query = query.Where(content =>
+                EF.Functions.ILike(content.Title, $"%{requestDto.Name}%") ||
+                EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name) > 0.2f ||
+                EF.Functions.FuzzyStringMatchLevenshtein(content.Title, requestDto.Name) <= 3);
+        }
+
+        ContentResponseDto[] contents = await query
+            .OrderByDescending(content => EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name))
+            .Take(20).Select(content => content.GetContentResponseDto())
+            .AsNoTracking().ToArrayAsync();
+
+        ContentResponseDto? lastDomain = contents.LastOrDefault();
+        double? lastSimiratity = null;
+
+        if (lastDomain is not null)
+            lastSimiratity = EF.Functions.TrigramsSimilarity(lastDomain.Title, requestDto.Name);
+
+        return Ok(new ContentSearchResponseDto(contents, lastSimiratity));
+    }
+
+    [HttpPut("{ContentId}")]
     [Authorize(Policy = nameof(UserRole.Creator))]
-    public async Task<IActionResult> UpdateContent()
+    public async Task<IActionResult> UpdateContent(Guid ContentId)
     {
         return Ok();
     }
