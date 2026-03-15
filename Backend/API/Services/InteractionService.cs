@@ -25,9 +25,9 @@ public class InteractionService : IInteractionService
             0.1f * (interaction.Saved ? 1 : 0);
 
         UpdateUserVector(userVectors, content, weight, Count);
-        UpdatecontentAudienceVector(userVectors, contentVectors, weight, Count);
+        UpdateContentAudienceVector(userVectors, contentVectors, weight, Count);
 
-        UpdateFinalcontentVector(contentVectors, Count);
+        UpdateFinalContentVector(contentVectors, Count);
 
         UpdateWatchStats(content, interaction.WatchTimeSeconds);
     }
@@ -47,7 +47,7 @@ public class InteractionService : IInteractionService
             userVectors, Count, x => x.Value, (x, value) => x.Value = value);
     }
 
-    private void UpdatecontentAudienceVector(UserGenreVector[] userVectors, ContentGenreVector[] contentVectors, float weight, int Count)
+    private void UpdateContentAudienceVector(UserGenreVector[] userVectors, ContentGenreVector[] contentVectors, float weight, int Count)
     {
         for (int i = 0; i < Count; i++)
         {
@@ -58,7 +58,7 @@ public class InteractionService : IInteractionService
             contentVectors, Count, x => x.AudienceVector, (x, value) => x.AudienceVector = value);
     }
 
-    private void UpdateFinalcontentVector(ContentGenreVector[] contentVectors, int Count)
+    private void UpdateFinalContentVector(ContentGenreVector[] contentVectors, int Count)
     {
         for (int i = 0; i < Count; i++)
         {

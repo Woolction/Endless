@@ -55,6 +55,16 @@ public class AuthService : IAuthService
             user.Slug = requestDto.Name.GenerateSlug();
         }
 
+        context.UserVectors.AddRange(await context.Genres
+            .Select(genre => new UserGenreVector()
+            {
+                User = user,
+                Genre = genre
+            })
+            .AsNoTracking()
+            .ToListAsync()
+        );
+
         context.Users.Add(user);
 
         try
@@ -70,7 +80,6 @@ public class AuthService : IAuthService
 
             throw;
         }
-
     }
     public async Task<AuthResponseDto?> LoginAsync(AuthRequestDto requestDto)
     {

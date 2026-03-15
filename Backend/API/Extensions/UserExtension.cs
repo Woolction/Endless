@@ -8,25 +8,6 @@ namespace Backend.API.Extensions;
 
 public static class UserExtension
 {
-    public static UserSearchResponseDto GetUserSearchResponseDto(this User user, string requestedName)
-    {
-        return new(
-            user.Id,
-            user.Name,
-            "@" + user.Slug,
-            user.Description ?? "",
-            user.RegistryData,
-            user.Email, user.Role,
-            user.AvatarPhotoUrl,
-            user.TotalLikes,
-            user.CommentsCount,
-            user.ContentsCount,
-            user.FollowersCount,
-            user.FollowingCount,
-            user.OwnedDomainsCount,
-            user.DomainSubscriptionsCount,
-            EF.Functions.TrigramsSimilarity(user.Name, requestedName));
-    }
     public static UserResponseDto GetUserResponseDto(this User user)
     {
         return new(

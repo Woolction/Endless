@@ -49,25 +49,28 @@ public class UsersController : ControllerBase
 
         IQueryable<User> query = context.Users.AsQueryable();
 
-        if (requestDto.LastSimilarity is not null)
+        if (requestDto.LastSearch is not null)
         {
-            query = query.Where(
-                user => EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name) < requestDto.LastSimilarity);
+            query= query.Where(
+                user => EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name) < requestDto.LastSearch.LastSimilarity);
         }
         else
         {
-            query = query.Where(user =>
-                EF.Functions.ILike(user.Name, $"%{requestDto.Name}%") ||
-                EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name) > 0.2f ||
-                EF.Functions.FuzzyStringMatchLevenshtein(user.Name, requestDto.Name) <= 3);
+            query = query
+                .Where(user =>
+                    EF.Functions.ILike(user.Name, $"%{requestDto.Name}%") ||
+                    EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name) > 0.2f ||
+                    EF.Functions.FuzzyStringMatchLevenshtein(user.Name, requestDto.Name) <= 3);
         }
 
-        List<UserSearchResponseDto> users = await query
+        UserResponseDto[] users = await query
             .OrderByDescending(user => EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name))
-            .Take(25).Select(user => user.GetUserSearchResponseDto(requestDto.Name))
-            .AsNoTracking().ToListAsync();
+            .Take(25).Select(user => user.GetUserResponseDto())
+            .AsNoTracking().ToArrayAsync();
 
-        return Ok(users);
+        UserResponseDto? lastResponse = users[^1];
+
+        return Ok(new UserSearchResponseDto(users, GetSearchDto(lastResponse, requestDto)));
     }
 
     //Current User
@@ -146,5 +149,18 @@ public class UsersController : ControllerBase
         this.DeleteTokensInCookies();
 
         return NoContent();
+    }
+
+    private SearchDto? GetSearchDto(UserResponseDto? user, UserSearchRequestDto requestDto)
+    {
+        if (user is null)
+            return null;
+
+        return new()
+        {
+            LastLiked = EF.Functions.ILike(user.Name, $"%{requestDto.Name}%"),
+            LastSimilarity = EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name),
+            LastLevenshit = EF.Functions.FuzzyStringMatchLevenshtein(user.Name, requestDto.Name)
+        };
     }
 }

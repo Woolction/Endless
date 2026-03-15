@@ -85,14 +85,6 @@ public class ContentController : ControllerBase
             ContentType = createDto.ContentType
         };
 
-        content.Vectors.AddRange(await context.Genres
-            .Select(genre => new ContentGenreVector() {
-                Content = content,
-                Genre = genre })
-            .AsNoTracking()
-            .ToListAsync()
-        );
-
         VideoMetaData metaData = new()
         {
             Content = content,
@@ -103,6 +95,13 @@ public class ContentController : ControllerBase
 
         context.Contents.Add(content);
         context.VideoMetas.Add(metaData);
+        context.ContentVectors.AddRange(await context.Genres
+            .Select(genre => new ContentGenreVector() {
+                Content = content,
+                Genre = genre })
+            .AsNoTracking()
+            .ToListAsync()
+        );
 
         await context.SaveChangesAsync();
 
