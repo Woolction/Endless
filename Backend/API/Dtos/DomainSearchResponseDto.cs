@@ -1,4 +1,4 @@
 namespace Backend.API.Dtos;
 
 public record class DomainSearchResponseDto(
-    DomainResponseDto[] DomainsDto, double? Similariry);
+    DomainResponseDto[] DomainsDto, SearchDto? Similariry);

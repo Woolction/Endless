@@ -105,10 +105,12 @@ public class DomainController : ControllerBase
     {
         IQueryable<Domain> query = context.Domains.AsQueryable();
 
-        if (requestDto.LastSimilarity is not null)
+        if (requestDto.LastSearch is not null)
         {
             query = query.Where(domain =>
-            EF.Functions.TrigramsSimilarity(domain.Name, requestDto.Name) < requestDto.LastSimilarity);
+                EF.Functions.ILike(domain.Name, $"%{requestDto.Name}%") == requestDto.LastSearch.LastLiked &&
+                EF.Functions.TrigramsSimilarity(domain.Name, requestDto.Name) < requestDto.LastSearch.LastSimilarity &&
+                EF.Functions.FuzzyStringMatchLevenshtein(domain.Name, requestDto.Name) <= requestDto.LastSearch.LastLevenshit);
         }
         else
         {
@@ -124,13 +126,9 @@ public class DomainController : ControllerBase
             .Select(domain => domain.GetDomainResponseDto())
             .AsNoTracking().ToArrayAsync();
 
-        DomainResponseDto? lastDomain = domains.LastOrDefault();
-        double? lastSimiratity = null;
+        DomainResponseDto? lastDomain = domains[^1];
 
-        if (lastDomain is not null)
-            lastSimiratity = EF.Functions.TrigramsSimilarity(lastDomain.Name, requestDto.Name);
-
-        return Ok(new DomainSearchResponseDto(domains, lastSimiratity));
+        return Ok(new DomainSearchResponseDto(domains, GetSearchDto(lastDomain, requestDto)));
     }
 
     [HttpGet]
@@ -193,5 +191,18 @@ public class DomainController : ControllerBase
         user.OwnedDomainsCount--;
 
         return NoContent();
+    }
+
+    private SearchDto? GetSearchDto(DomainResponseDto? domain, SearchRequestDto requestDto)
+    {
+        if (domain is null)
+            return null;
+
+        return new()
+        {
+            LastLiked = EF.Functions.ILike(domain.Name, $"%{requestDto.Name}%"),
+            LastSimilarity = EF.Functions.TrigramsSimilarity(domain.Name, requestDto.Name),
+            LastLevenshit = EF.Functions.FuzzyStringMatchLevenshtein(domain.Name, requestDto.Name)
+        };
     }
 }

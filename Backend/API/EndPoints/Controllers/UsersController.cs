@@ -42,7 +42,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("search")]
-    public async Task<IActionResult> GetUsersForName(UserSearchRequestDto requestDto) //Searching
+    public async Task<IActionResult> GetUsersForName(SearchRequestDto requestDto) //Searching
     {
         if (string.IsNullOrEmpty(requestDto.Name))
             return BadRequest("The name is empty");
@@ -51,8 +51,10 @@ public class UsersController : ControllerBase
 
         if (requestDto.LastSearch is not null)
         {
-            query= query.Where(
-                user => EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name) < requestDto.LastSearch.LastSimilarity);
+            query= query.Where(user =>
+                EF.Functions.ILike(user.Name, $"%{requestDto.Name}%") == requestDto.LastSearch.LastLiked &&
+                EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name) < requestDto.LastSearch.LastSimilarity &&
+                EF.Functions.FuzzyStringMatchLevenshtein(user.Name, requestDto.Name) <= requestDto.LastSearch.LastLevenshit);
         }
         else
         {
@@ -151,7 +153,7 @@ public class UsersController : ControllerBase
         return NoContent();
     }
 
-    private SearchDto? GetSearchDto(UserResponseDto? user, UserSearchRequestDto requestDto)
+    private SearchDto? GetSearchDto(UserResponseDto? user, SearchRequestDto requestDto)
     {
         if (user is null)
             return null;

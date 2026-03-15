@@ -220,10 +220,12 @@ public class ContentController : ControllerBase
     {
         IQueryable<Content> query = context.Contents.AsQueryable();
 
-        if (requestDto.LastSimilarity is not null)
+        if (requestDto.LastSearch is not null)
         {
             query = query.Where(content =>
-                EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name) < requestDto.LastSimilarity);
+                EF.Functions.ILike(content.Title, $"%{requestDto.Name}%") == requestDto.LastSearch.LastLiked &&
+                EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name) < requestDto.LastSearch.LastSimilarity &&
+                EF.Functions.FuzzyStringMatchLevenshtein(content.Title, requestDto.Name) <= requestDto.LastSearch.LastLevenshit);
         }
         else
         {
@@ -238,13 +240,9 @@ public class ContentController : ControllerBase
             .Take(20).Select(content => content.GetContentResponseDto())
             .AsNoTracking().ToArrayAsync();
 
-        ContentResponseDto? lastDomain = contents.LastOrDefault();
-        double? lastSimiratity = null;
-
-        if (lastDomain is not null)
-            lastSimiratity = EF.Functions.TrigramsSimilarity(lastDomain.Title, requestDto.Name);
-
-        return Ok(new ContentSearchResponseDto(contents, lastSimiratity));
+        ContentResponseDto? lastContent = contents.LastOrDefault();
+      
+        return Ok(new ContentSearchResponseDto(contents, GetSearchDto(lastContent, requestDto)));
     }
 
     [HttpPut("{ContentId}")]
@@ -259,5 +257,18 @@ public class ContentController : ControllerBase
     public async Task<IActionResult> DeleteContent()
     {
         return NoContent();
+    }
+
+    private SearchDto? GetSearchDto(ContentResponseDto? content, SearchRequestDto requestDto)
+    {
+        if (content is null)
+            return null;
+
+        return new()
+        {
+            LastLiked = EF.Functions.ILike(content.Title, $"%{requestDto.Name}%"),
+            LastSimilarity = EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name),
+            LastLevenshit = EF.Functions.FuzzyStringMatchLevenshtein(content.Title, requestDto.Name)
+        };
     }
 }
