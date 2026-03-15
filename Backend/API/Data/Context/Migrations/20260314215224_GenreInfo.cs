@@ -85,5 +85,10 @@ namespace Backend.API.Data.Context.Migrations
                 nullable: false,
                 defaultValue: 0L);
         }
+
+        public static implicit operator GenreInfo(Models.GenreInfo v)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

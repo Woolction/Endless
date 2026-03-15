@@ -15,14 +15,12 @@ public class UserInteractionController : ControllerBase
     private readonly EndlessContext context;
 
     private readonly IInteractionService interaction;
-    private readonly IFfmpegService ffmpegService;
 
-    public UserInteractionController(EndlessContext context, IInteractionService interaction, IFfmpegService ffmpegService)
+    public UserInteractionController(EndlessContext context, IInteractionService interaction)
     {
         this.context = context;
 
         this.interaction = interaction;
-        this.ffmpegService = ffmpegService;
     }
 
     [HttpPost("{ContentId}")]
