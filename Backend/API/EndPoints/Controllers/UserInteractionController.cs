@@ -39,8 +39,6 @@ public class UserInteractionController : ControllerBase
 
         if (userInteration is null)
         {
-            currentUser.UserInterationsCount++;
-
             userInteration = new()
             {
                 UserId = currentUserId,

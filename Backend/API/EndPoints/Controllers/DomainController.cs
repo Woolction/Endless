@@ -101,7 +101,7 @@ public class DomainController : ControllerBase
     }
 
     [HttpGet("search")]
-    public async Task<IActionResult> GetDomainsForName(SearchRequestDto requestDto)
+    public async Task<IActionResult> GetDomainsForName([FromQuery] SearchRequestDto requestDto)
     {
         IQueryable<Domain> query = context.Domains.AsQueryable();
 
@@ -110,7 +110,7 @@ public class DomainController : ControllerBase
             query = query.Where(domain =>
                 EF.Functions.ILike(domain.Name, $"%{requestDto.Name}%") == requestDto.LastSearch.LastLiked &&
                 EF.Functions.TrigramsSimilarity(domain.Name, requestDto.Name) < requestDto.LastSearch.LastSimilarity &&
-                EF.Functions.FuzzyStringMatchLevenshtein(domain.Name, requestDto.Name) <= requestDto.LastSearch.LastLevenshit);
+                EF.Functions.FuzzyStringMatchLevenshtein(domain.Name, requestDto.Name) >= requestDto.LastSearch.LastLevenshit);
         }
         else
         {
@@ -182,13 +182,20 @@ public class DomainController : ControllerBase
         if (user is null)
             return BadRequest("User not found");
 
-        if (!user.OwnedDomains.Any(d => d.DomainId == DomainId))
+        if (user.OwnedDomains.Any(d => d.DomainId != DomainId))
             return Forbid("You doesn't owner the Domain");
 
-        await context.Domains.Where(domain => domain.Id == DomainId).ExecuteDeleteAsync();
+        Domain? domain = await context.Domains.FindAsync(DomainId);
 
-        user.DomainSubscriptionsCount--;
-        user.OwnedDomainsCount--;
+        if (domain is not null)
+        {
+            user.DomainSubscriptionsCount--;
+            user.OwnedDomainsCount--;
+
+            context.Domains.Remove(domain);
+
+            await context.SaveChangesAsync();
+        }
 
         return NoContent();
     }

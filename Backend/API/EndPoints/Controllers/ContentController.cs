@@ -216,7 +216,7 @@ public class ContentController : ControllerBase
     }
 
     [HttpGet("search")]
-    public async Task<IActionResult> GetContentForName(SearchRequestDto requestDto)
+    public async Task<IActionResult> GetContentForName([FromQuery] SearchRequestDto requestDto)
     {
         IQueryable<Content> query = context.Contents.AsQueryable();
 
@@ -225,7 +225,7 @@ public class ContentController : ControllerBase
             query = query.Where(content =>
                 EF.Functions.ILike(content.Title, $"%{requestDto.Name}%") == requestDto.LastSearch.LastLiked &&
                 EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name) < requestDto.LastSearch.LastSimilarity &&
-                EF.Functions.FuzzyStringMatchLevenshtein(content.Title, requestDto.Name) <= requestDto.LastSearch.LastLevenshit);
+                EF.Functions.FuzzyStringMatchLevenshtein(content.Title, requestDto.Name) >= requestDto.LastSearch.LastLevenshit);
         }
         else
         {
@@ -252,10 +252,35 @@ public class ContentController : ControllerBase
         return Ok();
     }
 
-    [HttpDelete]
+    [HttpDelete("{ContentId}")]
     [Authorize(Policy = nameof(UserRole.Creator))]
-    public async Task<IActionResult> DeleteContent()
+    public async Task<IActionResult> DeleteContent(Guid ContentId)
     {
+        Guid UserId = this.GetIDFromClaim();
+
+        User? user = await context.Users.FindAsync(UserId);
+
+        if (user is null)
+            return BadRequest("User not found");
+
+        if (user.Contents.Any(c => c.Id != ContentId))
+            return Forbid("You doesn't owner the Content");
+
+        Content? content = await context.Contents
+            .Include(c => c.Domain)
+            .FirstOrDefaultAsync(c => c.Id == ContentId);
+
+        if (content is not null)
+        {
+            user.ContentsCount--;
+
+            content.Domain!.ContentsCount--;
+
+            context.Contents.Remove(content);
+
+            await context.SaveChangesAsync();
+        }
+
         return NoContent();
     }
 

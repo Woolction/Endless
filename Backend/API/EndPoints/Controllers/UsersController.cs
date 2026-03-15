@@ -42,7 +42,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("search")]
-    public async Task<IActionResult> GetUsersForName(SearchRequestDto requestDto) //Searching
+    public async Task<IActionResult> GetUsersForName([FromQuery] SearchRequestDto requestDto) //Searching
     {
         if (string.IsNullOrEmpty(requestDto.Name))
             return BadRequest("The name is empty");
@@ -54,15 +54,14 @@ public class UsersController : ControllerBase
             query= query.Where(user =>
                 EF.Functions.ILike(user.Name, $"%{requestDto.Name}%") == requestDto.LastSearch.LastLiked &&
                 EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name) < requestDto.LastSearch.LastSimilarity &&
-                EF.Functions.FuzzyStringMatchLevenshtein(user.Name, requestDto.Name) <= requestDto.LastSearch.LastLevenshit);
+                EF.Functions.FuzzyStringMatchLevenshtein(user.Name, requestDto.Name) >= requestDto.LastSearch.LastLevenshit);
         }
         else
         {
-            query = query
-                .Where(user =>
-                    EF.Functions.ILike(user.Name, $"%{requestDto.Name}%") ||
-                    EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name) > 0.2f ||
-                    EF.Functions.FuzzyStringMatchLevenshtein(user.Name, requestDto.Name) <= 3);
+            query = query.Where(user =>
+                EF.Functions.ILike(user.Name, $"%{requestDto.Name}%") ||
+                EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name) > 0.2f ||
+                EF.Functions.FuzzyStringMatchLevenshtein(user.Name, requestDto.Name) <= 3);
         }
 
         UserResponseDto[] users = await query
