@@ -20,7 +20,7 @@ public static class CookiesManager
             HttpOnly = true,
             Secure = true,
             SameSite = SameSiteMode.Lax,
-            Expires = DateTime.UtcNow.AddDays(14)
+            Expires = DateTime.UtcNow.AddDays(30)
         });
     }
 

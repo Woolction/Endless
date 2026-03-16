@@ -11,11 +11,4 @@ public static class ClaimsManager
 
         return new(id);
     }
-
-    public static string GetEmailFromClaim(this ControllerBase controller)
-    {
-        string email = controller.User.FindFirst(ClaimTypes.Email)!.Value;
-
-        return email;
-    }
 }
