@@ -50,11 +50,11 @@ public class UserInteractionController : ControllerBase
 
         userInteration.Liked = await context.LikedContents
             .AsNoTracking()
-            .AnyAsync(l => l.OwnerId == currentUserId && l.ContentId == content.Id);
+            .AnyAsync(l => l.UserId == currentUserId && l.ContentId == content.Id);
 
         userInteration.Saved = await context.SavedContents
             .AsNoTracking()
-            .AnyAsync(s => s.OwnerId == currentUserId && s.ContentId == content.Id);
+            .AnyAsync(s => s.UserId == currentUserId && s.ContentId == content.Id);
 
         userInteration.WatchTimeSeconds = watchTimeSeconds;
 

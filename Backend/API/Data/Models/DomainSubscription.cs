@@ -5,7 +5,7 @@ namespace Backend.API.Data.Models;
 public class DomainSubscription
 {
     public Guid SubscriberId { get; set; }
-    public User? SubscribedUser { get; set; }
+    public User? Subscriber { get; set; }
 
     public Guid DomainId { get; set; }
     public Domain? Domain { get; set; }

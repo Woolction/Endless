@@ -9,7 +9,7 @@ public class EndlessContext : DbContext
     public EndlessContext(DbContextOptions<EndlessContext> options) : base(options) { }
 
     public DbSet<User> Users { get; set; }
-    public DbSet<UserSubscribtion> UserSubscribtions { get; set; }
+    public DbSet<UserFollowing> UserFollowings { get; set; }
     public DbSet<UserInterationContent> UserInterationContents { get; set; }
     
     public DbSet<Domain> Domains { get; set; }
@@ -28,6 +28,7 @@ public class EndlessContext : DbContext
     public DbSet<VideoMetaData> VideoMetas { get; set; }
     
     public DbSet<Comment> Comments { get; set; }
+    public DbSet<LikedComment> LikedComments { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -46,7 +47,7 @@ public class EndlessContext : DbContext
             .HasOperators("gin_trgm_ops");
         userBuilder.OwnsOne(u => u.RefreshToken);
 
-        EntityTypeBuilder<UserSubscribtion> userSubBuilder = builder.Entity<UserSubscribtion>();
+        EntityTypeBuilder<UserFollowing> userSubBuilder = builder.Entity<UserFollowing>();
         userSubBuilder.HasOne(uS => uS.Follower).WithMany(u => u.Followers).HasForeignKey(uS => uS.FollowerId);
         userSubBuilder.HasOne(uS => uS.FollowedUser).WithMany(u => u.Following).HasForeignKey(uS => uS.FollowedUserId);
         userSubBuilder.HasKey(uS => new { uS.FollowerId, uS.FollowedUserId });
@@ -73,7 +74,7 @@ public class EndlessContext : DbContext
         domainOwnerBuilder.HasIndex(o => o.DomainId);
 
         EntityTypeBuilder<DomainSubscription> domainSubBuilder = builder.Entity<DomainSubscription>();
-        domainSubBuilder.HasOne(dS => dS.SubscribedUser).WithMany(d => d.DomainSubscriptions).HasForeignKey(uS => uS.SubscriberId);
+        domainSubBuilder.HasOne(dS => dS.Subscriber).WithMany(d => d.SubscripedDomains).HasForeignKey(uS => uS.SubscriberId);
         domainSubBuilder.HasOne(dS => dS.Domain).WithMany(d => d.Subscribers).HasForeignKey(uS => uS.DomainId);
         domainSubBuilder.HasKey(dS => new { dS.SubscriberId, dS.DomainId });
         domainSubBuilder.HasIndex(dS => dS.DomainId);
@@ -90,15 +91,15 @@ public class EndlessContext : DbContext
         contentBuilder.HasIndex(c => c.RandomKey);
 
         EntityTypeBuilder<SavedContent> savedCBuilder = builder.Entity<SavedContent>();
-        savedCBuilder.HasOne(sC => sC.Owner).WithMany(u => u.SavedContents).HasForeignKey(sC => sC.OwnerId);
+        savedCBuilder.HasOne(sC => sC.User).WithMany(u => u.SavedContents).HasForeignKey(sC => sC.UserId);
         savedCBuilder.HasOne(sC => sC.Content).WithMany(c => c.Savers).HasForeignKey(sC => sC.ContentId);
-        savedCBuilder.HasKey(sC => new { sC.OwnerId, sC.ContentId });
+        savedCBuilder.HasKey(sC => new { sC.UserId, sC.ContentId });
         savedCBuilder.HasIndex(sC => sC.ContentId);
 
         EntityTypeBuilder<LikedContent> likedCBuilder = builder.Entity<LikedContent>();
-        likedCBuilder.HasOne(lC => lC.Owner).WithMany(u => u.LikedContents).HasForeignKey(lC => lC.OwnerId);
+        likedCBuilder.HasOne(lC => lC.User).WithMany(u => u.LikedContents).HasForeignKey(lC => lC.UserId);
         likedCBuilder.HasOne(lC => lC.Content).WithMany(c => c.Likers).HasForeignKey(lC => lC.ContentId);
-        likedCBuilder.HasKey(lC => new { lC.OwnerId, lC.ContentId });
+        likedCBuilder.HasKey(lC => new { lC.UserId, lC.ContentId });
         likedCBuilder.HasIndex(lC => lC.ContentId);
 
         // Genre
@@ -124,9 +125,15 @@ public class EndlessContext : DbContext
         videoMetaBuilder.HasOne(v => v.Content).WithOne(c => c.VideoMeta).HasForeignKey<VideoMetaData>(v => v.ContentId);
         videoMetaBuilder.HasKey(v => v.ContentId);
 
+        // Comment
         EntityTypeBuilder<Comment> commentBuilder = builder.Entity<Comment>();
         commentBuilder.HasOne(co => co.Commentator).WithMany(u => u.Comments).HasForeignKey(co => co.CommentatorId);
         commentBuilder.HasOne(co => co.Content).WithMany(c => c.Comments).HasForeignKey(co => co.ContentId);
         commentBuilder.HasIndex(co => co.PublicatedDate);
+
+        EntityTypeBuilder<LikedComment> commentLikedBuilder = builder.Entity<LikedComment>();
+        commentLikedBuilder.HasOne(cL => cL.User).WithMany(u => u.LikedComments).HasForeignKey(cL => cL.UserId);
+        commentLikedBuilder.HasOne(cL => cL.Comment).WithMany(co => co.Likers).HasForeignKey(cL => cL.CommentId);
+        commentLikedBuilder.HasKey(cl => new { cl.UserId, cl.CommentId });
     }
 }

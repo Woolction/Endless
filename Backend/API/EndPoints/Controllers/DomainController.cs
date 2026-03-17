@@ -73,13 +73,13 @@ public class DomainController : ControllerBase
         DomainSubscription domainSubscription = new()
         {
             Domain = domain,
-            SubscribedUser = user,
+            Subscriber = user,
             SubscribedDate = DateTime.UtcNow,
             Notification = false
         };
 
         user.OwnedDomainsCount++;
-        user.DomainSubscriptionsCount++;
+        user.SubscripedDomainsCount++;
 
         context.DomainSubscriptions.Add(domainSubscription);
         context.DomainOwners.Add(domainOwner);
@@ -189,7 +189,7 @@ public class DomainController : ControllerBase
 
         if (domain is not null)
         {
-            user.DomainSubscriptionsCount--;
+            user.SubscripedDomainsCount--;
             user.OwnedDomainsCount--;
 
             context.Domains.Remove(domain);

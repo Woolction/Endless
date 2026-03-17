@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Backend.API.Data.Models;
 
-public class UserSubscribtion
+public class UserFollowing
 {
     public Guid FollowerId { get; set; }
     public User? Follower { get; set; }
