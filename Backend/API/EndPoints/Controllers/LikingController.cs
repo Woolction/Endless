@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Backend.API.Data.Models;
 using Backend.API.Extensions;
 using Microsoft.EntityFrameworkCore;
+using Backend.API.Dtos;
 
 namespace Backend.API.EndPoints.Controllers;
 
@@ -21,7 +22,7 @@ public class LikingController : ControllerBase
 
     [HttpPost("content/{ContentId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<IActionResult> LikeContent(Guid ContentId)
+    public async Task<ActionResult<ContentResponseDto>> LikeContent(Guid ContentId)
     {
         Guid currentUserId = this.GetIDFromClaim();
 
@@ -89,7 +90,7 @@ public class LikingController : ControllerBase
 
     [HttpPost("comment/{CommentId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<IActionResult> LikeComment(Guid CommentId)
+    public async Task<ActionResult<CommentResponseDto>> LikeComment(Guid CommentId)
     {
         Guid currentUserId = this.GetIDFromClaim();
 

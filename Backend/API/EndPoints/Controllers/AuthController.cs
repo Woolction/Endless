@@ -21,7 +21,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("token")]
     [EnableRateLimiting("LoginLimit")]
-    public async Task<IActionResult> Login(AuthRequestDto requestDto)
+    public async Task<ActionResult<AuthResponseDto>> Login(AuthRequestDto requestDto)
     {
         AuthResponseDto? responseDto = await authService.LoginAsync(requestDto);
 
@@ -34,7 +34,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPut("token")]
-    public async Task<IActionResult> RefreshToken()
+    public async Task<ActionResult<AuthResponseDto>> RefreshToken()
     {
         RefreshTokenRequestDto refreshDto = new(Request.Cookies["RefreshToken"]!);
 
@@ -48,7 +48,7 @@ public class AuthController : ControllerBase
         return Ok(responseDto);
     }
 
-    [Authorize]
+    [Authorize()]
     [HttpDelete("token")]
     public IActionResult Logout()
     {

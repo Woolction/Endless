@@ -1,6 +1,7 @@
 using Backend.API.Data.Components;
 using Backend.API.Data.Context;
 using Backend.API.Data.Models;
+using Backend.API.Dtos;
 using Backend.API.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,7 +22,7 @@ public class SubscriptionController : ControllerBase
 
     [HttpPost("domain/{DomainId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<IActionResult> Subscrioption(Guid DomainId)
+    public async Task<ActionResult<DomainResponseDto>> Subscrioption(Guid DomainId)
     {
         Guid currentUserId = this.GetIDFromClaim();
 

@@ -31,7 +31,7 @@ public class DomainController : ControllerBase
 
     [HttpPost]
     [Authorize(Policy = nameof(UserRole.Creator))]
-    public async Task<IActionResult> CreateDomain(DomainCreateDto createDto)
+    public async Task<ActionResult<DomainResponseDto>> CreateDomain(DomainCreateDto createDto)
     {
         Guid id = this.GetIDFromClaim();
 
@@ -101,7 +101,7 @@ public class DomainController : ControllerBase
     }
 
     [HttpGet("search")]
-    public async Task<IActionResult> GetDomainsForName([FromQuery] SearchRequestDto requestDto)
+    public async Task<ActionResult<DomainSearchResponseDto>> GetDomainsForName([FromQuery] SearchRequestDto requestDto)
     {
         IQueryable<Domain> query = context.Domains.AsQueryable();
 
@@ -132,18 +132,18 @@ public class DomainController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetDomains()
+    public async Task<ActionResult<DomainResponseDto[]>> GetDomains()
     {
-        List<DomainResponseDto> domains = await context.Domains
+        DomainResponseDto[] domains = await context.Domains
             .Select(domain => domain.GetDomainResponseDto())
-            .AsNoTracking().ToListAsync();
+            .AsNoTracking().ToArrayAsync();
 
         return Ok(domains);
     }
 
     [HttpPut("{DomainId}")]
     [Authorize(Policy = nameof(UserRole.Creator))]
-    public async Task<IActionResult> UpdateDomain(Guid DomainId, DomainUpdateDto updateDto)
+    public async Task<ActionResult<DomainResponseDto>> UpdateDomain(Guid DomainId, DomainUpdateDto updateDto)
     {
         Domain? domain = await context.Domains.FindAsync(DomainId);
 

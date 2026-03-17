@@ -1,6 +1,7 @@
 using Backend.API.Data.Components;
 using Backend.API.Data.Context;
 using Backend.API.Data.Models;
+using Backend.API.Dtos;
 using Backend.API.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,7 +22,7 @@ public class SavingController : ControllerBase
 
     [HttpPost("content/{ContentId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<IActionResult> SaveContent(Guid ContentId)
+    public async Task<ActionResult<ContentResponseDto>> SaveContent(Guid ContentId)
     {
         Guid currentUserId = this.GetIDFromClaim();
 

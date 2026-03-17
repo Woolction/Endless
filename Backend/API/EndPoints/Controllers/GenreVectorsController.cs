@@ -5,6 +5,7 @@ using Backend.API.Dtos;
 using Backend.API.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Backend.API.Data.Models;
+using Backend.API.Extensions;
 
 namespace Backend.API.EndPoints.Controllers;
 
@@ -21,7 +22,7 @@ public class GenreVectorsController : ControllerBase
     
     [HttpPost]
     [Authorize(Policy = nameof(UserRole.Admin))]
-    public async Task<IActionResult> CreateGenreVector(GenreVectorCreateDto createDto)
+    public async Task<ActionResult<List<GenreResponseDto>>> CreateGenreVector(GenreVectorCreateDto createDto)
     {
         GenreInfo genreInfo = await context.GenreInfos.FirstAsync();
 
@@ -70,6 +71,6 @@ public class GenreVectorsController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        return Ok(newGenres);
+        return Ok(newGenres.GetGenreResponsesDto());
     }
 }

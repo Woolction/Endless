@@ -21,20 +21,20 @@ public class DomainOwnersController : ControllerBase
     }
 
     [HttpGet("domain/{DomainId}")]
-    public async Task<IActionResult> GetDomainOwners(Guid DomainId)
+    public async Task<ActionResult<DomainOwnerResponseDto[]>> GetDomainOwners(Guid DomainId)
     {
-        List<DomainOwnerResponseDto> domainOwners = await context.DomainOwners
+        DomainOwnerResponseDto[] domainOwners = await context.DomainOwners
             .Where(owner => owner.DomainId == DomainId)
             .Select(owner => new DomainOwnerResponseDto(
                 owner.OwnerId, owner.DomainId, owner.OwnedDate,
-                owner.OwnerRole)).AsNoTracking().ToListAsync();
+                owner.OwnerRole)).AsNoTracking().ToArrayAsync();
 
         return Ok(domainOwners);
     }
 
     [HttpPost("domain/{DomainId}/user/{UserId}")]
     [Authorize(Policy = nameof(UserRole.Creator))]
-    public async Task<IActionResult> CreateDomainOwner(Guid DomainId, Guid UserId, DomainOwnerRole ownerRole)
+    public async Task<ActionResult<DomainResponseDto>> CreateDomainOwner(Guid DomainId, Guid UserId, DomainOwnerRole ownerRole)
     {
         Guid currentUserId = this.GetIDFromClaim();
 

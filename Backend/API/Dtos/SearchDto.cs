@@ -1,8 +1,8 @@
 namespace Backend.API.Dtos;
 
-public record class SearchDto
+public class SearchDto
 {
-    public bool LastLiked;
-    public double LastSimilarity;
-    public int LastLevenshit;
+    public bool LastLiked { get; set; }
+    public double LastSimilarity { get; set; }
+    public int LastLevenshit { get; set; }
 }

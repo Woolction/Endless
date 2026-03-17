@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Backend.API.Data.Context;
 using Backend.API.Data.Models;
 using Backend.API.Extensions;
+using Backend.API.Dtos;
 
 namespace Backend.API.EndPoints.Controllers;
 
@@ -21,7 +22,7 @@ public class FollowController : ControllerBase
 
     [HttpPost("{UserId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<IActionResult> Following(Guid UserId)
+    public async Task<ActionResult<UserResponseDto>> Following(Guid UserId)
     {
         Guid currentUserId = this.GetIDFromClaim();
 

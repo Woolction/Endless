@@ -29,7 +29,7 @@ public class UsersController : ControllerBase
 
     [HttpPost]
     [EnableRateLimiting("RegistryLimit")]
-    public async Task<IActionResult> CreateUser(AuthRequestDto requestDto)
+    public async Task<ActionResult<AuthResponseDto>> CreateUser(AuthRequestDto requestDto)
     {
         AuthResponseDto? responseDto = await authService.RegistryAsync(requestDto);
 
@@ -42,7 +42,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("search")]
-    public async Task<IActionResult> GetUsersForName([FromQuery] SearchRequestDto requestDto) //Searching
+    public async Task<ActionResult<UserSearchResponseDto>> GetUsersForName([FromQuery] SearchRequestDto requestDto) //Searching
     {
         if (string.IsNullOrEmpty(requestDto.Name))
             return BadRequest("The name is empty");
@@ -77,7 +77,7 @@ public class UsersController : ControllerBase
     //Current User
     [Authorize]
     [HttpGet("current")]
-    public async Task<IActionResult> GetCurrentUser()
+    public async Task<ActionResult<UserResponseDto>> GetCurrentUser()
     {
         Guid currentUserId = this.GetIDFromClaim();
 
@@ -91,7 +91,7 @@ public class UsersController : ControllerBase
 
     [Authorize]
     [HttpPut("current")]
-    public async Task<IActionResult> UpdateCurrentUser(UserUpdateDto updateDto)
+    public async Task<ActionResult<UserResponseDto>> UpdateCurrentUser(UserUpdateDto updateDto)
     {
         Guid currentUserId = this.GetIDFromClaim();
 

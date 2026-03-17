@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using Backend.API.Data.Components;
 using Backend.API.Data.Context;
 using Backend.API.Data.Models;
@@ -32,7 +31,7 @@ public class ContentController : ControllerBase
 
     [HttpPost("{DomainId}")]
     [Authorize(Policy = nameof(UserRole.Creator))]
-    public async Task<IActionResult> CreateContent(Guid DomainId, ContentCreateDto createDto)
+    public async Task<ActionResult<ContentResponseDto>> CreateContent(Guid DomainId, ContentCreateDto createDto)
     {
         if (createDto.ContentFile == null || createDto.ContentFile.Length == 0)
             return BadRequest("Empty contentFile");
@@ -109,7 +108,7 @@ public class ContentController : ControllerBase
     }
 
     [HttpGet("{ContentId}")]
-    public async Task<IActionResult> GetChangedContent(Guid ContentId)
+    public async Task<ActionResult<ChangedContentDto>> GetChangedContent(Guid ContentId)
     {
         Content? changedContent = await context.Contents
             .AsNoTracking()
@@ -121,16 +120,16 @@ public class ContentController : ControllerBase
         if (changedContent is null)
             return BadRequest("Content not found");
 
-        DomainResponseDto domainResponseDto = changedContent.Domain!.GetDomainResponseDto();
-        ContentResponseDto contentResponseDto = changedContent.GetContentResponseDto();
-        UserResponseDto userResponseDto = changedContent.Creator!.GetUserResponseDto();
-
-        return Ok(new { domainResponseDto, contentResponseDto, userResponseDto });
+        return Ok(new ChangedContentDto(
+            changedContent.Domain!.GetDomainResponseDto(),
+            changedContent.GetContentResponseDto(),
+            changedContent.Creator!.GetUserResponseDto()
+        ));
     }
 
     [HttpGet]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<IActionResult> GetContentForRecommendation()//ContentSearchRequestDto requestDto)
+    public async Task<ActionResult<ContentRecoResponseDto>> GetContentForRecommendation()
     {
         Guid currentUserId = this.GetIDFromClaim();
 
@@ -165,23 +164,6 @@ public class ContentController : ControllerBase
 
         ContentRecoScoreDto[] recommended = [];
 
-        /*if (requestDto.LastRecommendScore is not null)
-        {
-            recommended = candidates
-                .Select(c => new ContentRecoScoreDto(
-                    c, recommendation.Recommend(currentUser, c)))
-                .Where(c =>
-                   c.Score < requestDto.LastRecommendScore)
-                .OrderByDescending(x => x.Score)
-                .Take(16)
-                .ToArray();   
-        } else {}
-        var LastRecommended = recommended.LastOrDefault();
-        float? lastScore = null;
-
-        if (LastRecommended is not null)
-            lastScore = LastRecommended.Score;*/
-
         UserGenreVector[] userGenres = await context.UserVectors
             .Include(uG => uG.Genre)
             .OrderBy(uG => uG.Genre!.Order)
@@ -212,11 +194,11 @@ public class ContentController : ControllerBase
             .Concat(random.Select(content => content.GetContentRecoDto()))
             .OrderBy(x => x.RandomKey).ToArray();
 
-        return Ok(new ContentRecoResponseDto(combined)); //, lastScore));
+        return Ok(new ContentRecoResponseDto(combined));
     }
 
     [HttpGet("search")]
-    public async Task<IActionResult> GetContentForName([FromQuery] SearchRequestDto requestDto)
+    public async Task<ActionResult<ContentSearchResponseDto>> GetContentForName([FromQuery] SearchRequestDto requestDto)
     {
         IQueryable<Content> query = context.Contents.AsQueryable();
 

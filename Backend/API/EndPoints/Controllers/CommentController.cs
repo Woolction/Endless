@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Backend.API.Data.Context;
 using Backend.API.Data.Models;
 using Backend.API.Extensions;
+using Backend.API.Dtos;
 
 namespace Backend.API.EndPoints.Controllers;
 
@@ -20,8 +21,8 @@ public class CommentController : ControllerBase
     }
 
     [HttpPost("content/{ContentId}")]
-    [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<IActionResult> SendComment(Guid ContentId, string text)
+    [Authorize(Policy = nameof(UserRole.User))] //<SendCommentDto>
+    public async Task<ActionResult> SendComment(Guid ContentId, [FromBody] string text)
     {
         Guid currentUserId = this.GetIDFromClaim();
 
@@ -52,16 +53,14 @@ public class CommentController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        return Ok(new
-        {
-            CommentResponseDto = newComment.GetCommentResponseDto(),
-            User = currentUser.GetUserResponseDto()
-        });
+        return Ok(new SendCommentDto(
+            newComment.GetCommentResponseDto(),
+            currentUser.GetUserResponseDto()));
     }
 
     [HttpPut("comment/{CommentId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<IActionResult> UpdateComment(Guid CommentId, string text)
+    public async Task<ActionResult<CommentResponseDto>> UpdateComment(Guid CommentId, string text)
     {
         Comment? comment = await context.Comments.FindAsync(CommentId);
 

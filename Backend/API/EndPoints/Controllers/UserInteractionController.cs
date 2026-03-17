@@ -2,6 +2,7 @@
 using Backend.API.Data.Components;
 using Backend.API.Data.Context;
 using Backend.API.Data.Models;
+using Backend.API.Dtos;
 using Backend.API.Extensions;
 using Backend.API.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -24,7 +25,7 @@ public class UserInteractionController : ControllerBase
     }
 
     [HttpPost("content/{ContentId}")]
-    [Authorize(Policy = nameof(UserRole.User))]
+    [Authorize(Policy = nameof(UserRole.User))] //<GenreVectorsResponse>
     public async Task<IActionResult> CreateInteractionForContent(Guid ContentId, int watchTimeSeconds)
     {
         Guid currentUserId = this.GetIDFromClaim();
@@ -76,6 +77,9 @@ public class UserInteractionController : ControllerBase
 
         interaction.Interaction(userGenres, content, contentGenres, userInteration, genreInfo.Count);
 
-        return Ok();
+        return Ok(new GenreVectorsResponse(
+            userGenres.GetUserGenreVectors(),
+            contentGenres.GetContentGenreVectors())
+            );
     }
 }
