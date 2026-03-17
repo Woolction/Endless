@@ -6,26 +6,26 @@ using Microsoft.AspNetCore.Mvc;
 namespace Backend.API.EndPoints.Controllers;
 
 [ApiController]
-[Route("api/[controller]/domain")]
-public class SubscriptionController : ControllerBase
+[Route("api/[controller]/content")]
+public class SavingController : ControllerBase
 {
     private readonly EndlessContext context;
 
-    public SubscriptionController(EndlessContext context)
+    public SavingController(EndlessContext context)
     {
         this.context = context;
     }
 
-    [HttpPost("{DomianId}")]
+    [HttpPost("{ContentId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<IActionResult> Subscrioption(Guid DomianId)
+    public async Task<IActionResult> SaveContent(Guid ContentId)
     {
         return Ok();
     }
 
-    [HttpDelete("{DomianId}")]
+    [HttpDelete("{ContentId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<IActionResult> ReSubscrioption(Guid DomianId)
+    public async Task<IActionResult> ReSaveContent(Guid ContentId)
     {
         return NoContent();
     }

@@ -1,7 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Backend.API.Data.Components;
 using Backend.API.Data.Context;
 using Microsoft.AspNetCore.Mvc;
-using Backend.API.Data.Models;
 using Backend.API.Dtos;
 
 namespace Backend.API.EndPoints.Controllers;
@@ -17,7 +18,7 @@ public class DomainOwnersController : ControllerBase
         this.context = context;
     }
 
-    [HttpGet("{DomainId}")]
+    [HttpGet("domain/{DomainId}")]
     public async Task<IActionResult> GetDomainOwners(Guid DomainId)
     {
         List<DomainOwnerResponseDto> domainOwners = await context.DomainOwners
@@ -28,8 +29,10 @@ public class DomainOwnersController : ControllerBase
 
         return Ok(domainOwners);
     }
-    
-    public async Task<IActionResult> CreateDomainOwner()
+
+    [HttpPost("domain/{DomainId}/user/{UserId}")]
+    [Authorize(Policy = nameof(UserRole.Creator))]
+    public async Task<IActionResult> CreateDomainOwner(Guid DomainId, Guid UserId)
     {
         return Ok();
     }

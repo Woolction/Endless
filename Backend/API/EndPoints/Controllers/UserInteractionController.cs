@@ -23,7 +23,7 @@ public class UserInteractionController : ControllerBase
         this.interaction = interaction;
     }
 
-    [HttpPost("{ContentId}")]
+    [HttpPost("content/{ContentId}")]
     [Authorize(Policy = nameof(UserRole.User))]
     public async Task<IActionResult> CreateInteractionForContent(Guid ContentId, int watchTimeSeconds)
     {

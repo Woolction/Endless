@@ -6,27 +6,29 @@ using Microsoft.AspNetCore.Mvc;
 namespace Backend.API.EndPoints.Controllers;
 
 [ApiController]
-[Route("api/[controller]/domain")]
-public class SubscriptionController : ControllerBase
+[Route("api/[controller]/content")]
+public class LikingController : ControllerBase
 {
     private readonly EndlessContext context;
 
-    public SubscriptionController(EndlessContext context)
+    public LikingController(EndlessContext context)
     {
         this.context = context;
     }
 
-    [HttpPost("{DomianId}")]
+    [HttpPost("{ContentId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<IActionResult> Subscrioption(Guid DomianId)
+    public async Task<IActionResult> LikeContent(Guid ContentId)
     {
         return Ok();
     }
 
-    [HttpDelete("{DomianId}")]
+    [HttpDelete("{ContentId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<IActionResult> ReSubscrioption(Guid DomianId)
+    public async Task<IActionResult> ReLikeContent(Guid ContentId)
     {
         return NoContent();
     }
+
+    //DizLikes in other class
 }
