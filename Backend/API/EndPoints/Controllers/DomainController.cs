@@ -120,15 +120,23 @@ public class DomainController : ControllerBase
                 EF.Functions.FuzzyStringMatchLevenshtein(domain.Name, requestDto.Name) <= 3);
         }
 
-        DomainResponseDto[] domains = await query
+        var domains = await query
             .OrderByDescending(domain => EF.Functions.TrigramsSimilarity(domain.Name, requestDto.Name))
             .Take(20)
-            .Select(domain => domain.GetDomainResponseDto())
+            .Select(domain => new
+            {
+                Domain = domain.GetDomainResponseDto(),
+                LastLiked = EF.Functions.ILike(domain.Name, $"%{requestDto.Name}%"),
+                LastSimilarity = EF.Functions.TrigramsSimilarity(domain.Name, requestDto.Name),
+                LastLevenshit = EF.Functions.FuzzyStringMatchLevenshtein(domain.Name, requestDto.Name)
+            })
             .AsNoTracking().ToArrayAsync();
 
-        DomainResponseDto? lastDomain = domains[^1];
+        var lastResponse = domains.LastOrDefault();
 
-        return Ok(new DomainSearchResponseDto(domains, GetSearchDto(lastDomain, requestDto)));
+        DomainResponseDto[] domainResponses = domains.Select(domain => domain.Domain).ToArray();
+
+        return Ok(new DomainSearchResponseDto(domainResponses, lastResponse == null ? null : GetSearchDto(lastResponse.LastLiked, lastResponse.LastSimilarity, lastResponse.LastLevenshit)));
     }
 
     [HttpGet]
@@ -200,16 +208,13 @@ public class DomainController : ControllerBase
         return NoContent();
     }
 
-    private SearchDto? GetSearchDto(DomainResponseDto? domain, SearchRequestDto requestDto)
+    private SearchDto GetSearchDto(bool IsLastLiked, double LastSimilarity, int LastLevenshit)
     {
-        if (domain is null)
-            return null;
-
         return new()
         {
-            LastLiked = EF.Functions.ILike(domain.Name, $"%{requestDto.Name}%"),
-            LastSimilarity = EF.Functions.TrigramsSimilarity(domain.Name, requestDto.Name),
-            LastLevenshit = EF.Functions.FuzzyStringMatchLevenshtein(domain.Name, requestDto.Name)
+            LastLiked = IsLastLiked,
+            LastSimilarity = LastSimilarity,
+            LastLevenshit = LastLevenshit
         };
     }
 }

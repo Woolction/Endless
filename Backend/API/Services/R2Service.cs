@@ -9,7 +9,7 @@ public class R2Service : IR2Service
 
     public R2Service()
     {
-        var config = new AmazonS3Config
+        /*var config = new AmazonS3Config
         {
             ServiceURL = "https://<account_id>.r2.cloudflarestorage.com",
             ForcePathStyle = true
@@ -20,7 +20,7 @@ public class R2Service : IR2Service
                 "<secret_key>",
             config
 
-        );
+        );*/
     }
 
     public async Task<string> UploadDirectory(string folder, string keyPrefix, string bucketName = "videos")

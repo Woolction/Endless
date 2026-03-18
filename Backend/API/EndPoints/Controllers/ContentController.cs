@@ -217,14 +217,22 @@ public class ContentController : ControllerBase
                 EF.Functions.FuzzyStringMatchLevenshtein(content.Title, requestDto.Name) <= 3);
         }
 
-        ContentResponseDto[] contents = await query
+        var contents = await query
             .OrderByDescending(content => EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name))
-            .Take(20).Select(content => content.GetContentResponseDto())
+            .Take(20).Select(content => new
+            {
+                Content = content.GetContentResponseDto(),
+                LastLiked = EF.Functions.ILike(content.Title, $"%{requestDto.Name}%"),
+                LastSimilarity = EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name),
+                LastLevenshit = EF.Functions.FuzzyStringMatchLevenshtein(content.Title, requestDto.Name)
+            })
             .AsNoTracking().ToArrayAsync();
 
-        ContentResponseDto? lastContent = contents.LastOrDefault();
-      
-        return Ok(new ContentSearchResponseDto(contents, GetSearchDto(lastContent, requestDto)));
+        var lastResponse = contents.LastOrDefault();
+
+        ContentResponseDto[] contentResponses = contents.Select(contnet => contnet.Content).ToArray();
+
+        return Ok(new ContentSearchResponseDto(contentResponses, lastResponse == null ? null : GetSearchDto(lastResponse.LastLiked, lastResponse.LastSimilarity, lastResponse.LastLevenshit)));
     }
 
     [HttpPut("{ContentId}")]
@@ -266,16 +274,13 @@ public class ContentController : ControllerBase
         return NoContent();
     }
 
-    private SearchDto? GetSearchDto(ContentResponseDto? content, SearchRequestDto requestDto)
+    private SearchDto GetSearchDto(bool IsLastLiked, double LastSimilarity, int LastLevenshit)
     {
-        if (content is null)
-            return null;
-
         return new()
         {
-            LastLiked = EF.Functions.ILike(content.Title, $"%{requestDto.Name}%"),
-            LastSimilarity = EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name),
-            LastLevenshit = EF.Functions.FuzzyStringMatchLevenshtein(content.Title, requestDto.Name)
+            LastLiked = IsLastLiked,
+            LastSimilarity = LastSimilarity,
+            LastLevenshit = LastLevenshit
         };
     }
 }

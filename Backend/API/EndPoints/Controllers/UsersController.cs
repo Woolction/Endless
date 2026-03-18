@@ -64,14 +64,21 @@ public class UsersController : ControllerBase
                 EF.Functions.FuzzyStringMatchLevenshtein(user.Name, requestDto.Name) <= 3);
         }
 
-        UserResponseDto[] users = await query
+        var users = await query
             .OrderByDescending(user => EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name))
-            .Take(25).Select(user => user.GetUserResponseDto())
+            .Take(20).Select(user => new {
+                User = user.GetUserResponseDto(),
+                LastLiked = EF.Functions.ILike(user.Name, $"%{requestDto.Name}%"),
+                LastSimilarity = EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name),
+                LastLevenshit = EF.Functions.FuzzyStringMatchLevenshtein(user.Name, requestDto.Name)
+            })
             .AsNoTracking().ToArrayAsync();
 
-        UserResponseDto? lastResponse = users[^1];
+        var lastResponse = users.LastOrDefault();
 
-        return Ok(new UserSearchResponseDto(users, GetSearchDto(lastResponse, requestDto)));
+        UserResponseDto[] userResponses = users.Select(user => user.User).ToArray();
+
+        return Ok(new UserSearchResponseDto(userResponses, lastResponse == null ? null : GetSearchDto(lastResponse.LastLiked, lastResponse.LastSimilarity, lastResponse.LastLevenshit)));
     }
 
     //Current User
@@ -152,16 +159,13 @@ public class UsersController : ControllerBase
         return NoContent();
     }
 
-    private SearchDto? GetSearchDto(UserResponseDto? user, SearchRequestDto requestDto)
+    private SearchDto GetSearchDto(bool IsLastLiked, double LastSimilarity, int LastLevenshit)
     {
-        if (user is null)
-            return null;
-
         return new()
         {
-            LastLiked = EF.Functions.ILike(user.Name, $"%{requestDto.Name}%"),
-            LastSimilarity = EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name),
-            LastLevenshit = EF.Functions.FuzzyStringMatchLevenshtein(user.Name, requestDto.Name)
+            LastLiked = IsLastLiked,
+            LastSimilarity = LastSimilarity,
+            LastLevenshit = LastLevenshit
         };
     }
 }
