@@ -25,8 +25,8 @@ public class Content
 
     public long SavesCount { get; set; }
     public long LikesCount { get; set; }
-    public long CommentsCount { get; set; }
     public long DizLikesCount { get; set; }
+    public long CommentsCount { get; set; }
     public long ViewsCount { get; set; }
 
     public double RandomKey { get; set; }
@@ -37,6 +37,7 @@ public class Content
 
     public List<SavedContent> Savers { get; set; } = new List<SavedContent>();
     public List<LikedContent> Likers { get; set; } = new List<LikedContent>();
+    public List<DizLikedContent> DizLikers { get; set; } = new List<DizLikedContent>();
 
     public List<Comment> Comments { get; set; } = new List<Comment>();
 }

@@ -19,6 +19,7 @@ public class EndlessContext : DbContext
     public DbSet<Content> Contents { get; set; }
     public DbSet<SavedContent> SavedContents { get; set; }
     public DbSet<LikedContent> LikedContents { get; set; }
+    public DbSet<DizLikedContent> DizLikedContents { get; set; } 
 
     public DbSet<Genre> Genres { get; set; }
     public DbSet<GenreInfo> GenreInfos { get; set; }
@@ -29,6 +30,7 @@ public class EndlessContext : DbContext
     
     public DbSet<Comment> Comments { get; set; }
     public DbSet<LikedComment> LikedComments { get; set; }
+    public DbSet<DizLikedComment> DizLikedComments { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -102,6 +104,12 @@ public class EndlessContext : DbContext
         likedCBuilder.HasKey(lC => new { lC.UserId, lC.ContentId });
         likedCBuilder.HasIndex(lC => lC.ContentId);
 
+        EntityTypeBuilder<DizLikedContent> DizLikedCBuilder = builder.Entity<DizLikedContent>();
+        DizLikedCBuilder.HasOne(lC => lC.User).WithMany(u => u.DizLikedContents).HasForeignKey(lC => lC.UserId);
+        DizLikedCBuilder.HasOne(lC => lC.Content).WithMany(c => c.DizLikers).HasForeignKey(lC => lC.ContentId);
+        DizLikedCBuilder.HasKey(lC => new { lC.UserId, lC.ContentId });
+        DizLikedCBuilder.HasIndex(lC => lC.ContentId);
+
         // Genre
         EntityTypeBuilder<Genre> genreBuilder = builder.Entity<Genre>();
         genreBuilder.HasIndex(g => g.Name)
@@ -135,5 +143,10 @@ public class EndlessContext : DbContext
         commentLikedBuilder.HasOne(cL => cL.User).WithMany(u => u.LikedComments).HasForeignKey(cL => cL.UserId);
         commentLikedBuilder.HasOne(cL => cL.Comment).WithMany(co => co.Likers).HasForeignKey(cL => cL.CommentId);
         commentLikedBuilder.HasKey(cl => new { cl.UserId, cl.CommentId });
+
+        EntityTypeBuilder<DizLikedComment> commentDizLikedBuilder = builder.Entity<DizLikedComment>();
+        commentDizLikedBuilder.HasOne(cL => cL.User).WithMany(u => u.DizLikedComments).HasForeignKey(cL => cL.UserId);
+        commentDizLikedBuilder.HasOne(cL => cL.Comment).WithMany(co => co.DizLikers).HasForeignKey(cL => cL.CommentId);
+        commentDizLikedBuilder.HasKey(cl => new { cl.UserId, cl.CommentId });
     }
 }

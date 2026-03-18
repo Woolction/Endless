@@ -1,7 +1,11 @@
 using Backend.API.Data.Components;
 using Backend.API.Data.Context;
+using Backend.API.Data.Models;
+using Backend.API.Dtos;
+using Backend.API.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Backend.API.EndPoints.Controllers;
 
@@ -18,29 +22,109 @@ public class DizLikingController : ControllerBase
 
     [HttpPost("content/{ContentId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<IActionResult> DizLikeContent(Guid ContentId)
+    public async Task<ActionResult<ContentResponseDto>> DizLikeContent(Guid ContentId)
     {
-        return Ok();
+        Guid currentUserId = this.GetIDFromClaim();
+
+        bool hasUser = await context.Users.AsNoTracking().AnyAsync(user => user.Id == currentUserId);
+        Content? content = await context.Contents.FirstOrDefaultAsync(content => content.Id == ContentId);
+
+        if (!hasUser)
+            return BadRequest("User not found");
+        if (content is null)
+            return BadRequest("Content not found");
+
+        content.DizLikesCount++;
+
+        DizLikedContent dizLikedContent = new()
+        {
+            UserId = currentUserId,
+            ContentId = ContentId,
+            DizLikedDate = DateTime.UtcNow
+        };
+
+        context.DizLikedContents.Add(dizLikedContent);
+
+        await context.SaveChangesAsync();
+
+        return Ok(content.GetContentResponseDto());
     }
 
     [HttpDelete("content/{ContentId}")]
     [Authorize(Policy = nameof(UserRole.User))]
     public async Task<IActionResult> ReDizLikeContent(Guid ContentId)
     {
+        Guid currentUserId = this.GetIDFromClaim();
+
+        DizLikedContent? dizLikedContent = await context.DizLikedContents
+            .Include(dizLikedContent => dizLikedContent.Content)
+            .FirstOrDefaultAsync(dizLikedContent =>
+                dizLikedContent.ContentId == ContentId &&
+                dizLikedContent.UserId == currentUserId);
+
+        if (dizLikedContent is null)
+            return BadRequest("Like dont placed");
+
+        dizLikedContent.Content!.DizLikesCount--;
+
+        context.DizLikedContents.Remove(dizLikedContent);
+
+        await context.SaveChangesAsync();
+
         return NoContent();
     }
 
     [HttpPost("comment/{CommentId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<IActionResult> DizLikeComment(Guid CommentId)
+    public async Task<ActionResult<CommentResponseDto>> DizLikeComment(Guid CommentId)
     {
-        return Ok();
+        Guid currentUserId = this.GetIDFromClaim();
+
+        bool hasUser = await context.Users.AsNoTracking().AnyAsync(user => user.Id == currentUserId);
+        Comment? comment = await context.Comments.FirstOrDefaultAsync(comment => comment.Id == CommentId);
+
+        if (!hasUser)
+            return BadRequest("User not found");
+        if (comment is null)
+            return BadRequest("Comment not found");
+
+        comment.DizLikeCount++;
+
+        DizLikedComment dizLikedComment = new()
+        {
+            UserId = currentUserId,
+            CommentId = CommentId,
+            DizLikedDate = DateTime.UtcNow
+        };
+
+        context.DizLikedComments.Add(dizLikedComment);
+
+        await context.SaveChangesAsync();
+
+        return Ok(comment.GetCommentResponseDto());
     }
 
     [HttpDelete("comment/{CommentId}")]
     [Authorize(Policy = nameof(UserRole.User))]
     public async Task<IActionResult> ReDizLikeComment(Guid CommentId)
     {
+        Guid currentUserId = this.GetIDFromClaim();
+
+        DizLikedComment? dizLikedComment = await context.DizLikedComments
+            .Include(dizLikedComment => dizLikedComment.Comment)
+            .FirstOrDefaultAsync(dizLikedComment =>
+                dizLikedComment.CommentId == CommentId &&
+                dizLikedComment.UserId == currentUserId);
+
+        if (dizLikedComment is null)
+            return BadRequest("DizLike dont placed");
+
+        dizLikedComment.Comment!.DizLikeCount--;
+
+        context.DizLikedComments.Remove(dizLikedComment);
+
+        await context.SaveChangesAsync();
+
         return NoContent();
     }
 }

@@ -22,27 +22,34 @@ public class User
 
     public long TotalLikes { get; set; }
 
+    //  Contents
     public long SavedContentsCount { get; set; }
-    public long LikedContentsCount { get; set; }
-
     public long ContentsSavesCount { get; set; }
+
+    public long LikedContentsCount { get; set; }
     public long ContentsLikesCount { get; set; }
+
     public long ContentsCount { get; set; }
 
+    //  Comments
     public long LikedCommentsCount { get; set; }
     public long CommentsLikesCount { get; set; }
+
     public long CommentsCount { get; set; }
 
+    //  User
     public long FollowersCount { get; set; }
     public long FollowingCount { get; set; }
 
     public long OwnedDomainsCount { get; set; }
     public long SubscripedDomainsCount { get; set; }
 
+    public List<DizLikedContent> DizLikedContents { get; set; } = new List<DizLikedContent>();
     public List<SavedContent> SavedContents { get; set; } = new List<SavedContent>();
     public List<LikedContent> LikedContents { get; set; } = new List<LikedContent>();
     public List<Content> Contents { get; set; } = new List<Content>();
 
+    public List<DizLikedComment> DizLikedComments { get; set; } = new List<DizLikedComment>();
     public List<LikedComment> LikedComments { get; set; } = new List<LikedComment>();
     public List<Comment> Comments { get; set; } = new List<Comment>();
 

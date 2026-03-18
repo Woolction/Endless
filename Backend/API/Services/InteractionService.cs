@@ -75,6 +75,8 @@ public class InteractionService : IInteractionService
     {
         VideoMetaData videoMeta = content.VideoMeta!; // for test
 
+        content.ViewsCount++;
+
         float watchRatio =
             (float)watchTimeSeconds / videoMeta.DurationSeconds;
 
@@ -82,10 +84,10 @@ public class InteractionService : IInteractionService
 
         videoMeta.AverageWatchTimeSeconds =
             (int)(videoMeta.AverageWatchTimeSeconds * content.ViewsCount + watchTimeSeconds)
-            / (int)(content.ViewsCount + 1);
+            / (int)(content.ViewsCount);
 
         videoMeta.AverageWatchRatio =
             (videoMeta.AverageWatchRatio * content.ViewsCount + watchRatio)
-            / (content.ViewsCount + 1);
+            / (content.ViewsCount);
     }
 }
