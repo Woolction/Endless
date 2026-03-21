@@ -10,7 +10,7 @@ public static class ContentExtension
         return new ContentRecoDto(
             content.Id, content.DomainId, content.CreatorId,
             content.Title, content.Slug, content.Description,
-            content.CreatedDate, content.ContentType, Random.Shared.NextDouble(),
+            content.CreatedDate, content.ContentType.ToString(), Random.Shared.NextDouble(),
             content.VideoMeta?.DurationSeconds, content.ContentUrl, content.PrewievPhotoUrl,
             content.SavesCount, content.LikesCount, content.CommentsCount,
             content.DizLikesCount, content.ViewsCount);
@@ -21,7 +21,7 @@ public static class ContentExtension
         return new ContentResponseDto(
             content.Id, content.DomainId, content.CreatorId,
             content.Title, content.Slug, content.Description,
-            content.CreatedDate, content.ContentType,
+            content.CreatedDate, content.ContentType.ToString(),
             content.VideoMeta?.DurationSeconds, content.ContentUrl, content.PrewievPhotoUrl,
             content.SavesCount, content.LikesCount, content.CommentsCount,
             content.DizLikesCount, content.ViewsCount);

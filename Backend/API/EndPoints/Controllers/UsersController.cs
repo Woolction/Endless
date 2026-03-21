@@ -78,7 +78,9 @@ public class UsersController : ControllerBase
 
         UserResponseDto[] userResponses = users.Select(user => user.User).ToArray();
 
-        return Ok(new UserSearchResponseDto(userResponses, lastResponse == null ? null : GetSearchDto(lastResponse.LastLiked, lastResponse.LastSimilarity, lastResponse.LastLevenshit)));
+        return Ok(new UserSearchResponseDto(
+            userResponses, lastResponse == null ? null : GetSearchDto(
+                lastResponse.LastLiked, lastResponse.LastSimilarity, lastResponse.LastLevenshit)));
     }
 
     //Current User

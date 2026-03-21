@@ -26,6 +26,9 @@ public class FollowController : ControllerBase
     {
         Guid currentUserId = this.GetIDFromClaim();
 
+        if (currentUserId == UserId)
+            return BadRequest("You dont have a follow you");
+
         User? currentUser = await context.Users.FindAsync(currentUserId);
         User? user = await context.Users.FindAsync(UserId);
 
@@ -56,6 +59,9 @@ public class FollowController : ControllerBase
     public async Task<IActionResult> ReFollowing(Guid UserId)
     {
         Guid currentUserId = this.GetIDFromClaim();
+
+        if (currentUserId == UserId)
+            return BadRequest("You dont have a refollow you");
 
         UserFollowing? userFollowing = await context.UserFollowings
             .Include(userFollowing => userFollowing.Follower)

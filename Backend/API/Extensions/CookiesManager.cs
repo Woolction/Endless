@@ -12,7 +12,7 @@ public static class CookiesManager
             HttpOnly = true,
             Secure = true,
             SameSite = SameSiteMode.Lax,
-            Expires = DateTime.UtcNow.AddMinutes(15)
+            Expires = DateTime.UtcNow.AddMinutes(30)
         });
 
         controller.Response.Cookies.Append("RefreshToken", responseDto.RefreshToken, new CookieOptions()

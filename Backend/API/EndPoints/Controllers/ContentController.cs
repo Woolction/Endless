@@ -33,9 +33,6 @@ public class ContentController : ControllerBase
     [Authorize(Policy = nameof(UserRole.Creator))]
     public async Task<ActionResult<ContentResponseDto>> CreateContent(Guid DomainId, ContentCreateDto createDto)
     {
-        if (createDto.ContentFile == null || createDto.ContentFile.Length == 0)
-            return BadRequest("Empty contentFile");
-
         Guid currentUserId = this.GetIDFromClaim();
 
         Domain? domain = await context.Domains
@@ -58,12 +55,18 @@ public class ContentController : ControllerBase
         if (domainOwner.OwnerRole <= DomainOwnerRole.ContentEditor)
             return BadRequest("You do not have sufficient rights");
 
-        string videoPath = await r2Service.SaveFormFileAsync(createDto.ContentFile, "Video");
-        string videoUrl = await ffmpegService.UploadGeneratedVideos(videoPath);
+        string videoUrl = null!;
+        string videoPath = null!;
+
+        if (createDto.ContentFile != null && createDto.ContentFile.Length != 0)
+        {
+            videoPath = await r2Service.SaveFormFileAsync(createDto.ContentFile, "Video");
+            videoUrl = await ffmpegService.UploadGeneratedVideos(videoPath);
+        }
 
         string photoUrl = null!;
 
-        if (createDto.PrewievPhoto is not null)
+        if (createDto.PrewievPhoto != null && createDto.PrewievPhoto.Length != 0)
         {
             string photoPath = await r2Service.SaveFormFileAsync(createDto.PrewievPhoto, "Images", ".jpeg");
             photoUrl = await r2Service.SaveImage(photoPath);
@@ -84,20 +87,24 @@ public class ContentController : ControllerBase
             ContentType = createDto.ContentType
         };
 
-        VideoMetaData metaData = new()
+        if (videoPath != null)
         {
-            Content = content,
-            DurationSeconds = await ffmpegService.GetVideoDuration(videoPath)
-        };
+            VideoMetaData metaData = new()
+            {
+                Content = content,
+                DurationSeconds = await ffmpegService.GetVideoDuration(videoPath)
+            };
 
-        System.IO.File.Delete(videoPath);
-
+            System.IO.File.Delete(videoPath);
+            
+            context.VideoMetas.Add(metaData);
+        }
+        
         context.Contents.Add(content);
-        context.VideoMetas.Add(metaData);
         context.ContentVectors.AddRange(await context.Genres
             .Select(genre => new ContentGenreVector() {
                 Content = content,
-                Genre = genre })
+                GenreId = genre.Id })
             .AsNoTracking()
             .ToListAsync()
         );
@@ -142,7 +149,7 @@ public class ContentController : ControllerBase
 
         var candidates = await context.Contents
             .AsNoTracking()
-            .Where(c => c.RandomKey >= r)
+            .Where(c => c.RandomKey >= r && c.VideoMeta != null)
             .Include(c => c.Vectors)
             .Include(c => c.VideoMeta)
             .OrderBy(c => c.RandomKey)
@@ -152,7 +159,7 @@ public class ContentController : ControllerBase
         {
             var extra = await context.Contents
                 .AsNoTracking()
-                .Where(c => c.RandomKey < r)
+                .Where(c => c.RandomKey < r && c.VideoMeta != null)
                 .Include(c => c.Vectors)
                 .Include(c => c.VideoMeta)
                 .OrderBy(c => c.RandomKey)
@@ -174,7 +181,7 @@ public class ContentController : ControllerBase
 
         recommended = candidates
                 .Select(c => new ContentRecoScoreDto(
-                    c, recommendation.Recommend(userGenres, c, context.ContentVectors
+                    c, recommendation.Recommend(userGenres, c, c.VideoMeta!, context.ContentVectors
                         .Include(cG => cG.Genre)
                         .OrderBy(cG => cG.Genre!.Order)
                         .Where(cG => cG.ContentId == c.Id)
@@ -232,7 +239,9 @@ public class ContentController : ControllerBase
 
         ContentResponseDto[] contentResponses = contents.Select(contnet => contnet.Content).ToArray();
 
-        return Ok(new ContentSearchResponseDto(contentResponses, lastResponse == null ? null : GetSearchDto(lastResponse.LastLiked, lastResponse.LastSimilarity, lastResponse.LastLevenshit)));
+        return Ok(new ContentSearchResponseDto(
+            contentResponses, lastResponse == null ? null : GetSearchDto(
+                lastResponse.LastLiked, lastResponse.LastSimilarity, lastResponse.LastLevenshit)));
     }
 
     [HttpPut("{ContentId}")]

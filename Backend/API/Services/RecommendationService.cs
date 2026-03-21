@@ -5,16 +5,16 @@ namespace Backend.API.Services;
 
 public class RecommendationService : IRecommendationService
 {
-    public float Recommend(UserGenreVector[] userGenres, Content content, ContentGenreVector[] contentGenres, int vectorsCount)
+    public float Recommend(UserGenreVector[] userGenres, Content content, VideoMetaData videoMeta, ContentGenreVector[] contentGenres, int vectorsCount)
     {
         float similarity = VectorManager.CosineSimilarity(
             userGenres, contentGenres, vectorsCount, x => x.Value, b => b.FinalVector);
 
-        float trending = CalculateTrending(content);
+        float trending = CalculateTrending(content, videoMeta);
 
         float freshness = CalculateFreshness(content);
 
-        float quality = CalculateQuality(content);
+        float quality = CalculateQuality(content, videoMeta);
 
         return
             0.55f * similarity +
@@ -23,10 +23,8 @@ public class RecommendationService : IRecommendationService
             0.10f * quality;
     }
 
-    private float CalculateTrending(Content content)
+    private float CalculateTrending(Content content, VideoMetaData videoMeta)
     {
-        VideoMetaData videoMeta = content.VideoMeta!;
-
         float hours =
             (float)(DateTime.UtcNow - content.CreatedDate).TotalHours;
 
@@ -59,10 +57,8 @@ public class RecommendationService : IRecommendationService
         return freshness;
     }
 
-    private float CalculateQuality(Content content)
+    private float CalculateQuality(Content content, VideoMetaData videoMeta)
     {
-        VideoMetaData videoMeta = content.VideoMeta!; // content.VideoMeta! for testing
-
         float likeScore =
             WilsonScore(content.LikesCount, content.ViewsCount);
 

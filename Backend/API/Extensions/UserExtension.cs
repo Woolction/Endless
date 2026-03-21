@@ -13,7 +13,7 @@ public static class UserExtension
             "@" + user.Slug,
             user.Description ?? "",
             user.RegistryData,
-            user.Email, user.Role,
+            user.Email, user.Role.ToString(),
             user.AvatarPhotoUrl,
             user.TotalLikes,
             user.ContentsLikesCount,

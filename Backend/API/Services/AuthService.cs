@@ -23,7 +23,7 @@ public class AuthService : IAuthService
     private readonly SymmetricSecurityKey securityKey;
     private readonly IPasswordHasher<User> passwordHasher;
 
-    private const int refreshTokenExpires = 14;
+    private const int refreshTokenExpires = 30;
 
     public AuthService(EndlessContext context, IConfiguration configuration, IPasswordHasher<User> passwordHasher)
     {
@@ -59,7 +59,7 @@ public class AuthService : IAuthService
             .Select(genre => new UserGenreVector()
             {
                 User = user,
-                Genre = genre
+                GenreId = genre.Id
             })
             .AsNoTracking()
             .ToListAsync()

@@ -27,14 +27,14 @@ public class DomainOwnersController : ControllerBase
             .Where(owner => owner.DomainId == DomainId)
             .Select(owner => new DomainOwnerResponseDto(
                 owner.OwnerId, owner.DomainId, owner.OwnedDate,
-                owner.OwnerRole)).AsNoTracking().ToArrayAsync();
+                owner.OwnerRole.ToString())).AsNoTracking().ToArrayAsync();
 
         return Ok(domainOwners);
     }
 
     [HttpPost("domain/{DomainId}/user/{UserId}")]
     [Authorize(Policy = nameof(UserRole.Creator))]
-    public async Task<ActionResult<DomainResponseDto>> CreateDomainOwner(Guid DomainId, Guid UserId, DomainOwnerRole ownerRole)
+    public async Task<ActionResult<DomainResponseDto>> CreateDomainOwner(Guid DomainId, Guid UserId, [FromBody] DomainOwnerRole ownerRole)
     {
         Guid currentUserId = this.GetIDFromClaim();
 

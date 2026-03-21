@@ -66,6 +66,10 @@ public static class ProgramPipeline
 
         // Authorization builder.Services
         builder.Services.AddAuthorizationBuilder()
+            .AddPolicy(nameof(UserRole.Admin), policy =>
+            {
+                policy.RequireRole(nameof(UserRole.Admin));
+            })
             .AddPolicy(nameof(UserRole.Creator), policy =>
             {
                 policy.RequireRole(nameof(UserRole.Creator), nameof(UserRole.Admin));

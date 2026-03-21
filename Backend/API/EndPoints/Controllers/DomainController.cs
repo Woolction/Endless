@@ -136,7 +136,9 @@ public class DomainController : ControllerBase
 
         DomainResponseDto[] domainResponses = domains.Select(domain => domain.Domain).ToArray();
 
-        return Ok(new DomainSearchResponseDto(domainResponses, lastResponse == null ? null : GetSearchDto(lastResponse.LastLiked, lastResponse.LastSimilarity, lastResponse.LastLevenshit)));
+        return Ok(new DomainSearchResponseDto(
+            domainResponses, lastResponse == null ? null : GetSearchDto(
+                lastResponse.LastLiked, lastResponse.LastSimilarity, lastResponse.LastLevenshit)));
     }
 
     [HttpGet]
@@ -160,20 +162,28 @@ public class DomainController : ControllerBase
 
         Guid currentUserId = this.GetIDFromClaim();
 
-        if (!domain.Owners.Any(owner => owner.OwnerId == currentUserId))
+        DomainOwner? currentOwner = await context.DomainOwners
+            .FirstOrDefaultAsync(owner =>
+                owner.OwnerId == currentUserId &&
+                owner.DomainId == DomainId);
+
+        if (currentOwner == null)
             return Forbid("You doesn't owner the Domain");
+
+        if (currentOwner.OwnerRole != DomainOwnerRole.Admin)
+            return BadRequest("You do not have sufficient rights");
 
         if (!string.IsNullOrEmpty(updateDto.Description))
             domain.Description = updateDto.Description;
 
         string slug = updateDto.Name.GenerateSlug();
 
-        if (!await context.Domains.AnyAsync(domain => domain.Name == updateDto.Name || domain.Slug == slug))
-        {
-            domain.Name = updateDto.Name;
-            domain.Slug = slug;
-        }
+        if (await context.Domains.AnyAsync(domain => domain.Name == updateDto.Name || domain.Slug == slug))
+            return BadRequest($"Domain whit name {updateDto.Name} hasted+");
 
+        domain.Name = updateDto.Name;
+        domain.Slug = slug;
+            
         await context.SaveChangesAsync();
 
         return Ok(domain.GetDomainResponseDto());
@@ -183,19 +193,44 @@ public class DomainController : ControllerBase
     [Authorize(Policy = nameof(UserRole.Creator))]
     public async Task<IActionResult> DeleteDomain(Guid DomainId)
     {
-        Guid UserId = this.GetIDFromClaim();
+        Guid currentUserId = this.GetIDFromClaim();
 
-        User? user = await context.Users.FindAsync(UserId);
+        User? user = await context.Users.FindAsync(currentUserId);
 
         if (user is null)
             return BadRequest("User not found");
 
-        if (user.OwnedDomains.Any(d => d.DomainId != DomainId))
+        DomainOwner? currentOwner = await context.DomainOwners
+            .FirstOrDefaultAsync(owner =>
+                owner.OwnerId == currentUserId &&
+                owner.DomainId == DomainId);
+
+        if (currentOwner == null)
             return Forbid("You doesn't owner the Domain");
+
+        if (currentOwner.OwnerRole != DomainOwnerRole.Admin)
+            return BadRequest("You do not have sufficient rights");
 
         Domain? domain = await context.Domains.FindAsync(DomainId);
 
-        if (domain is not null)
+        Content[] contents = await context.Contents
+            .Include(content => content.Creator)
+            .Where(content => content.DomainId == DomainId)
+            .ToArrayAsync();
+
+        for (int i = 0; i < contents.Length; i++)
+        {
+            Content content = contents[i];
+
+            content.Creator!.ContentsCount--;
+
+            LikedContent[] likedContents = await context.LikedContents
+                .Include(content => content.User)
+                .Where(content => content.ContentId == content.ContentId)
+                .ToArrayAsync();
+        } 
+
+        if (domain != null)
         {
             user.SubscripedDomainsCount--;
             user.OwnedDomainsCount--;

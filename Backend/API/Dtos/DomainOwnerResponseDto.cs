@@ -6,5 +6,5 @@ public record class DomainOwnerResponseDto(
     Guid OwnerId,
     Guid DomainId,
     DateTime OwnedDate,
-    DomainOwnerRole OwnerRole
+    string OwnerRole
     );
