@@ -31,10 +31,12 @@ public class UserInteractionController : ControllerBase
         Guid currentUserId = this.GetIDFromClaim();
 
         User? currentUser = await context.Users.FindAsync(currentUserId);
-        Content? content = await context.Contents.FindAsync(ContentId);
+        Content? content = await context.Contents
+            .Include(content => content.VideoMeta)
+            .FirstOrDefaultAsync(content => content.Id == ContentId);
 
-        if (currentUser is null || content is null)
-            return BadRequest("User or Content not found");
+        if (currentUser == null || content == null || content.VideoMeta == null)
+            return BadRequest("User or Content or Meta not found");
 
         UserInterationContent? userInteration = await context.UserInterationContents.FindAsync(currentUserId);
 

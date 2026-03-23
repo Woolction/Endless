@@ -14,8 +14,7 @@ public class InteractionService : IInteractionService
             return;
 
         float watchRatio =
-            (float)interaction.WatchTimeSeconds /
-            videoMeta.DurationSeconds; //! for test
+            (float)interaction.WatchTimeSeconds / videoMeta.DurationSeconds; 
 
         watchRatio = MathF.Min(watchRatio, 1f); 
 
