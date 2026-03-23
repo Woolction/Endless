@@ -27,11 +27,19 @@ public class SubscriptionController : ControllerBase
         Guid currentUserId = this.GetIDFromClaim();
 
         User? currentUser = await context.Users.FindAsync(currentUserId);
-        Domain? domain = await context.Domains.FindAsync(DomainId);
+        var domain = await context.Domains
+            .Select(domain => new {
+                d = domain, dResponse = new DomainResponseDto(
+                    domain.Id, domain.Name, "@" + domain.Slug,
+                    domain.Description ?? "", domain.CreatedDate,
+                    domain.AvatarPhotoUrl, domain.Subscribers.Count,
+                    domain.Contents.Count, domain.Owners.Count,
+                    domain.TotalLikes, domain.TotalViews)})
+            .FirstOrDefaultAsync(domain => domain.d.Id == DomainId);
 
         if (currentUser is null)
             return BadRequest("User not found");
-        if (domain is null)
+        if (domain is null || domain is null)
             return BadRequest("Domain not found");
 
         DomainSubscription domainSubscription = new()
@@ -46,7 +54,7 @@ public class SubscriptionController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        return Ok(domain.GetDomainResponseDto());
+        return Ok(domain.dResponse);
     }
 
     [HttpDelete("domain/{DomainId}")]

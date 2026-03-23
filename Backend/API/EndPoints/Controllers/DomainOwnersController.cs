@@ -39,7 +39,6 @@ public class DomainOwnersController : ControllerBase
         Guid currentUserId = this.GetIDFromClaim();
 
         DomainOwner? currentOwner = await context.DomainOwners
-            .Include(owner => owner.Domain)
             .FirstOrDefaultAsync(owner =>
                 owner.OwnerId == currentUserId &&
                 owner.DomainId == DomainId);
@@ -62,11 +61,32 @@ public class DomainOwnersController : ControllerBase
             OwnerRole = ownerRole
         };
 
+        DomainSubscription domainSubscription = new()
+        {
+            DomainId = DomainId,
+            SubscriberId = UserId,
+            SubscribedDate = DateTime.UtcNow,
+            Notification = false
+        };
+
+        context.DomainSubscriptions.Add(domainSubscription);
         context.DomainOwners.Add(domainOwner);
 
         await context.SaveChangesAsync();
 
-        return Ok(currentOwner.Domain!.GetDomainResponseDto());
+        return Ok(context.Domains.Select(domain => new DomainResponseDto(
+                domain.Id,
+                domain.Name,
+                "@" + domain.Slug,
+                domain.Description ?? "",
+                domain.CreatedDate,
+                domain.AvatarPhotoUrl,
+                domain.Subscribers.Count,
+                domain.Contents.Count,
+                domain.Owners.Count,
+                domain.TotalLikes,
+                domain.TotalViews))
+            .FirstAsync(domain => domain.Id == DomainId));
     }
 
     [Authorize(Policy = nameof(UserRole.Creator))]

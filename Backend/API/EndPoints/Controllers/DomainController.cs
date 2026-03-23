@@ -33,9 +33,9 @@ public class DomainController : ControllerBase
     [Authorize(Policy = nameof(UserRole.Creator))]
     public async Task<ActionResult<DomainResponseDto>> CreateDomain(DomainCreateDto createDto)
     {
-        Guid id = this.GetIDFromClaim();
+        Guid currentUserId = this.GetIDFromClaim();
 
-        User? user = await context.Users.FindAsync(id);
+        User? user = await context.Users.FindAsync(currentUserId);
 
         if (user is null)
             return BadRequest("User not found");
@@ -62,7 +62,7 @@ public class DomainController : ControllerBase
 
         DomainOwner domainOwner = new()
         {
-            Owner = user,
+            OwnerId = currentUserId,
             Domain = domain,
             OwnedDate = DateTime.UtcNow,
             OwnerRole = DomainOwnerRole.Admin
@@ -71,7 +71,7 @@ public class DomainController : ControllerBase
         DomainSubscription domainSubscription = new()
         {
             Domain = domain,
-            Subscriber = user,
+            SubscriberId = currentUserId,
             SubscribedDate = DateTime.UtcNow,
             Notification = false
         };
@@ -84,7 +84,16 @@ public class DomainController : ControllerBase
         {
             await context.SaveChangesAsync();
 
-            return Ok(domain.GetDomainResponseDto());
+            return Ok(new DomainResponseDto(
+                domain.Id,
+                domain.Name,
+                "@" + domain.Slug,
+                domain.Description ?? "",
+                domain.CreatedDate,
+                domain.AvatarPhotoUrl,
+                1, 0, 1,
+                domain.TotalLikes,
+                domain.TotalViews));
         }
         catch (DbUpdateException ex)
         {
@@ -120,7 +129,18 @@ public class DomainController : ControllerBase
             .Take(20)
             .Select(domain => new
             {
-                Domain = domain.GetDomainResponseDto(),
+                Domain = new DomainResponseDto(
+                    domain.Id,
+                    domain.Name,
+                    "@" + domain.Slug,
+                    domain.Description ?? "",
+                    domain.CreatedDate,
+                    domain.AvatarPhotoUrl,
+                    domain.Subscribers.Count,
+                    domain.Contents.Count,
+                    domain.Owners.Count,
+                    domain.TotalLikes,
+                    domain.TotalViews),
                 LastLiked = EF.Functions.ILike(domain.Name, $"%{requestDto.Name}%"),
                 LastSimilarity = EF.Functions.TrigramsSimilarity(domain.Name, requestDto.Name),
                 LastLevenshit = EF.Functions.FuzzyStringMatchLevenshtein(domain.Name, requestDto.Name)
@@ -140,7 +160,18 @@ public class DomainController : ControllerBase
     public async Task<ActionResult<DomainResponseDto[]>> GetDomains()
     {
         DomainResponseDto[] domains = await context.Domains
-            .Select(domain => domain.GetDomainResponseDto())
+            .Select(domain => new DomainResponseDto(
+                domain.Id,
+                domain.Name,
+                "@" + domain.Slug,
+                domain.Description ?? "",
+                domain.CreatedDate,
+                domain.AvatarPhotoUrl,
+                domain.Subscribers.Count,
+                domain.Contents.Count,
+                domain.Owners.Count,
+                domain.TotalLikes,
+                domain.TotalViews))
             .AsNoTracking().ToArrayAsync();
 
         return Ok(domains);
@@ -150,9 +181,24 @@ public class DomainController : ControllerBase
     [Authorize(Policy = nameof(UserRole.Creator))]
     public async Task<ActionResult<DomainResponseDto>> UpdateDomain(Guid DomainId, DomainUpdateDto updateDto)
     {
-        Domain? domain = await context.Domains.FindAsync(DomainId);
+        var domain = await context.Domains
+            .Select(domain => new {
+                d = domain,
+                dResponse = new DomainResponseDto(
+                domain.Id,
+                domain.Name,
+                "@" + domain.Slug,
+                domain.Description ?? "",
+                domain.CreatedDate,
+                domain.AvatarPhotoUrl,
+                domain.Subscribers.Count,
+                domain.Contents.Count,
+                domain.Owners.Count,
+                domain.TotalLikes,
+                domain.TotalViews)})// For mapping
+            .FirstOrDefaultAsync(domain => domain.d.Id == DomainId);
 
-        if (domain is null)
+        if (domain is null || domain.d is null)
             return BadRequest("Domain not found");
 
         Guid currentUserId = this.GetIDFromClaim();
@@ -169,19 +215,19 @@ public class DomainController : ControllerBase
             return BadRequest("You do not have sufficient rights");
 
         if (!string.IsNullOrEmpty(updateDto.Description))
-            domain.Description = updateDto.Description;
+            domain.d.Description = updateDto.Description;
 
         string slug = updateDto.Name.GenerateSlug();
 
         if (await context.Domains.AnyAsync(domain => domain.Name == updateDto.Name || domain.Slug == slug))
-            return BadRequest($"Domain whit name {updateDto.Name} hasted+");
+            return BadRequest($"Domain whit name {updateDto.Name} hasted");
 
-        domain.Name = updateDto.Name;
-        domain.Slug = slug;
+        domain.d.Name = updateDto.Name;
+        domain.d.Slug = slug;
             
         await context.SaveChangesAsync();
 
-        return Ok(domain.GetDomainResponseDto());
+        return Ok(domain.dResponse);
     }
 
     [HttpDelete("{DomainId}")]
@@ -209,7 +255,6 @@ public class DomainController : ControllerBase
         context.Domains.Remove(domain);
 
         await context.SaveChangesAsync();
-
 
         return NoContent();
     }

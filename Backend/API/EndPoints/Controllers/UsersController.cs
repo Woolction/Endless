@@ -67,7 +67,12 @@ public class UsersController : ControllerBase
         var users = await query
             .OrderByDescending(user => EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name))
             .Take(20).Select(user => new {
-                User = user.GetUserResponseDto(),
+                User = new UserResponseDto(
+                    user.Id, user.Name, "@" + user.Slug,
+                    user.Description ?? "", user.RegistryData, user.Email,
+                    user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
+                    user.Comments.Count, user.Contents.Count, user.Followers.Count,
+                    user.Following.Count, user.OwnedDomains.Count, user.SubscripedDomains.Count),
                 LastLiked = EF.Functions.ILike(user.Name, $"%{requestDto.Name}%"),
                 LastSimilarity = EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name),
                 LastLevenshit = EF.Functions.FuzzyStringMatchLevenshtein(user.Name, requestDto.Name)
@@ -90,12 +95,19 @@ public class UsersController : ControllerBase
     {
         Guid currentUserId = this.GetIDFromClaim();
 
-        User? user = await context.Users.FindAsync(currentUserId);
+        UserResponseDto? user = await context.Users
+            .Select(user => new UserResponseDto(
+                user.Id, user.Name, "@" + user.Slug,
+                user.Description ?? "", user.RegistryData, user.Email,
+                user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
+                user.Comments.Count, user.Contents.Count, user.Followers.Count,
+                user.Following.Count, user.OwnedDomains.Count, user.SubscripedDomains.Count))
+            .FirstOrDefaultAsync(user => user.Id == currentUserId);
 
         if (user is null)
             return NotFound();
 
-        return Ok(user.GetUserResponseDto());
+        return Ok(user);
     }
 
     [Authorize]
@@ -104,19 +116,27 @@ public class UsersController : ControllerBase
     {
         Guid currentUserId = this.GetIDFromClaim();
 
-        User? user = await context.Users.FindAsync(currentUserId);
+        var user = await context.Users
+            .Select(user => new {
+                u = user, uResponse = new UserResponseDto(
+                    user.Id, user.Name, "@" + user.Slug,
+                    user.Description ?? "", user.RegistryData, user.Email,
+                    user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
+                    user.Comments.Count, user.Contents.Count, user.Followers.Count,
+                    user.Following.Count, user.OwnedDomains.Count, user.SubscripedDomains.Count)})
+            .FirstOrDefaultAsync(user => user.u.Id == currentUserId);
 
-        if (user is null)
+        if (user is null || user.u is null)
             return BadRequest("User not found");
 
         if (!string.IsNullOrEmpty(updateDto.Name))
         {
-            user.Name = updateDto.Name;
-            user.Slug = updateDto.Name.GenerateSlug();
+            user.u.Name = updateDto.Name;
+            user.u.Slug = updateDto.Name.GenerateSlug();
         }
 
         if (!string.IsNullOrEmpty(updateDto.Description))
-            user.Description = updateDto.Description;
+            user.u.Description = updateDto.Description;
 
         if (updateDto.AvatarPhoto is not null && updateDto.AvatarPhoto.Length != 0)
         {
@@ -124,19 +144,19 @@ public class UsersController : ControllerBase
 
             string photoUrl = await r2Service.SaveImage(photoPath);
 
-            user.AvatarPhotoUrl = photoUrl;
+            user.u.AvatarPhotoUrl = photoUrl;
 
             System.IO.File.Delete(photoPath);
         }
 
         //for test
-        user.Role = updateDto.Role;
+        user.u.Role = updateDto.Role;
 
         try
         {
             await context.SaveChangesAsync();
 
-            return Ok(user.GetUserResponseDto());
+            return Ok(user.uResponse);
         }
         catch (DbUpdateException ex)
         {

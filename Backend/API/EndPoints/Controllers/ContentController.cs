@@ -181,21 +181,43 @@ public class ContentController : ControllerBase
     [HttpGet("{ContentId}")]
     public async Task<ActionResult<ChangedContentDto>> GetChangedContent(Guid ContentId)
     {
-        Content? changedContent = await context.Contents
+        var changedContent = await context.Contents
+            .Select(content => new {
+                c = content,
+                cResponse = new ContentResponseDto(content.Id, content.DomainId, content.CreatorId,
+                    content.Title, content.Slug, content.Description,
+                    content.CreatedDate, content.ContentType.ToString(),
+                    content.VideoMeta != null ? content.VideoMeta.DurationSeconds : 0,
+                    content.ContentUrl, content.PrewievPhotoUrl, content.Savers.Count, content.Likers.Count,
+                    content.Comments.Count, content.DizLikers.Count, content.ViewsCount)})
             .AsNoTracking()
-            .Include(content => content.VideoMeta)
-            .Include(content => content.Creator)
-            .Include(content => content.Domain)
-            .FirstOrDefaultAsync(content => content.Id == ContentId);
+            .FirstOrDefaultAsync(content => content.c.Id == ContentId);
 
-        if (changedContent is null)
+        if (changedContent is null || changedContent.c is null)
             return BadRequest("Content not found");
 
+        DomainResponseDto? domainResponse = await context.Domains
+            .Select(domain => new DomainResponseDto(
+                domain.Id, domain.Name,
+                "@" + domain.Slug, domain.Description ?? "",
+                domain.CreatedDate, domain.AvatarPhotoUrl,
+                domain.Subscribers.Count, domain.Contents.Count,
+                domain.Owners.Count, domain.TotalLikes, domain.TotalViews))
+            .AsNoTracking()
+            .FirstOrDefaultAsync(domain => domain.Id == changedContent.c.DomainId);
+
+        UserResponseDto? userResponse = await context.Users
+            .Select(user => new UserResponseDto(
+                user.Id, user.Name, "@" + user.Slug,
+                user.Description ?? "", user.RegistryData, user.Email,
+                user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
+                user.Comments.Count, user.Contents.Count, user.Followers.Count,
+                user.Following.Count, user.OwnedDomains.Count, user.SubscripedDomains.Count))
+            .AsNoTracking()
+            .FirstOrDefaultAsync();
+
         return Ok(new ChangedContentDto(
-            changedContent.Domain?.GetDomainResponseDto(),
-            changedContent.GetContentResponseDto(),
-            changedContent.Creator!.GetUserResponseDto()
-        ));
+            domainResponse, changedContent.cResponse, userResponse));
     }
 
     [HttpGet]
@@ -261,8 +283,20 @@ public class ContentController : ControllerBase
             .Take(4).ToListAsync();
 
         var combined = recommended
-            .Select(x => x.Content.GetContentRecoDto())
-            .Concat(random.Select(content => content.GetContentRecoDto()))
+            .Select(x => new ContentRecoDto(
+                x.Content.Id, x.Content.DomainId, x.Content.CreatorId,
+                x.Content.Title, x.Content.Slug, x.Content.Description,
+                x.Content.CreatedDate, x.Content.ContentType.ToString(), Random.Shared.NextDouble(),
+                x.Content.VideoMeta?.DurationSeconds, x.Content.ContentUrl, x.Content.PrewievPhotoUrl,
+                x.Content.Savers.Count, x.Content.Likers.Count, x.Content.Comments.Count,
+                x.Content.DizLikers.Count, x.Content.ViewsCount))
+            .Concat(random.Select(content => new ContentRecoDto(
+                content.Id, content.DomainId, content.CreatorId,
+                content.Title, content.Slug, content.Description,
+                content.CreatedDate, content.ContentType.ToString(), Random.Shared.NextDouble(),
+                content.VideoMeta?.DurationSeconds, content.ContentUrl, content.PrewievPhotoUrl,
+                content.Savers.Count, content.Likers.Count, content.Comments.Count,
+                content.DizLikers.Count, content.ViewsCount)))
             .OrderBy(x => x.RandomKey).ToArray();
 
         return Ok(new ContentRecoResponseDto(combined));
@@ -290,14 +324,19 @@ public class ContentController : ControllerBase
 
         var contents = await query
             .OrderByDescending(content => EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name))
-            .Take(20).Select(content => new
-            {
-                Content = content.GetContentResponseDto(),
+            .Take(20).Select(content => new {
+                Content = new ContentResponseDto(
+                    content.Id, content.DomainId, content.CreatorId,
+                    content.Title, content.Slug, content.Description,
+                    content.CreatedDate, content.ContentType.ToString(),
+                    content.VideoMeta != null ? content.VideoMeta.DurationSeconds : 0,
+                    content.ContentUrl, content.PrewievPhotoUrl, content.Savers.Count,
+                    content.Likers.Count, content.Comments.Count, content.DizLikers.Count,
+                    content.ViewsCount),
                 LastLiked = EF.Functions.ILike(content.Title, $"%{requestDto.Name}%"),
                 LastSimilarity = EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name),
                 LastLevenshit = EF.Functions.FuzzyStringMatchLevenshtein(content.Title, requestDto.Name)
-            })
-            .AsNoTracking().ToArrayAsync();
+            }).AsNoTracking().ToArrayAsync();
 
         var lastResponse = contents.LastOrDefault();
 

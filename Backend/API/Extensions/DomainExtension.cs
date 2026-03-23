@@ -15,6 +15,7 @@ public static class DomainExtension
             domain.CreatedDate,
             domain.AvatarPhotoUrl,
             domain.Subscribers.Count,
+            domain.Contents.Count,
             domain.Owners.Count,
             domain.TotalLikes,
             domain.TotalViews);

@@ -30,11 +30,19 @@ public class FollowController : ControllerBase
             return BadRequest("You dont have a follow you");
 
         User? currentUser = await context.Users.FindAsync(currentUserId);
-        User? user = await context.Users.FindAsync(UserId);
+        var user = await context.Users
+            .Select(user => new{
+                u = user, uResponse = new UserResponseDto(
+                    user.Id, user.Name, "@" + user.Slug,
+                    user.Description ?? "", user.RegistryData, user.Email,
+                    user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
+                    user.Comments.Count, user.Contents.Count, user.Followers.Count,
+                    user.Following.Count, user.OwnedDomains.Count, user.SubscripedDomains.Count)})
+            .FirstOrDefaultAsync(user => user.u.Id == UserId);
 
         if (currentUser is null)
             return BadRequest("Current user not found");
-        if (user is null)
+        if (user is null || user.u is null)
             return BadRequest("User not found");
 
         UserFollowing userFollowing = new()
@@ -48,7 +56,7 @@ public class FollowController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        return Ok(user.GetUserResponseDto());
+        return Ok(user.uResponse);
     }
 
     [HttpDelete("{UserId}")]

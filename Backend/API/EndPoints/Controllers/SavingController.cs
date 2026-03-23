@@ -27,12 +27,21 @@ public class SavingController : ControllerBase
         Guid currentUserId = this.GetIDFromClaim();
 
         User? currentUser = await context.Users.FindAsync(currentUserId);
-        Content? content = await context.Contents
-            .FirstOrDefaultAsync(content => content.Id == ContentId);
+        var content = await context.Contents
+            .Select(content => new {
+                c = content, cResponse = new ContentResponseDto(
+                    content.Id, content.DomainId, content.CreatorId,
+                    content.Title, content.Slug, content.Description,
+                    content.CreatedDate, content.ContentType.ToString(),
+                    content.VideoMeta != null ? content.VideoMeta.DurationSeconds : 0,
+                    content.ContentUrl, content.PrewievPhotoUrl, content.Savers.Count,
+                    content.Likers.Count, content.Comments.Count, content.DizLikers.Count,
+                    content.ViewsCount)})
+            .FirstOrDefaultAsync(content => content.c.Id == ContentId);
 
         if (currentUser is null)
             return BadRequest("User not found");
-        if (content is null)
+        if (content is null || content.c is null)
             return BadRequest("Content not found");
 
         SavedContent savedContent = new()
@@ -46,7 +55,7 @@ public class SavingController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        return Ok(content.GetContentResponseDto());
+        return Ok(content.cResponse);
     }
 
     [HttpDelete("content/{ContentId}")]

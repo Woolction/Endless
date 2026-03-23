@@ -27,12 +27,21 @@ public class LikingController : ControllerBase
         Guid currentUserId = this.GetIDFromClaim();
 
         User? currentUser = await context.Users.FindAsync(currentUserId);
-        Content? content = await context.Contents
-            .FirstOrDefaultAsync(content => content.Id == ContentId);
+        var content = await context.Contents
+            .Select(content => new { 
+                c = content, cResponse = new ContentResponseDto(
+                    content.Id, content.DomainId, content.CreatorId,
+                    content.Title, content.Slug, content.Description,
+                    content.CreatedDate, content.ContentType.ToString(),
+                    content.VideoMeta != null ? content.VideoMeta.DurationSeconds : 0,
+                    content.ContentUrl, content.PrewievPhotoUrl, content.Savers.Count,
+                    content.Likers.Count, content.Comments.Count, content.DizLikers.Count,
+                    content.ViewsCount)})
+            .FirstOrDefaultAsync(content => content.c.Id == ContentId);
 
         if (currentUser is null)
             return BadRequest("User not found");
-        if (content is null)
+        if (content is null || content.c is null)
             return BadRequest("Content not found");
 
         LikedContent likedContent = new()
@@ -46,7 +55,7 @@ public class LikingController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        return Ok(content.GetContentResponseDto());
+        return Ok(content.cResponse);
     }
 
     [HttpDelete("content/{ContentId}")]
@@ -83,12 +92,19 @@ public class LikingController : ControllerBase
         Guid currentUserId = this.GetIDFromClaim();
 
         User? currentUser = await context.Users.FindAsync(currentUserId);
-        Comment? comment = await context.Comments
-            .FirstOrDefaultAsync(comment => comment.Id == CommentId);
+        var comment = await context.Comments
+            .Select(comment => new {
+                c = comment, cResponse = new CommentResponseDto(
+                    comment.Text,
+                    comment.PublicatedDate,
+                    comment.Likers.Count,
+                    comment.DizLikers.Count,
+                    comment.ViewsCount)})
+            .FirstOrDefaultAsync(comment => comment.c.Id == CommentId);
 
         if (currentUser is null)
             return BadRequest("User not found");
-        if (comment is null)
+        if (comment is null || comment.c is null)
             return BadRequest("Comment not found");
 
         LikedComment likedComment = new()
@@ -102,7 +118,7 @@ public class LikingController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        return Ok(comment.GetCommentResponseDto());
+        return Ok(comment.cResponse);
     }
 
     [HttpDelete("comment/{CommentId}")]
@@ -130,6 +146,4 @@ public class LikingController : ControllerBase
 
         return NoContent();
     }
-
-    //DizLikes in other class
 }
