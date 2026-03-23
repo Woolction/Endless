@@ -79,7 +79,6 @@ public class UserInteractionController : ControllerBase
 
         return Ok(new GenreVectorsResponse(
             userGenres.GetUserGenreVectors(),
-            contentGenres.GetContentGenreVectors())
-            );
+            contentGenres.GetContentGenreVectors()));
     }
 }

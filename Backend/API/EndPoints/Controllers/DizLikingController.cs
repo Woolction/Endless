@@ -1,11 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using Backend.API.Data.Components;
+using Microsoft.AspNetCore.Mvc;
 using Backend.API.Data.Context;
 using Backend.API.Data.Models;
-using Backend.API.Dtos;
 using Backend.API.Extensions;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Backend.API.Dtos;
 
 namespace Backend.API.EndPoints.Controllers;
 
@@ -34,8 +34,6 @@ public class DizLikingController : ControllerBase
         if (content is null)
             return BadRequest("Content not found");
 
-        content.DizLikesCount++;
-
         DizLikedContent dizLikedContent = new()
         {
             UserId = currentUserId,
@@ -57,15 +55,12 @@ public class DizLikingController : ControllerBase
         Guid currentUserId = this.GetIDFromClaim();
 
         DizLikedContent? dizLikedContent = await context.DizLikedContents
-            .Include(dizLikedContent => dizLikedContent.Content)
             .FirstOrDefaultAsync(dizLikedContent =>
                 dizLikedContent.ContentId == ContentId &&
                 dizLikedContent.UserId == currentUserId);
 
         if (dizLikedContent is null)
             return BadRequest("Like dont placed");
-
-        dizLikedContent.Content!.DizLikesCount--;
 
         context.DizLikedContents.Remove(dizLikedContent);
 
@@ -88,8 +83,6 @@ public class DizLikingController : ControllerBase
         if (comment is null)
             return BadRequest("Comment not found");
 
-        comment.DizLikeCount++;
-
         DizLikedComment dizLikedComment = new()
         {
             UserId = currentUserId,
@@ -111,15 +104,12 @@ public class DizLikingController : ControllerBase
         Guid currentUserId = this.GetIDFromClaim();
 
         DizLikedComment? dizLikedComment = await context.DizLikedComments
-            .Include(dizLikedComment => dizLikedComment.Comment)
             .FirstOrDefaultAsync(dizLikedComment =>
                 dizLikedComment.CommentId == CommentId &&
                 dizLikedComment.UserId == currentUserId);
 
         if (dizLikedComment is null)
             return BadRequest("DizLike dont placed");
-
-        dizLikedComment.Comment!.DizLikeCount--;
 
         context.DizLikedComments.Remove(dizLikedComment);
 

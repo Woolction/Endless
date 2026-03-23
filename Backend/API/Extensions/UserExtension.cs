@@ -16,13 +16,11 @@ public static class UserExtension
             user.Email, user.Role.ToString(),
             user.AvatarPhotoUrl,
             user.TotalLikes,
-            user.ContentsLikesCount,
-            user.CommentsLikesCount,
-            user.CommentsCount,
-            user.ContentsCount,
-            user.FollowersCount,
-            user.FollowingCount,
-            user.OwnedDomainsCount,
-            user.SubscripedDomainsCount);
+            user.Comments.Count,
+            user.Contents.Count,
+            user.Followers.Count,
+            user.Following.Count,
+            user.OwnedDomains.Count,
+            user.SubscripedDomains.Count);
     }
 }

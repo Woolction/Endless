@@ -13,8 +13,6 @@ public class Comment
 
     public DateTime PublicatedDate { get; set; }
 
-    public long LikeCount { get; set; }
-    public long DizLikeCount { get; set; }
     public long ViewsCount { get; set; }
 
     public List<LikedComment> Likers { get; set; } = new List<LikedComment>();

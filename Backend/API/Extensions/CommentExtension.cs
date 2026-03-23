@@ -10,9 +10,8 @@ public static class CommentExtension
         return new(
             comment.Text,
             comment.PublicatedDate,
-            comment.LikeCount,
-            comment.DizLikeCount,
-            comment.ViewsCount
-            );
+            comment.Likers.Count,
+            comment.DizLikers.Count,
+            comment.ViewsCount);
     }
 }

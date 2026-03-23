@@ -28,18 +28,12 @@ public class SavingController : ControllerBase
 
         User? currentUser = await context.Users.FindAsync(currentUserId);
         Content? content = await context.Contents
-            .Include(content => content.Creator)
             .FirstOrDefaultAsync(content => content.Id == ContentId);
 
         if (currentUser is null)
             return BadRequest("User not found");
         if (content is null)
             return BadRequest("Content not found");
-
-        currentUser.SavedContentsCount++;
-        
-        content.SavesCount++;
-        content.Creator!.ContentsSavesCount++;
 
         SavedContent savedContent = new()
         {
@@ -63,7 +57,6 @@ public class SavingController : ControllerBase
 
         User? currentUser = await context.Users.FindAsync(currentUserId);
         Content? content = await context.Contents
-            .Include(content => content.Creator)
             .FirstOrDefaultAsync(content => content.Id == ContentId);
 
         SavedContent? savedContent = await context.SavedContents
@@ -77,11 +70,6 @@ public class SavingController : ControllerBase
             return BadRequest("Content not found");
         if (savedContent is null)
             return BadRequest("Save dont placed");
-
-        currentUser.SavedContentsCount--;
-
-        content.SavesCount--;
-        content.Creator!.ContentsSavesCount--;
 
         context.SavedContents.Remove(savedContent);
 

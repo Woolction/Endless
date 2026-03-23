@@ -11,8 +11,6 @@ public record class UserResponseDto(
     string Email, string Role,
     string? AvatarPhotoUrl,
     long TotalLikes,
-    long ContentsLikesCount,
-    long CommentsLikesCount,
     long CommentsCount,
     long ContentsCount,
     long FollowersCount,

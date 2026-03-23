@@ -28,18 +28,12 @@ public class LikingController : ControllerBase
 
         User? currentUser = await context.Users.FindAsync(currentUserId);
         Content? content = await context.Contents
-            .Include(content => content.Creator)
             .FirstOrDefaultAsync(content => content.Id == ContentId);
 
         if (currentUser is null)
             return BadRequest("User not found");
         if (content is null)
             return BadRequest("Content not found");
-
-        currentUser.LikedContentsCount++;
-
-        content.LikesCount++;
-        content.Creator!.ContentsLikesCount++;
 
         LikedContent likedContent = new()
         {
@@ -66,7 +60,6 @@ public class LikingController : ControllerBase
             .FirstOrDefaultAsync(content => content.Id == ContentId);
 
         LikedContent? likedContent = await context.LikedContents
-            .Include(likedContent => likedContent.User)
             .FirstOrDefaultAsync(likedContent =>
                 likedContent.ContentId == ContentId &&
                 likedContent.UserId == currentUserId);
@@ -75,11 +68,6 @@ public class LikingController : ControllerBase
             return BadRequest("Content not found");
         if (likedContent is null)
             return BadRequest("Like dont placed");
-
-        likedContent.User!.LikedContentsCount--;
-
-        content.LikesCount--;
-        content.Creator!.ContentsLikesCount--;
 
         context.LikedContents.Remove(likedContent);
 
@@ -96,18 +84,12 @@ public class LikingController : ControllerBase
 
         User? currentUser = await context.Users.FindAsync(currentUserId);
         Comment? comment = await context.Comments
-            .Include(comment => comment.Commentator)
             .FirstOrDefaultAsync(comment => comment.Id == CommentId);
 
         if (currentUser is null)
             return BadRequest("User not found");
         if (comment is null)
             return BadRequest("Comment not found");
-
-        currentUser.LikedCommentsCount++;
-
-        comment.LikeCount++;
-        comment.Commentator!.CommentsLikesCount++;
 
         LikedComment likedComment = new()
         {
@@ -130,11 +112,9 @@ public class LikingController : ControllerBase
         Guid currentUserId = this.GetIDFromClaim();
 
         Comment? comment = await context.Comments
-            .Include(comment => comment.Commentator)
             .FirstOrDefaultAsync(comment => comment.Id == CommentId);
 
         LikedComment? likedComment = await context.LikedComments
-            .Include(likedComment => likedComment.User)
             .FirstOrDefaultAsync(likedComment =>
                 likedComment.UserId == currentUserId &&
                 likedComment.CommentId == CommentId);
@@ -143,11 +123,6 @@ public class LikingController : ControllerBase
             return BadRequest("Comment not found");
         if (likedComment is null)
             return BadRequest("Like dont placed");
-
-        likedComment.User!.LikedCommentsCount--;
-
-        comment.LikeCount--;
-        comment.Commentator!.CommentsLikesCount--;
 
         context.LikedComments.Remove(likedComment);
 

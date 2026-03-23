@@ -48,9 +48,6 @@ public class CommentController : ControllerBase
 
         context.Comments.Add(newComment);
 
-        currentUser.CommentsCount++;
-        content.CommentsCount++;
-
         await context.SaveChangesAsync();
 
         return Ok(new SendCommentDto(
@@ -79,15 +76,10 @@ public class CommentController : ControllerBase
     public async Task<IActionResult> DeleteComment(Guid CommentId)
     {
         Comment? comment = await context.Comments
-            .Include(comment => comment.Commentator)
-            .Include(comment => comment.Content)
             .FirstOrDefaultAsync(comment => comment.Id == CommentId);
 
         if (comment is null)
             return BadRequest("Comment not found");
-
-        comment.Commentator!.CommentsCount--;
-        comment.Content!.CommentsCount--;
 
         context.Comments.Remove(comment);
 

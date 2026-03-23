@@ -35,7 +35,7 @@ public class RecommendationService : IRecommendationService
             MathF.Log(viewsPerHour + 1);
 
         float likeScore =
-            WilsonScore(content.LikesCount, content.ViewsCount);
+            WilsonScore(content.Likers.Count, content.ViewsCount);
 
         float watchScore =
             videoMeta.AverageWatchRatio;
@@ -60,7 +60,7 @@ public class RecommendationService : IRecommendationService
     private float CalculateQuality(Content content, VideoMetaData videoMeta)
     {
         float likeScore =
-            WilsonScore(content.LikesCount, content.ViewsCount);
+            WilsonScore(content.Likers.Count, content.ViewsCount);
 
         return
             0.4f * likeScore +

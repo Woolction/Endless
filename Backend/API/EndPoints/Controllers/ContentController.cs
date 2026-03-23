@@ -29,25 +29,16 @@ public class ContentController : ControllerBase
         this.r2Service = r2Service;
     }
 
-    [HttpPost("{DomainId}")]
+    [HttpPost("domain/{DomainId}")]
     [Authorize(Policy = nameof(UserRole.Creator))]
     public async Task<ActionResult<ContentResponseDto>> CreateContent(Guid DomainId, ContentCreateDto createDto)
     {
         Guid currentUserId = this.GetIDFromClaim();
 
-        Domain? domain = await context.Domains
-            .AsNoTracking()
-            .FirstOrDefaultAsync(domain =>
-                domain.Id == DomainId);
-
-        if (domain is null)
-            return BadRequest("Domain not found");
-
         DomainOwner? domainOwner = await context.DomainOwners
-            .AsNoTracking()
             .FirstOrDefaultAsync(owner =>
                 owner.OwnerId == currentUserId &&
-                owner.DomainId == domain.Id);
+                owner.DomainId == DomainId);
 
         if (domainOwner is null)
             return BadRequest("User not found");
@@ -77,7 +68,7 @@ public class ContentController : ControllerBase
         Content content = new()
         {
             CreatorId = currentUserId,
-            DomainId = domain.Id,
+            DomainId = DomainId,
             Title = createDto.Title,
             Slug = Guid.NewGuid(),
             ContentUrl = videoUrl,
@@ -96,15 +87,17 @@ public class ContentController : ControllerBase
             };
 
             System.IO.File.Delete(videoPath);
-            
+
             context.VideoMetas.Add(metaData);
         }
-        
+
         context.Contents.Add(content);
         context.ContentVectors.AddRange(await context.Genres
-            .Select(genre => new ContentGenreVector() {
+            .Select(genre => new ContentGenreVector()
+            {
                 Content = content,
-                GenreId = genre.Id })
+                GenreId = genre.Id
+            })
             .AsNoTracking()
             .ToListAsync()
         );
@@ -112,6 +105,77 @@ public class ContentController : ControllerBase
         await context.SaveChangesAsync();
 
         return Ok(content.GetContentResponseDto());
+    }
+
+    [HttpPost]
+    [Authorize(Policy = nameof(UserRole.Creator))]
+    public async Task<ActionResult<ContentResponseDto>> CreateContentForUser(ContentCreateDto createDto)
+    {
+        Guid currentUserId = this.GetIDFromClaim();
+
+        User? user = await context.Users.FindAsync(currentUserId);
+
+        if (user == null)
+            return BadRequest("User not found");
+
+        string videoUrl = null!;
+        string videoPath = null!;
+
+        if (createDto.ContentFile != null && createDto.ContentFile.Length != 0)
+        {
+            videoPath = await r2Service.SaveFormFileAsync(createDto.ContentFile, "Video");
+            videoUrl = await ffmpegService.UploadGeneratedVideos(videoPath);
+        }
+
+        string photoUrl = null!;
+
+        if (createDto.PrewievPhoto != null && createDto.PrewievPhoto.Length != 0)
+        {
+            string photoPath = await r2Service.SaveFormFileAsync(createDto.PrewievPhoto, "Images", ".jpeg");
+            photoUrl = await r2Service.SaveImage(photoPath);
+
+            System.IO.File.Delete(photoPath);
+        }
+
+        Content content = new()
+        {
+            CreatorId = currentUserId,
+            Title = createDto.Title,
+            Slug = Guid.NewGuid(),
+            ContentUrl = videoUrl,
+            PrewievPhotoUrl = photoUrl,
+            CreatedDate = DateTime.UtcNow,
+            RandomKey = Random.Shared.NextDouble(),
+            ContentType = createDto.ContentType
+        };
+
+        if (videoPath != null)
+        {
+            VideoMetaData metaData = new()
+            {
+                Content = content,
+                DurationSeconds = await ffmpegService.GetVideoDuration(videoPath)
+            };
+
+            System.IO.File.Delete(videoPath);
+
+            context.VideoMetas.Add(metaData);
+        }
+
+        context.Contents.Add(content);
+        context.ContentVectors.AddRange(await context.Genres
+            .Select(genre => new ContentGenreVector()
+            {
+                Content = content,
+                GenreId = genre.Id
+            })
+            .AsNoTracking()
+            .ToListAsync()
+        );
+
+        await context.SaveChangesAsync();
+
+        return Ok(content.GetContentResponseDto()); //Test
     }
 
     [HttpGet("{ContentId}")]
@@ -128,7 +192,7 @@ public class ContentController : ControllerBase
             return BadRequest("Content not found");
 
         return Ok(new ChangedContentDto(
-            changedContent.Domain!.GetDomainResponseDto(),
+            changedContent.Domain?.GetDomainResponseDto(),
             changedContent.GetContentResponseDto(),
             changedContent.Creator!.GetUserResponseDto()
         ));
@@ -266,19 +330,14 @@ public class ContentController : ControllerBase
             return Forbid("You doesn't owner the Content");
 
         Content? content = await context.Contents
-            .Include(c => c.Domain)
             .FirstOrDefaultAsync(c => c.Id == ContentId);
 
-        if (content is not null)
-        {
-            user.ContentsCount--;
+        if (content == null)
+            return BadRequest("Content not found");
 
-            content.Domain!.ContentsCount--;
+        context.Contents.Remove(content);
 
-            context.Contents.Remove(content);
-
-            await context.SaveChangesAsync();
-        }
+        await context.SaveChangesAsync();
 
         return NoContent();
     }

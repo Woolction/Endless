@@ -54,9 +54,6 @@ public class DomainOwnersController : ControllerBase
         if (user is null)
             return BadRequest("User not found");
 
-        user.OwnedDomainsCount++;
-        currentOwner.Domain!.OwnersCount++;
-
         DomainOwner domainOwner = new()
         {
             DomainId = DomainId,
@@ -69,7 +66,7 @@ public class DomainOwnersController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        return Ok(currentOwner.Domain.GetDomainResponseDto());
+        return Ok(currentOwner.Domain!.GetDomainResponseDto());
     }
 
     [Authorize(Policy = nameof(UserRole.Creator))]
@@ -79,7 +76,6 @@ public class DomainOwnersController : ControllerBase
         Guid currentUserId = this.GetIDFromClaim();
 
         DomainOwner? currentOwner = await context.DomainOwners
-            .Include(owner => owner.Domain)
             .FirstOrDefaultAsync(owner =>
                 owner.OwnerId == currentUserId &&
                 owner.DomainId == DomainId);
@@ -90,16 +86,12 @@ public class DomainOwnersController : ControllerBase
             return BadRequest("You do not have sufficient rights");
 
         DomainOwner? owner = await context.DomainOwners
-            .Include(owner => owner.Owner)
             .FirstOrDefaultAsync(owner =>
                 owner.OwnerId == OwnerId &&
                 owner.DomainId == DomainId);
 
         if (owner == null)
             return BadRequest("Owner not found");
-
-        owner.Owner!.OwnedDomainsCount--;
-        currentOwner.Domain!.OwnersCount--;
 
         context.DomainOwners.Remove(owner);
 

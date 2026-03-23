@@ -14,10 +14,6 @@ public class Domain
     public long TotalViews { get; set; }
     public long TotalLikes { get; set; }
 
-    public long SubscribersCount { get; set; }
-    public long OwnersCount { get; set; }
-    public long ContentsCount { get; set; }
-
     public List<DomainSubscription> Subscribers { get; set; } = new List<DomainSubscription>();
 
     public List<DomainOwner> Owners { get; set; } = new List<DomainOwner>();

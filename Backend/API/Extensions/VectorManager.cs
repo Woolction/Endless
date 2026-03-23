@@ -23,7 +23,7 @@ public static class VectorManager
         return MathF.Sqrt(sum);
     }
 
-    public static float CosineSimilarity<T, B>(T[] a, B[] b, long count, Func<T, float> selector, Func<B, float> selectorB)
+    public static float CosineSimilarity<T, B>(T[] a, B[] b, int count, Func<T, float> selector, Func<B, float> selectorB)
     {
         float magT = Magnitude(a, selector);
         float magB = Magnitude(b, selectorB);

@@ -12,8 +12,8 @@ public static class ContentExtension
             content.Title, content.Slug, content.Description,
             content.CreatedDate, content.ContentType.ToString(), Random.Shared.NextDouble(),
             content.VideoMeta?.DurationSeconds, content.ContentUrl, content.PrewievPhotoUrl,
-            content.SavesCount, content.LikesCount, content.CommentsCount,
-            content.DizLikesCount, content.ViewsCount);
+            content.Savers.Count, content.Likers.Count, content.Comments.Count,
+            content.DizLikers.Count, content.ViewsCount);
     }
 
     public static ContentResponseDto GetContentResponseDto(this Content content)
@@ -23,7 +23,7 @@ public static class ContentExtension
             content.Title, content.Slug, content.Description,
             content.CreatedDate, content.ContentType.ToString(),
             content.VideoMeta?.DurationSeconds, content.ContentUrl, content.PrewievPhotoUrl,
-            content.SavesCount, content.LikesCount, content.CommentsCount,
-            content.DizLikesCount, content.ViewsCount);
+            content.Savers.Count, content.Likers.Count, content.Comments.Count,
+            content.DizLikers.Count, content.ViewsCount);
     }
 }

@@ -34,9 +34,6 @@ public class SubscriptionController : ControllerBase
         if (domain is null)
             return BadRequest("Domain not found");
 
-        currentUser.SubscripedDomainsCount++;
-        domain.SubscribersCount++;
-
         DomainSubscription domainSubscription = new()
         {
             SubscriberId = currentUserId,
@@ -67,9 +64,6 @@ public class SubscriptionController : ControllerBase
 
         if (domainSubscription is null)
             return BadRequest("Subscriped Domain not found");
-
-        domainSubscription.Subscriber!.SubscripedDomainsCount--;
-        domainSubscription.Domain!.SubscribersCount--;
 
         context.DomainSubscriptions.Remove(domainSubscription);
 

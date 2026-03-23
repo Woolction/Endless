@@ -45,8 +45,6 @@ public class DomainController : ControllerBase
         Domain domain = new()
         {
             Slug = slug,
-            OwnersCount = 1,
-            SubscribersCount = 1,
             Name = createDto.Name,
             CreatedDate = DateTime.UtcNow,
         };
@@ -77,9 +75,6 @@ public class DomainController : ControllerBase
             SubscribedDate = DateTime.UtcNow,
             Notification = false
         };
-
-        user.OwnedDomainsCount++;
-        user.SubscripedDomainsCount++;
 
         context.DomainSubscriptions.Add(domainSubscription);
         context.DomainOwners.Add(domainOwner);
@@ -195,11 +190,6 @@ public class DomainController : ControllerBase
     {
         Guid currentUserId = this.GetIDFromClaim();
 
-        User? user = await context.Users.FindAsync(currentUserId);
-
-        if (user is null)
-            return BadRequest("User not found");
-
         DomainOwner? currentOwner = await context.DomainOwners
             .FirstOrDefaultAsync(owner =>
                 owner.OwnerId == currentUserId &&
@@ -213,32 +203,13 @@ public class DomainController : ControllerBase
 
         Domain? domain = await context.Domains.FindAsync(DomainId);
 
-        Content[] contents = await context.Contents
-            .Include(content => content.Creator)
-            .Where(content => content.DomainId == DomainId)
-            .ToArrayAsync();
+        if (domain == null)
+            return BadRequest("Domain not found");
 
-        for (int i = 0; i < contents.Length; i++)
-        {
-            Content content = contents[i];
+        context.Domains.Remove(domain);
 
-            content.Creator!.ContentsCount--;
+        await context.SaveChangesAsync();
 
-            LikedContent[] likedContents = await context.LikedContents
-                .Include(content => content.User)
-                .Where(content => content.ContentId == content.ContentId)
-                .ToArrayAsync();
-        } 
-
-        if (domain != null)
-        {
-            user.SubscripedDomainsCount--;
-            user.OwnedDomainsCount--;
-
-            context.Domains.Remove(domain);
-
-            await context.SaveChangesAsync();
-        }
 
         return NoContent();
     }
