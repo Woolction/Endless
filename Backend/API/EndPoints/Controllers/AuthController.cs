@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
-using Backend.API.Data.Components;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 using Backend.API.Extensions;
 using Backend.API.Services;
 using Backend.API.Dtos;
-using Microsoft.AspNetCore.RateLimiting;
 
 namespace Backend.API.EndPoints.Controllers;
 

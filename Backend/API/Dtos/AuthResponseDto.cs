@@ -1,3 +1,4 @@
 namespace Backend.API.Dtos;
 
-public record class AuthResponseDto(string Token, string RefreshToken);
+public record class AuthResponseDto(
+    string Token, string RefreshToken);

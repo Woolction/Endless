@@ -6,12 +6,11 @@ using System.Security.Cryptography;
 using Backend.API.Data.Components;
 using Backend.API.Data.Context;
 using Backend.API.Data.Models;
+using Backend.API.Extensions;
 using System.Security.Claims;
 using Backend.API.Dtos;
 using System.Text;
-using System.Reflection.Metadata.Ecma335;
 using Npgsql;
-using Backend.API.Extensions;
 
 namespace Backend.API.Services;
 

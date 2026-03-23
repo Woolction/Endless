@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using Backend.API.Data.Components;
 using Backend.API.Data.Context;
 using Microsoft.AspNetCore.Mvc;
 using Backend.API.Data.Models;
 using Backend.API.Extensions;
-using Microsoft.EntityFrameworkCore;
 using Backend.API.Dtos;
 
 namespace Backend.API.EndPoints.Controllers;

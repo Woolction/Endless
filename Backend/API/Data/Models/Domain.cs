@@ -1,4 +1,3 @@
-
 namespace Backend.API.Data.Models;
 
 public class Domain

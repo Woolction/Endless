@@ -1,3 +1,4 @@
 namespace Backend.API.Dtos;
 
-public record class ContentSearchResponseDto(ContentResponseDto[] ContentsDto, SearchDto? LastSimiratity);
+public record class ContentSearchResponseDto(
+    ContentResponseDto[] ContentsDto, SearchDto? LastSimiratity);

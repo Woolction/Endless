@@ -1,4 +1,3 @@
-using Backend.API.Data.Models;
 using Backend.API.Dtos;
 
 namespace Backend.API.Services;

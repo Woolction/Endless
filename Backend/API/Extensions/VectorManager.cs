@@ -1,5 +1,3 @@
-using Backend.API.Data.Models;
-
 namespace Backend.API.Extensions;
 
 public static class VectorManager
