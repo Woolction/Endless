@@ -71,4 +71,40 @@ public class DomainOwnersController : ControllerBase
 
         return Ok(currentOwner.Domain.GetDomainResponseDto());
     }
+
+    [Authorize(Policy = nameof(UserRole.Creator))]
+    [HttpDelete("domain/{DomainId}/owner/{OwnerId}")]
+    public async Task<IActionResult> DeleteOwner(Guid DomainId, Guid OwnerId)
+    {
+        Guid currentUserId = this.GetIDFromClaim();
+
+        DomainOwner? currentOwner = await context.DomainOwners
+            .Include(owner => owner.Domain)
+            .FirstOrDefaultAsync(owner =>
+                owner.OwnerId == currentUserId &&
+                owner.DomainId == DomainId);
+
+        if (currentOwner is null)
+            return BadRequest("You not owner the domain");
+        if (currentOwner.OwnerRole != DomainOwnerRole.Admin)
+            return BadRequest("You do not have sufficient rights");
+
+        DomainOwner? owner = await context.DomainOwners
+            .Include(owner => owner.Owner)
+            .FirstOrDefaultAsync(owner =>
+                owner.OwnerId == OwnerId &&
+                owner.DomainId == DomainId);
+
+        if (owner == null)
+            return BadRequest("Owner not found");
+
+        owner.Owner!.OwnedDomainsCount--;
+        currentOwner.Domain!.OwnersCount--;
+
+        context.DomainOwners.Remove(owner);
+
+        await context.SaveChangesAsync();
+
+        return NoContent();
+    }
 }
