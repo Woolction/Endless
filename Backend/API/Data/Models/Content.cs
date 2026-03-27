@@ -6,7 +6,7 @@ public class Content
 {
     public Guid Id { get; set; }
 
-    public Guid DomainId { get; set; }
+    public Guid? DomainId { get; set; }
     public Domain? Domain { get; set; }
 
     public Guid CreatorId { get; set; }
