@@ -20,9 +20,32 @@ public class CommentController : ControllerBase
         this.context = context;
     }
 
+    [HttpGet("content/{ContentId}")]
+    public async Task<ActionResult<CommentResponseDto[]>> GetCommentWithContnet(Guid ContentId)
+    {
+        bool hasContent = await context.Contents
+            .AsNoTracking().AnyAsync(content => content.Id == ContentId);
+
+        if (!hasContent)
+            return BadRequest("Content not found");
+
+        var comments = await context.Comments
+            .Where(comment => comment.ContentId == ContentId)
+            .Select(comment => new CommentResponseDto(
+                    comment.Id,
+                    comment.Text,
+                    comment.PublicatedDate,
+                    comment.Likers.Count,
+                    comment.DizLikers.Count,
+                    comment.ViewsCount))
+            .ToArrayAsync();
+
+        return Ok(comments);
+    }
+
     [HttpPost("content/{ContentId}")]
-    [Authorize(Policy = nameof(UserRole.User))] //<SendCommentDto>
-    public async Task<ActionResult> SendComment(Guid ContentId, [FromBody] string text)
+    [Authorize(Policy = nameof(UserRole.User))] 
+    public async Task<ActionResult<SendCommentDto>> SendComment(Guid ContentId, [FromBody] CreateCommentDto commentDto)
     {
         Guid currentUserId = this.GetIDFromClaim();
 
@@ -49,7 +72,7 @@ public class CommentController : ControllerBase
         {
             CommentatorId = currentUserId,
             ContentId = ContentId,
-            Text = text,
+            Text = commentDto.Text,
             PublicatedDate = DateTime.UtcNow
         };
 
@@ -66,14 +89,18 @@ public class CommentController : ControllerBase
     public async Task<ActionResult<CommentResponseDto>> UpdateComment(Guid CommentId, string text)
     {
         var comment = await context.Comments
+            .Where(comment => comment.Id == CommentId)
             .Select(comment => new {
-                c = comment, cResponse = new CommentResponseDto(
+                c = comment,
+                cResponse = new CommentResponseDto(
+                    comment.Id,
                     comment.Text,
                     comment.PublicatedDate,
                     comment.Likers.Count,
                     comment.DizLikers.Count,
-                    comment.ViewsCount)})
-            .FirstOrDefaultAsync(comment => comment.c.Id == CommentId);
+                    comment.ViewsCount)
+            })
+            .FirstOrDefaultAsync();
 
         if (comment is null || comment.c is null)
             return BadRequest("Comment not found");

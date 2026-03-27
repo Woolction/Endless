@@ -5,7 +5,7 @@ namespace Backend.API.Services;
 
 public class RecommendationService : IRecommendationService
 {
-    public float Recommend(UserGenreVector[] userGenres, Content content, VideoMetaData videoMeta, ContentGenreVector[] contentGenres, int vectorsCount)
+    public float Recommend(UserGenreVector[] userGenres, Content content, VideoMetaData? videoMeta, ContentGenreVector[] contentGenres, int vectorsCount)
     {
         float similarity = VectorManager.CosineSimilarity(
             userGenres, contentGenres, vectorsCount, x => x.Value, b => b.FinalVector);
@@ -23,7 +23,7 @@ public class RecommendationService : IRecommendationService
             0.10f * quality;
     }
 
-    private float CalculateTrending(Content content, VideoMetaData videoMeta)
+    private float CalculateTrending(Content content, VideoMetaData? videoMeta)
     {
         float hours =
             (float)(DateTime.UtcNow - content.CreatedDate).TotalHours;
@@ -38,7 +38,7 @@ public class RecommendationService : IRecommendationService
             WilsonScore(content.Likers.Count, content.ViewsCount);
 
         float watchScore =
-            videoMeta.AverageWatchRatio;
+            videoMeta == null ? 0 : videoMeta.AverageWatchRatio;
 
         return viewsScore * likeScore * watchScore;
     }
@@ -57,14 +57,16 @@ public class RecommendationService : IRecommendationService
         return freshness;
     }
 
-    private float CalculateQuality(Content content, VideoMetaData videoMeta)
+    private float CalculateQuality(Content content, VideoMetaData? videoMeta)
     {
         float likeScore =
             WilsonScore(content.Likers.Count, content.ViewsCount);
 
+        float average = videoMeta == null ? 0 : videoMeta.AverageWatchRatio;
+
         return
             0.4f * likeScore +
-            0.6f * videoMeta.AverageWatchRatio;
+            0.6f * average;
     }
 
     private float WilsonScore(long likes, long views)

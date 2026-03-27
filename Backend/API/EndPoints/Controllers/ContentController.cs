@@ -226,36 +226,27 @@ public class ContentController : ControllerBase
     {
         Guid currentUserId = this.GetIDFromClaim();
 
-        if (!await context.Users
-                .AsNoTracking()
-                .AnyAsync(u => u.Id == currentUserId))
+        if (!await context.Users.AsNoTracking().AnyAsync(u => u.Id == currentUserId))
             return BadRequest("User Not found");
 
         double r = Random.Shared.NextDouble();
 
         var candidates = await context.Contents
             .AsNoTracking()
-            .Where(c => c.RandomKey >= r && c.VideoMeta != null)
-            .Include(c => c.Vectors)
-            .Include(c => c.VideoMeta)
-            .OrderBy(c => c.RandomKey)
-            .Take(300).ToListAsync();
+            .Take(300)
+            .ToListAsync();
 
         if (candidates.Count < 300)
         {
             var extra = await context.Contents
                 .AsNoTracking()
                 .Where(c => c.RandomKey < r && c.VideoMeta != null)
-                .Include(c => c.Vectors)
                 .Include(c => c.VideoMeta)
-                .OrderBy(c => c.RandomKey)
                 .Take(300 - candidates.Count)
                 .ToListAsync();
 
             candidates.AddRange(extra);
         }
-
-        ContentRecoScoreDto[] recommended = [];
 
         UserGenreVector[] userGenres = await context.UserVectors
             .Include(uG => uG.Genre)
@@ -265,41 +256,39 @@ public class ContentController : ControllerBase
 
         GenreInfo genreInfo = await context.GenreInfos.AsNoTracking().FirstAsync();
 
-        recommended = candidates
+        IEnumerable<ContentRecoScoreDto> recommended = candidates
                 .Select(c => new ContentRecoScoreDto(
-                    c, recommendation.Recommend(userGenres, c, c.VideoMeta!, context.ContentVectors
+                    c, recommendation.Recommend(userGenres, c, c.VideoMeta, context.ContentVectors
                         .Include(cG => cG.Genre)
                         .OrderBy(cG => cG.Genre!.Order)
                         .Where(cG => cG.ContentId == c.Id)
                         .ToArray(), genreInfo.Count)))
                 .OrderByDescending(x => x.Score)
-                .Take(16).ToArray();
+                .Take(16);
 
         var recommendedIds = recommended.Select(x => x.Content.Id).ToHashSet();
 
         var random = await context.Contents
             .Where(x => !recommendedIds.Contains(x.Id))
-            .OrderBy(x => x.RandomKey >= r)
-            .Take(4).ToListAsync();
+            .Take(4)
+            .ToArrayAsync();
 
-        var combined = recommended
-            .Select(x => new ContentRecoDto(
-                x.Content.Id, x.Content.DomainId, x.Content.CreatorId,
-                x.Content.Title, x.Content.Slug, x.Content.Description,
-                x.Content.CreatedDate, x.Content.ContentType.ToString(), Random.Shared.NextDouble(),
-                x.Content.VideoMeta?.DurationSeconds, x.Content.ContentUrl, x.Content.PrewievPhotoUrl,
-                x.Content.Savers.Count, x.Content.Likers.Count, x.Content.Comments.Count,
-                x.Content.DizLikers.Count, x.Content.ViewsCount))
-            .Concat(random.Select(content => new ContentRecoDto(
-                content.Id, content.DomainId, content.CreatorId,
-                content.Title, content.Slug, content.Description,
-                content.CreatedDate, content.ContentType.ToString(), Random.Shared.NextDouble(),
-                content.VideoMeta?.DurationSeconds, content.ContentUrl, content.PrewievPhotoUrl,
-                content.Savers.Count, content.Likers.Count, content.Comments.Count,
-                content.DizLikers.Count, content.ViewsCount)))
-            .OrderBy(x => x.RandomKey).ToArray();
+        IEnumerable<Content> combined = recommended
+            .Select(x => x.Content)
+            .Concat(random);
 
-        return Ok(new ContentRecoResponseDto(combined));
+        var result = combined
+            .Select(c => new ContentRecoDto(
+                c.Id, c.DomainId, c.CreatorId,
+                c.Title, c.Slug, c.Description,
+                c.CreatedDate, c.ContentType.ToString(), Random.Shared.NextDouble(),
+                c.VideoMeta == null ? 0 : c.VideoMeta.DurationSeconds, c.ContentUrl,
+                c.PrewievPhotoUrl, c.Savers.Count, c.Likers.Count, c.Comments.Count,
+                c.DizLikers.Count, c.ViewsCount))
+            .OrderBy(x => x.RandomKey)
+            .ToArray();
+
+        return Ok(new ContentRecoResponseDto(result));
     }
 
     [HttpGet("search")]

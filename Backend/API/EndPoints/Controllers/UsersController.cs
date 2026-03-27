@@ -96,13 +96,15 @@ public class UsersController : ControllerBase
         Guid currentUserId = this.GetIDFromClaim();
 
         UserResponseDto? user = await context.Users
+            //.Where(u => u.Id == currentUserId)
             .Select(user => new UserResponseDto(
                 user.Id, user.Name, "@" + user.Slug,
                 user.Description ?? "", user.RegistryData, user.Email,
                 user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
                 user.Comments.Count, user.Contents.Count, user.Followers.Count,
                 user.Following.Count, user.OwnedDomains.Count, user.SubscripedDomains.Count))
-            .FirstOrDefaultAsync(user => user.Id == currentUserId);
+            .AsNoTracking()
+            .FirstOrDefaultAsync();
 
         if (user is null)
             return NotFound();

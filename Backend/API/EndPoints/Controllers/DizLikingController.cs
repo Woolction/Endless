@@ -35,8 +35,7 @@ public class DizLikingController : ControllerBase
             content.CreatedDate, content.ContentType.ToString(),
             content.VideoMeta != null ? content.VideoMeta.DurationSeconds : 0,
             content.ContentUrl, content.PrewievPhotoUrl, content.Savers.Count, content.Likers.Count,
-            content.Comments.Count, content.DizLikers.Count, content.ViewsCount)
-        })
+            content.Comments.Count, content.DizLikers.Count, content.ViewsCount)})
             .FirstOrDefaultAsync(content => content.c.Id == ContentId);
 
         if (!hasUser)
@@ -89,11 +88,13 @@ public class DizLikingController : ControllerBase
         var comment = await context.Comments
             .Select(comment => new { 
                 c = comment, cResponse = new CommentResponseDto(
+                    comment.Id,
                     comment.Text,
                     comment.PublicatedDate,
                     comment.Likers.Count,
                     comment.DizLikers.Count,
-                    comment.ViewsCount)})
+                    comment.ViewsCount)
+            })
             .FirstOrDefaultAsync(comment => comment.c.Id == CommentId);
 
         if (!hasUser)
