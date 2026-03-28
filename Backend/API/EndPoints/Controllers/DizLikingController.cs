@@ -95,6 +95,7 @@ public class DizLikingController : ControllerBase
                     comment.DizLikers.Count,
                     comment.ViewsCount)
             })
+            .AsNoTracking()
             .FirstOrDefaultAsync(comment => comment.c.Id == CommentId);
 
         if (!hasUser)

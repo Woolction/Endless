@@ -325,7 +325,9 @@ public class ContentController : ControllerBase
                 LastLiked = EF.Functions.ILike(content.Title, $"%{requestDto.Name}%"),
                 LastSimilarity = EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name),
                 LastLevenshit = EF.Functions.FuzzyStringMatchLevenshtein(content.Title, requestDto.Name)
-            }).AsNoTracking().ToArrayAsync();
+            })
+            .AsNoTracking()
+            .ToArrayAsync();
 
         var lastResponse = contents.LastOrDefault();
 
@@ -338,9 +340,72 @@ public class ContentController : ControllerBase
 
     [HttpPut("{ContentId}")]
     [Authorize(Policy = nameof(UserRole.Creator))]
-    public async Task<IActionResult> UpdateContent(Guid ContentId)
+    public async Task<IActionResult> UpdateContent(Guid ContentId, ContentCreateDto createDto)
     {
-        return Ok();
+        Guid currentUserId = this.GetIDFromClaim();
+
+        User? user = await context.Users.FindAsync(currentUserId);
+
+        if (user == null)
+            return BadRequest("User not found");
+
+        var content = await context.Contents
+            .Where(content =>
+                content.Id == ContentId &&
+                content.CreatorId == currentUserId)
+            .Select(content => new {
+                c = content,
+                dto = new ContentResponseDto(
+                    content.Id, content.DomainId, content.CreatorId,
+                    content.Title, content.Slug, content.Description,
+                    content.CreatedDate, content.ContentType.ToString(),
+                    content.VideoMeta == null ? 0 : content.VideoMeta.DurationSeconds,
+                    content.ContentUrl, content.PrewievPhotoUrl, content.Savers.Count,
+                    content.Likers.Count, content.Comments.Count, content.DizLikers.Count,
+                    content.ViewsCount)})
+            .FirstOrDefaultAsync();
+
+        if (content == null)
+            return BadRequest("User not found");
+
+        VideoMetaData? videoMetaData = await context.VideoMetas
+            .FirstOrDefaultAsync(videoMeta => videoMeta.ContentId == ContentId);
+
+        string videoUrl = null!;
+        string videoPath = null!;
+
+        if (createDto.ContentFile != null && createDto.ContentFile.Length != 0)
+        {
+            videoPath = await r2Service.SaveFormFileAsync(createDto.ContentFile, "Video");
+            videoUrl = await ffmpegService.UploadGeneratedVideos(videoPath);
+        }
+
+        string photoUrl = null!;
+
+        if (createDto.PrewievPhoto != null && createDto.PrewievPhoto.Length != 0)
+        {
+            string photoPath = await r2Service.SaveFormFileAsync(createDto.PrewievPhoto, "Images", ".jpeg");
+            photoUrl = await r2Service.SaveImage(photoPath);
+
+            System.IO.File.Delete(photoPath);
+        }
+
+        content.c.Title = createDto.Title;
+        content.c.ContentUrl = videoUrl;
+        content.c.PrewievPhotoUrl = photoUrl;
+        content.c.ContentType = createDto.ContentType;
+
+        if (videoMetaData != null && videoPath != null)
+        {
+            videoMetaData.ContentId = ContentId;
+            videoMetaData.DurationSeconds = await ffmpegService.GetVideoDuration(videoPath);
+
+            System.IO.File.Delete(videoPath);
+        }
+
+        await context.SaveChangesAsync();
+
+        return Ok(content.dto); 
     }
 
     [HttpDelete("{ContentId}")]

@@ -35,6 +35,7 @@ public class SubscriptionController : ControllerBase
                     domain.AvatarPhotoUrl, domain.Subscribers.Count,
                     domain.Contents.Count, domain.Owners.Count,
                     domain.TotalLikes, domain.TotalViews)})
+            .AsNoTracking()
             .FirstOrDefaultAsync(domain => domain.d.Id == DomainId);
 
         if (currentUser is null)

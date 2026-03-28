@@ -38,6 +38,7 @@ public class FollowController : ControllerBase
                     user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
                     user.Comments.Count, user.Contents.Count, user.Followers.Count,
                     user.Following.Count, user.OwnedDomains.Count, user.SubscripedDomains.Count)})
+            .AsNoTracking()
             .FirstOrDefaultAsync(user => user.u.Id == UserId);
 
         if (currentUser is null)

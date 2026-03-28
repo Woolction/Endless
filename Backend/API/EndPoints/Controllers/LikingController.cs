@@ -95,11 +95,14 @@ public class LikingController : ControllerBase
         var comment = await context.Comments
             .Select(comment => new {
                 c = comment, cResponse = new CommentResponseDto(
+                    comment.Id,
                     comment.Text,
                     comment.PublicatedDate,
                     comment.Likers.Count,
                     comment.DizLikers.Count,
-                    comment.ViewsCount)})
+                    comment.ViewsCount)
+            })
+            .AsNoTracking()
             .FirstOrDefaultAsync(comment => comment.c.Id == CommentId);
 
         if (currentUser is null)

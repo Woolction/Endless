@@ -182,6 +182,7 @@ public class DomainController : ControllerBase
     public async Task<ActionResult<DomainResponseDto>> UpdateDomain(Guid DomainId, DomainUpdateDto updateDto)
     {
         var domain = await context.Domains
+            .Where(domain => domain.Id == DomainId)
             .Select(domain => new {
                 d = domain,
                 dResponse = new DomainResponseDto(
@@ -196,7 +197,7 @@ public class DomainController : ControllerBase
                 domain.Owners.Count,
                 domain.TotalLikes,
                 domain.TotalViews)})// For mapping
-            .FirstOrDefaultAsync(domain => domain.d.Id == DomainId);
+            .FirstOrDefaultAsync();
 
         if (domain is null || domain.d is null)
             return BadRequest("Domain not found");
