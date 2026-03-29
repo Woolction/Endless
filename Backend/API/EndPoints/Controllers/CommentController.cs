@@ -21,7 +21,7 @@ public class CommentController : ControllerBase
     }
 
     [HttpGet("content/{ContentId}")]
-    public async Task<ActionResult<CommentResponseDto[]>> GetCommentWithContnet(Guid ContentId)
+    public async Task<ActionResult<SendCommentDto[]>> GetCommentWithContnet(Guid ContentId)
     {
         bool hasContent = await context.Contents
             .AsNoTracking().AnyAsync(content => content.Id == ContentId);
@@ -31,13 +31,18 @@ public class CommentController : ControllerBase
 
         var comments = await context.Comments
             .Where(comment => comment.ContentId == ContentId)
-            .Select(comment => new CommentResponseDto(
-                    comment.Id,
-                    comment.Text,
-                    comment.PublicatedDate,
-                    comment.Likers.Count,
-                    comment.DizLikers.Count,
-                    comment.ViewsCount))
+            .Include(comment => comment.Commentator)
+            .Select(comment => new SendCommentDto(
+                new CommentResponseDto(
+                    comment.Id, comment.Text,
+                    comment.PublicatedDate, comment.Likers.Count,
+                    comment.DizLikers.Count, comment.ViewsCount),
+                new UserResponseDto(
+                    comment.Commentator!.Id, comment.Commentator!.Name, "@" + comment.Commentator!.Slug,
+                    comment.Commentator!.Description ?? "", comment.Commentator!.RegistryData, comment.Commentator!.Email,
+                    comment.Commentator!.Role.ToString(), comment.Commentator!.AvatarPhotoUrl, comment.Commentator!.TotalLikes,
+                    comment.Commentator!.Comments.Count, comment.Commentator!.Contents.Count, comment.Commentator!.Followers.Count,
+                    comment.Commentator!.Following.Count, comment.Commentator!.OwnedDomains.Count, comment.Commentator!.SubscripedDomains.Count)))
             .ToArrayAsync();
 
         return Ok(comments);

@@ -51,7 +51,7 @@ public class UsersController : ControllerBase
 
         if (requestDto.LastSearch is not null)
         {
-            query= query.Where(user =>
+            query = query.Where(user =>
                 EF.Functions.ILike(user.Name, $"%{requestDto.Name}%") == requestDto.LastSearch.LastLiked &&
                 EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name) < requestDto.LastSearch.LastSimilarity &&
                 EF.Functions.FuzzyStringMatchLevenshtein(user.Name, requestDto.Name) >= requestDto.LastSearch.LastLevenshit);
@@ -66,7 +66,8 @@ public class UsersController : ControllerBase
 
         var users = await query
             .OrderByDescending(user => EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name))
-            .Take(20).Select(user => new {
+            .Take(20).Select(user => new
+            {
                 User = new UserResponseDto(
                     user.Id, user.Name, "@" + user.Slug,
                     user.Description ?? "", user.RegistryData, user.Email,
@@ -86,6 +87,26 @@ public class UsersController : ControllerBase
         return Ok(new UserSearchResponseDto(
             userResponses, lastResponse == null ? null : GetSearchDto(
                 lastResponse.LastLiked, lastResponse.LastSimilarity, lastResponse.LastLevenshit)));
+    }
+
+    [HttpGet("{UserId}")]
+    public async Task<ActionResult<UserResponseDto>> GetUser(Guid UserId)
+    {
+        UserResponseDto? userResponse = await context.Users
+            .Select(user =>
+                new UserResponseDto(
+                    user.Id, user.Name, "@" + user.Slug,
+                    user.Description ?? "", user.RegistryData, user.Email,
+                    user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
+                    user.Comments.Count, user.Contents.Count, user.Followers.Count,
+                    user.Following.Count, user.OwnedDomains.Count, user.SubscripedDomains.Count))
+            .AsNoTracking()
+            .FirstOrDefaultAsync(user => user.Id == UserId);
+
+        if (userResponse == null)
+            return BadRequest("User not found");
+
+        return Ok(userResponse);
     }
 
     //Current User

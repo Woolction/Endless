@@ -32,6 +32,18 @@ public static class ProgramPipeline
         builder.Logging.AddDebug();
         builder.Logging.SetMinimumLevel(LogLevel.Information);
 
+        // Cors
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("Frontend", policy =>
+            {
+                policy.WithOrigins("http://localhost:5173");
+                policy.AllowAnyHeader();
+                policy.AllowAnyMethod();
+                policy.AllowCredentials();
+            });
+        });
+
         // Authentication
         builder.Services.AddAuthentication(options =>
         {
@@ -149,6 +161,7 @@ public static class ProgramPipeline
 
         app.UseRouting();
 
+        app.UseCors("Frontend");
         app.UseAuthentication();
         app.UseAuthorization();
 

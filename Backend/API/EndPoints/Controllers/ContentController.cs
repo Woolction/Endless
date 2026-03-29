@@ -264,13 +264,13 @@ public class ContentController : ControllerBase
                         .Where(cG => cG.ContentId == c.Id)
                         .ToArray(), genreInfo.Count)))
                 .OrderByDescending(x => x.Score)
-                .Take(16);
+                .Take(20);
 
         var recommendedIds = recommended.Select(x => x.Content.Id).ToHashSet();
 
         var random = await context.Contents
             .Where(x => !recommendedIds.Contains(x.Id))
-            .Take(4)
+            .Take(5)
             .ToArrayAsync();
 
         IEnumerable<Content> combined = recommended

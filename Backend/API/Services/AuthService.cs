@@ -19,7 +19,7 @@ public class AuthService : IAuthService
     private readonly EndlessContext context;
 
     private readonly IConfiguration jwtSettings;
-    private readonly SymmetricSecurityKey securityKey;
+    private readonly SymmetricSecurityKey securetyKey;
     private readonly IPasswordHasher<User> passwordHasher;
 
     private const int refreshTokenExpires = 30;
@@ -31,7 +31,7 @@ public class AuthService : IAuthService
         //jwt configuration and get security key
         jwtSettings = configuration.GetSection("JwtSettings");
         byte[] key = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]!);
-        securityKey = new SymmetricSecurityKey(key);
+        securetyKey = new SymmetricSecurityKey(key);
 
         this.passwordHasher = passwordHasher;
     }
@@ -122,7 +122,7 @@ public class AuthService : IAuthService
             audience: jwtSettings["Audience"],
             claims: claims,
             expires: DateTime.UtcNow.AddMinutes(double.Parse(jwtSettings["ExpireMinutes"]!)),
-            signingCredentials: new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha512)
+            signingCredentials: new SigningCredentials(securetyKey, SecurityAlgorithms.HmacSha512)
             );
 
         return new JwtSecurityTokenHandler().WriteToken(token);

@@ -104,6 +104,26 @@ public class DomainController : ControllerBase
         }
     }
 
+    [HttpGet("{DomainId}")]
+    public async Task<ActionResult<DomainResponseDto>> GetDomain(Guid DomainId)
+    {
+        DomainResponseDto? domain = await context.Domains
+            .Select(domain =>
+                new DomainResponseDto(
+                    domain.Id, domain.Name, "@" + domain.Slug,
+                    domain.Description ?? "", domain.CreatedDate,
+                    domain.AvatarPhotoUrl, domain.Subscribers.Count,
+                    domain.Contents.Count, domain.Owners.Count,
+                    domain.TotalLikes, domain.TotalViews))
+            .AsNoTracking()
+            .FirstOrDefaultAsync(domain => domain.Id == DomainId);
+
+        if (domain == null)
+            return BadRequest("Domain not found");
+
+        return Ok(domain);
+    }
+
     [HttpGet("search")]
     public async Task<ActionResult<DomainSearchResponseDto>> GetDomainsForName([FromQuery] SearchRequestDto requestDto)
     {
