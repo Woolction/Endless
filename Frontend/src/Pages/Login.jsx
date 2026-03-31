@@ -1,24 +1,16 @@
-import { useState } from "react";
-import { api } from "../api.js";
+import { api } from "./axios";
 
-export default function Login() {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+export const login = async (email, password) => {
+    const res = await api.post("/Auth/token", { email, password });
+    return res.data;
+};
 
-    const login = async () => {
-        const res = await api.post("/Auth/token", { email, password });
-        localStorage.setItem("token", res.data.token);
-        window.location.href = "/";
-    };
+export const register = async (data) => {
+    const res = await api.post("/Users", data);
+    return res.data;
+};
 
-    return (
-        <div className="flex justify-center items-center h-screen">
-            <div className="bg-gray-900 p-6 rounded-xl w-80">
-                <h2 className="text-xl mb-4">Login</h2>
-                <input placeholder="email" onChange={(e) => setEmail(e.target.value)} className="w-full mb-2 p-2 bg-gray-800" />
-                <input placeholder="password" type="password" onChange={(e) => setPassword(e.target.value)} className="w-full mb-4 p-2 bg-gray-800" />
-                <button onClick={login} className="w-full bg-white text-black p-2 rounded">Login</button>
-            </div>
-        </div>
-    );
-}
+export const logout = async () => {
+    await api.delete("/Auth/token");
+    localStorage.removeItem("token");
+};

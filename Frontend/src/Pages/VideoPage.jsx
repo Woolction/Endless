@@ -25,10 +25,10 @@ export default function VideoPage() {
                 <h1 className="text-2xl font-bold mt-4">{video.title}</h1>
 
                 <div className="flex gap-3 mt-3">
-                    <button className="px-4 py-2 bg-white text-black rounded-full hover:scale-105 transition">
+                    <button className="px-4 py-2 bg-white dark:bg-[#0f0f0f] text-black dark:text-whiterounded-full hover:scale-105 transition">
                         Like
                     </button>
-                    <button className="px-4 py-2 bg-white/10 rounded-full hover:bg-white/20">
+                    <button className="px-4 py-2 bg-white dark:bg-[#0f0f0f]/10 rounded-full hover:bg-white dark:bg-[#0f0f0f]/20">
                         Save
                     </button>
                 </div>

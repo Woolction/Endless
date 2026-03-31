@@ -182,14 +182,16 @@ public class ContentController : ControllerBase
     public async Task<ActionResult<ChangedContentDto>> GetChangedContent(Guid ContentId)
     {
         var changedContent = await context.Contents
-            .Select(content => new {
+            .Select(content => new
+            {
                 c = content,
                 cResponse = new ContentResponseDto(content.Id, content.DomainId, content.CreatorId,
                     content.Title, content.Slug, content.Description,
                     content.CreatedDate, content.ContentType.ToString(),
                     content.VideoMeta != null ? content.VideoMeta.DurationSeconds : 0,
                     content.ContentUrl, content.PrewievPhotoUrl, content.Savers.Count, content.Likers.Count,
-                    content.Comments.Count, content.DizLikers.Count, content.ViewsCount)})
+                    content.Comments.Count, content.DizLikers.Count, content.ViewsCount)
+            })
             .AsNoTracking()
             .FirstOrDefaultAsync(content => content.c.Id == ContentId);
 
@@ -221,6 +223,30 @@ public class ContentController : ControllerBase
     }
 
     [HttpGet]
+    public async Task<ActionResult<ContentRecoDto[]>> GetRandomContent()
+    {
+        double r = Random.Shared.NextDouble();
+
+        var candidates = await context.Contents
+            .AsNoTracking()
+            .Include(c => c.VideoMeta)
+            .Take(300)
+            .ToArrayAsync();
+
+        return Ok(candidates.Select(c =>
+                new ContentRecoDto(
+                    c.Id, c.DomainId, c.CreatorId,
+                    c.Title, c.Slug, c.Description,
+                    c.CreatedDate, c.ContentType.ToString(), Random.Shared.NextDouble(),
+                    c.VideoMeta == null ? 0 : c.VideoMeta.DurationSeconds, c.ContentUrl,
+                    c.PrewievPhotoUrl, c.Savers.Count, c.Likers.Count, c.Comments.Count,
+                    c.DizLikers.Count, c.ViewsCount))
+                .OrderBy(c => c.RandomKey)
+                .Take(25)
+                .ToArray());
+    }
+
+    [HttpGet("recommendations")]
     [Authorize(Policy = nameof(UserRole.User))]
     public async Task<ActionResult<ContentRecoResponseDto>> GetContentForRecommendation()
     {
@@ -233,6 +259,8 @@ public class ContentController : ControllerBase
 
         var candidates = await context.Contents
             .AsNoTracking()
+            .Where(c => c.RandomKey > r && c.VideoMeta != null)
+            .Include(c => c.VideoMeta)
             .Take(300)
             .ToListAsync();
 
