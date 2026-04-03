@@ -71,9 +71,16 @@ public class FollowController : ControllerBase
         return NotFound("Dont released this end point");
     }
 
-    [HttpGet("followed/{FollowedId}")]
+    [HttpGet("follower/{FollowerId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<ActionResult> GetCurrentUserFollowings(Guid FollowedId)
+    public async Task<ActionResult> GetUserFollowings(Guid FollowerId)
+    {
+        return NotFound("Dont released this end point");
+    }
+
+    [HttpGet("current")]
+    [Authorize(Policy = nameof(UserRole.User))]
+    public async Task<ActionResult> GetCurrentUserFollowings()
     {
         return NotFound("Dont released this end point");
     }

@@ -27,7 +27,7 @@ public class CommentController : ControllerBase
             .AsNoTracking().AnyAsync(content => content.Id == ContentId);
 
         if (!hasContent)
-            return BadRequest("Content not found");
+            return NotFound("Content not found");
 
         var comments = await context.Comments
             .Where(comment => comment.ContentId == ContentId)
@@ -55,23 +55,27 @@ public class CommentController : ControllerBase
         Guid currentUserId = this.GetIDFromClaim();
 
         var currentUser = await context.Users
-            .Select(user => new {
-                u = user, uResponse = new UserResponseDto(
+            .Select(user => new
+            {
+                u = user,
+                uResponse = new UserResponseDto(
                     user.Id, user.Name, "@" + user.Slug,
                     user.Description ?? "", user.RegistryData, user.Email,
                     user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
                     user.Comments.Count, user.Contents.Count, user.Followers.Count,
-                    user.Following.Count, user.OwnedDomains.Count, user.SubscripedDomains.Count)})
+                    user.Following.Count, user.OwnedDomains.Count, user.SubscripedDomains.Count)
+            })
             .AsNoTracking()
             .FirstOrDefaultAsync(user => user.u.Id == currentUserId);
+            
         Content? content = await context.Contents
             .AsNoTracking()
             .FirstOrDefaultAsync(content => content.Id == ContentId);
 
         if (currentUser is null || currentUser.u is null)
-            return BadRequest("User not found");
+            return NotFound("User not found");
         if (content is null)
-            return BadRequest("Content not found");
+            return NotFound("Content not found");
 
         Comment newComment = new()
         {
@@ -85,11 +89,11 @@ public class CommentController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        return Ok(new SendCommentDto(
+        return Created($"api/comment/{newComment.Id}", new SendCommentDto(
             newComment.GetCommentResponseDto(), currentUser.uResponse));
     }
 
-    [HttpPut("comment/{CommentId}")]
+    [HttpPut("{CommentId}")]
     [Authorize(Policy = nameof(UserRole.User))]
     public async Task<ActionResult<CommentResponseDto>> UpdateComment(Guid CommentId, string text)
     {
@@ -108,7 +112,7 @@ public class CommentController : ControllerBase
             .FirstOrDefaultAsync();
 
         if (comment is null || comment.c is null)
-            return BadRequest("Comment not found");
+            return NotFound("Comment not found");
 
         comment.c.Text = text;
 
@@ -117,7 +121,7 @@ public class CommentController : ControllerBase
         return Ok(comment.cResponse);
     }
 
-    [HttpDelete("comment/{CommentId}")]
+    [HttpDelete("{CommentId}")]
     [Authorize(Policy = nameof(UserRole.User))]
     public async Task<IActionResult> DeleteComment(Guid CommentId)
     {
@@ -125,7 +129,7 @@ public class CommentController : ControllerBase
             .FirstOrDefaultAsync(comment => comment.Id == CommentId);
 
         if (comment is null)
-            return BadRequest("Comment not found");
+            return NotFound("Comment not found");
 
         context.Comments.Remove(comment);
 

@@ -186,7 +186,7 @@ public class UsersController : ControllerBase
         catch (DbUpdateException ex)
         {
             if (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
-                return BadRequest($"This name {updateDto.Name} already existn");
+                return Conflict($"This name {updateDto.Name} already existn");
 
             throw;
         }

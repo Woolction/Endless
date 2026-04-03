@@ -41,10 +41,10 @@ public class ContentController : ControllerBase
                 owner.DomainId == DomainId);
 
         if (domainOwner is null)
-            return BadRequest("User not found");
+            return NotFound("User not found");
 
         if (domainOwner.OwnerRole <= DomainOwnerRole.ContentEditor)
-            return BadRequest("You do not have sufficient rights");
+            return Forbid("You do not have sufficient rights");
 
         string videoUrl = null!;
         string videoPath = null!;
@@ -104,7 +104,7 @@ public class ContentController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        return Ok(content.GetContentResponseDto());
+        return Created($"api/content/{content.Id}", content.GetContentResponseDto());
     }
 
     [HttpPost]
@@ -116,7 +116,7 @@ public class ContentController : ControllerBase
         User? user = await context.Users.FindAsync(currentUserId);
 
         if (user == null)
-            return BadRequest("User not found");
+            return NotFound("User not found");
 
         string videoUrl = null!;
         string videoPath = null!;
@@ -175,7 +175,7 @@ public class ContentController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        return Ok(content.GetContentResponseDto()); //Test
+        return Created($"api/content/{content.Id}", content.GetContentResponseDto());
     }
 
     [HttpGet("{ContentId}")]
@@ -196,7 +196,7 @@ public class ContentController : ControllerBase
             .FirstOrDefaultAsync(content => content.c.Id == ContentId);
 
         if (changedContent is null || changedContent.c is null)
-            return BadRequest("Content not found");
+            return NotFound("Content not found");
 
         DomainResponseDto? domainResponse = await context.Domains
             .Select(domain => new DomainResponseDto(
@@ -253,7 +253,7 @@ public class ContentController : ControllerBase
         Guid currentUserId = this.GetIDFromClaim();
 
         if (!await context.Users.AsNoTracking().AnyAsync(u => u.Id == currentUserId))
-            return BadRequest("User Not found");
+            return NotFound("User Not found");
 
         double r = Random.Shared.NextDouble();
 
@@ -375,7 +375,7 @@ public class ContentController : ControllerBase
         User? user = await context.Users.FindAsync(currentUserId);
 
         if (user == null)
-            return BadRequest("User not found");
+            return NotFound("User not found");
 
         var content = await context.Contents
             .Where(content =>
@@ -394,7 +394,7 @@ public class ContentController : ControllerBase
             .FirstOrDefaultAsync();
 
         if (content == null)
-            return BadRequest("User not found");
+            return NotFound("Content not found");
 
         VideoMetaData? videoMetaData = await context.VideoMetas
             .FirstOrDefaultAsync(videoMeta => videoMeta.ContentId == ContentId);
@@ -445,7 +445,7 @@ public class ContentController : ControllerBase
         User? user = await context.Users.FindAsync(UserId);
 
         if (user is null)
-            return BadRequest("User not found");
+            return NotFound("User not found");
 
         if (user.Contents.Any(c => c.Id != ContentId))
             return Forbid("You doesn't owner the Content");
@@ -454,7 +454,7 @@ public class ContentController : ControllerBase
             .FirstOrDefaultAsync(c => c.Id == ContentId);
 
         if (content == null)
-            return BadRequest("Content not found");
+            return NotFound("Content not found");
 
         context.Contents.Remove(content);
 

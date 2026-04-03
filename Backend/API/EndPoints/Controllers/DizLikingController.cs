@@ -6,6 +6,7 @@ using Backend.API.Data.Context;
 using Backend.API.Data.Models;
 using Backend.API.Extensions;
 using Backend.API.Dtos;
+using System.Runtime.CompilerServices;
 
 namespace Backend.API.EndPoints.Controllers;
 
@@ -27,7 +28,8 @@ public class DizLikingController : ControllerBase
         Guid currentUserId = this.GetIDFromClaim();
 
         bool hasUser = await context.Users.AsNoTracking().AnyAsync(user => user.Id == currentUserId);
-        var content = await context.Contents.Select(content => new {
+        var content = await context.Contents.Select(content => new
+        {
             c = content,
             cResponse = new ContentResponseDto(
             content.Id, content.DomainId, content.CreatorId,
@@ -35,13 +37,14 @@ public class DizLikingController : ControllerBase
             content.CreatedDate, content.ContentType.ToString(),
             content.VideoMeta != null ? content.VideoMeta.DurationSeconds : 0,
             content.ContentUrl, content.PrewievPhotoUrl, content.Savers.Count, content.Likers.Count,
-            content.Comments.Count, content.DizLikers.Count, content.ViewsCount)})
+            content.Comments.Count, content.DizLikers.Count, content.ViewsCount)
+        })
             .FirstOrDefaultAsync(content => content.c.Id == ContentId);
 
         if (!hasUser)
-            return BadRequest("User not found");
+            return NotFound("User not found");
         if (content is null || content.c is null)
-            return BadRequest("Content not found");
+            return NotFound("Content not found");
 
         DizLikedContent dizLikedContent = new()
         {
@@ -54,7 +57,21 @@ public class DizLikingController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        return Ok(content.cResponse);
+        return Created($"api/dizliking/user/{currentUserId}/content/{ContentId}",
+            content.cResponse);
+    }
+
+    [HttpGet("user/{UserId}/content/{ContentId}")]
+    public async Task<ActionResult> GetDizLikedContent(Guid UserId, Guid ContentId)
+    {
+        return NotFound("Dont released this end point");
+    }
+
+    [HttpGet("current/contents")]
+    [Authorize(Policy = nameof(UserRole.User))]
+    public async Task<ActionResult> GetCurrentUserDizLikedContents()
+    {
+        return NotFound("Dont released this end point");
     }
 
     [HttpDelete("content/{ContentId}")]
@@ -69,7 +86,7 @@ public class DizLikingController : ControllerBase
                 dizLikedContent.UserId == currentUserId);
 
         if (dizLikedContent is null)
-            return BadRequest("Like dont placed");
+            return NotFound("Like dont placed");
 
         context.DizLikedContents.Remove(dizLikedContent);
 
@@ -86,8 +103,10 @@ public class DizLikingController : ControllerBase
 
         bool hasUser = await context.Users.AsNoTracking().AnyAsync(user => user.Id == currentUserId);
         var comment = await context.Comments
-            .Select(comment => new { 
-                c = comment, cResponse = new CommentResponseDto(
+            .Select(comment => new
+            {
+                c = comment,
+                cResponse = new CommentResponseDto(
                     comment.Id,
                     comment.Text,
                     comment.PublicatedDate,
@@ -99,9 +118,9 @@ public class DizLikingController : ControllerBase
             .FirstOrDefaultAsync(comment => comment.c.Id == CommentId);
 
         if (!hasUser)
-            return BadRequest("User not found");
+            return NotFound("User not found");
         if (comment is null || comment.c is null)
-            return BadRequest("Comment not found");
+            return NotFound("Comment not found");
 
         DizLikedComment dizLikedComment = new()
         {
@@ -114,7 +133,20 @@ public class DizLikingController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        return Ok(comment.cResponse);
+        return Created($"api/dizliking/user/{currentUserId}/comment/{CommentId}", comment.cResponse);
+    }
+
+    [HttpGet("user/{UserId}/comment/{CommentId}")]
+    public async Task<ActionResult> GetDizLikedComment(Guid UserId, Guid CommentId)
+    {
+        return NotFound("Dont released this end point");
+    }
+
+    [HttpGet("current/comments")]
+    [Authorize(Policy = nameof(UserRole.User))]
+    public async Task<ActionResult> GetCurrentUserDizLikedComments()
+    {
+        return NotFound("Dont released this end point");
     }
 
     [HttpDelete("comment/{CommentId}")]
@@ -129,7 +161,7 @@ public class DizLikingController : ControllerBase
                 dizLikedComment.UserId == currentUserId);
 
         if (dizLikedComment is null)
-            return BadRequest("DizLike dont placed");
+            return NotFound("DizLike dont placed");
 
         context.DizLikedComments.Remove(dizLikedComment);
 

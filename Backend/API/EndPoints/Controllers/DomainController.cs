@@ -38,7 +38,7 @@ public class DomainController : ControllerBase
         User? user = await context.Users.FindAsync(currentUserId);
 
         if (user is null)
-            return BadRequest("User not found");
+            return NotFound("User not found");
 
         string slug = createDto.Name.GenerateSlug();
 
@@ -84,7 +84,7 @@ public class DomainController : ControllerBase
         {
             await context.SaveChangesAsync();
 
-            return Ok(new DomainResponseDto(
+            return Created($"api/domain/{domain.Id}", new DomainResponseDto(
                 domain.Id,
                 domain.Name,
                 "@" + domain.Slug,
@@ -98,7 +98,7 @@ public class DomainController : ControllerBase
         catch (DbUpdateException ex)
         {
             if (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
-                return BadRequest("Domain name or slug already exists");
+                return Conflict("Domain name or slug already exists");
 
             throw;
         }
@@ -119,7 +119,7 @@ public class DomainController : ControllerBase
             .FirstOrDefaultAsync(domain => domain.Id == DomainId);
 
         if (domain == null)
-            return BadRequest("Domain not found");
+            return NotFound("Domain not found");
 
         return Ok(domain);
     }
@@ -220,7 +220,7 @@ public class DomainController : ControllerBase
             .FirstOrDefaultAsync();
 
         if (domain is null || domain.d is null)
-            return BadRequest("Domain not found");
+            return NotFound("Domain not found");
 
         Guid currentUserId = this.GetIDFromClaim();
 
@@ -233,7 +233,7 @@ public class DomainController : ControllerBase
             return Forbid("You doesn't owner the Domain");
 
         if (currentOwner.OwnerRole != DomainOwnerRole.Admin)
-            return BadRequest("You do not have sufficient rights");
+            return Forbid("You do not have sufficient rights");
 
         if (!string.IsNullOrEmpty(updateDto.Description))
             domain.d.Description = updateDto.Description;
@@ -241,7 +241,7 @@ public class DomainController : ControllerBase
         string slug = updateDto.Name.GenerateSlug();
 
         if (await context.Domains.AnyAsync(domain => domain.Name == updateDto.Name || domain.Slug == slug))
-            return BadRequest($"Domain whit name {updateDto.Name} hasted");
+            return Conflict($"Domain whit name {updateDto.Name} hasted");
 
         domain.d.Name = updateDto.Name;
         domain.d.Slug = slug;
@@ -266,12 +266,12 @@ public class DomainController : ControllerBase
             return Forbid("You doesn't owner the Domain");
 
         if (currentOwner.OwnerRole != DomainOwnerRole.Admin)
-            return BadRequest("You do not have sufficient rights");
+            return Forbid("You do not have sufficient rights");
 
         Domain? domain = await context.Domains.FindAsync(DomainId);
 
         if (domain == null)
-            return BadRequest("Domain not found");
+            return NotFound("Domain not found");
 
         context.Domains.Remove(domain);
 

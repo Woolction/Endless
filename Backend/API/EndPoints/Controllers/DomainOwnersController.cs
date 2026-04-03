@@ -20,8 +20,25 @@ public class DomainOwnersController : ControllerBase
         this.context = context;
     }
 
+    [HttpGet("user/{UserId}/domain/{DomainId}")]
+    public async Task<ActionResult<DomainOwnerResponseDto>> GetDomainOwnerById(Guid UserId, Guid DomainId)
+    {
+        DomainOwnerResponseDto? domainOwner = await context.DomainOwners
+            .Select(owner => new DomainOwnerResponseDto(
+                owner.OwnerId, owner.DomainId, owner.OwnedDate,
+                owner.OwnerRole.ToString()))
+            .AsNoTracking()
+            .FirstOrDefaultAsync(owner =>
+                owner.OwnerId == UserId && owner.DomainId == DomainId);
+
+        if (domainOwner == null)
+            return NotFound();
+
+        return Ok(domainOwner);
+    }
+
     [HttpGet("domain/{DomainId}")]
-    public async Task<ActionResult<DomainOwnerResponseDto[]>> GetDomainOwners(Guid DomainId)
+    public async Task<ActionResult<DomainOwnerResponseDto[]>> GetDomainOwnersByDomain(Guid DomainId)
     {
         DomainOwnerResponseDto[] domainOwners = await context.DomainOwners
             .Where(owner => owner.DomainId == DomainId)
@@ -44,14 +61,14 @@ public class DomainOwnersController : ControllerBase
                 owner.DomainId == DomainId);
 
         if (currentOwner is null)
-            return BadRequest("You not owner the domain");
+            return Forbid("You not owner the domain");
         if (currentOwner.OwnerRole != DomainOwnerRole.Admin)
-            return BadRequest("You do not have sufficient rights");
+            return Forbid("You do not have sufficient rights");
 
         User? user = await context.Users.FindAsync(UserId);
 
         if (user is null)
-            return BadRequest("User not found");
+            return NotFound("User not found");
 
         DomainOwner domainOwner = new()
         {
@@ -74,18 +91,13 @@ public class DomainOwnersController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        return Ok(context.Domains.Select(domain => new DomainResponseDto(
-                domain.Id,
-                domain.Name,
-                "@" + domain.Slug,
-                domain.Description ?? "",
-                domain.CreatedDate,
-                domain.AvatarPhotoUrl,
-                domain.Subscribers.Count,
-                domain.Contents.Count,
-                domain.Owners.Count,
-                domain.TotalLikes,
-                domain.TotalViews))
+        return Created($"api/domainowners/user/{UserId}/domain/{DomainId}",
+            context.Domains.Select(domain => new DomainResponseDto(
+                domain.Id, domain.Name, "@" + domain.Slug,
+                domain.Description ?? "", domain.CreatedDate,
+                domain.AvatarPhotoUrl, domain.Subscribers.Count,
+                domain.Contents.Count, domain.Owners.Count,
+                domain.TotalLikes, domain.TotalViews))
             .FirstAsync(domain => domain.Id == DomainId));
     }
 
@@ -101,9 +113,9 @@ public class DomainOwnersController : ControllerBase
                 owner.DomainId == DomainId);
 
         if (currentOwner is null)
-            return BadRequest("You not owner the domain");
+            return Forbid("You not owner the domain");
         if (currentOwner.OwnerRole != DomainOwnerRole.Admin)
-            return BadRequest("You do not have sufficient rights");
+            return Forbid("You do not have sufficient rights");
 
         DomainOwner? owner = await context.DomainOwners
             .FirstOrDefaultAsync(owner =>
@@ -111,7 +123,7 @@ public class DomainOwnersController : ControllerBase
                 owner.DomainId == DomainId);
 
         if (owner == null)
-            return BadRequest("Owner not found");
+            return NotFound("Owner not found");
 
         context.DomainOwners.Remove(owner);
 

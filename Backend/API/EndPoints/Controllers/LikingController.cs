@@ -69,9 +69,9 @@ public class LikingController : ControllerBase
         return NotFound("Dont released this end point");
     }
 
-    [HttpGet("content/{ContentId}")]
+    [HttpGet("current/contents")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<ActionResult> GetCurrentUserLikedContents(Guid ContentId)
+    public async Task<ActionResult> GetCurrentUserLikedContents()
     {
         return NotFound("Dont released this end point");
     }
@@ -152,13 +152,12 @@ public class LikingController : ControllerBase
         return NotFound("Dont released this end point");
     }
 
-    [HttpGet("comment/{CommentId}")]
+    [HttpGet("current/comments")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<ActionResult> GetCurrentUserLikedComments(Guid CommentId)
+    public async Task<ActionResult> GetCurrentUserLikedComments()
     {
         return NotFound("Dont released this end point");
     }
-
 
     [HttpDelete("comment/{CommentId}")]
     [Authorize(Policy = nameof(UserRole.User))]
