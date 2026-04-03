@@ -7,9 +7,10 @@ using Backend.API.Data.Models;
 using Backend.API.Extensions;
 using Backend.API.Services;
 using Backend.API.Dtos;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/[user][controller]")]
 public class UserInteractionController : ControllerBase
 {
     private readonly EndlessContext context;
@@ -24,8 +25,8 @@ public class UserInteractionController : ControllerBase
     }
 
     [HttpPost("content/{ContentId}")]
-    [Authorize(Policy = nameof(UserRole.User))] //<GenreVectorsResponse>
-    public async Task<IActionResult> CreateInteractionForContent(Guid ContentId, int watchTimeSeconds)
+    [Authorize(Policy = nameof(UserRole.User))]
+    public async Task<ActionResult<GenreVectorsResponse>> CreateInteractionForContent(Guid ContentId, int watchTimeSeconds)
     {
         Guid currentUserId = this.GetIDFromClaim();
 
@@ -35,30 +36,30 @@ public class UserInteractionController : ControllerBase
             .FirstOrDefaultAsync(content => content.Id == ContentId);
 
         if (currentUser == null || content == null || content.VideoMeta == null)
-            return BadRequest("User or Content or Meta not found");
+            return NotFound("User or Content or Meta not found");
 
-        UserInterationContent? userInteration = await context.UserInterationContents.FindAsync(currentUserId);
+        UserInterationContent? userInteraction = await context.UserInterationContents.FindAsync(currentUserId);
 
-        if (userInteration is null)
+        if (userInteraction is null)
         {
-            userInteration = new()
+            userInteraction = new()
             {
                 UserId = currentUserId,
                 ContentId = content.Id,
             };
 
-            context.UserInterationContents.Add(userInteration);
+            context.UserInterationContents.Add(userInteraction);
         }
 
-        userInteration.Liked = await context.LikedContents
+        userInteraction.Liked = await context.LikedContents
             .AsNoTracking()
             .AnyAsync(l => l.UserId == currentUserId && l.ContentId == content.Id);
 
-        userInteration.Saved = await context.SavedContents
+        userInteraction.Saved = await context.SavedContents
             .AsNoTracking()
             .AnyAsync(s => s.UserId == currentUserId && s.ContentId == content.Id);
 
-        userInteration.WatchTimeSeconds = watchTimeSeconds;
+        userInteraction.WatchTimeSeconds = watchTimeSeconds;
 
         await context.SaveChangesAsync();
 
@@ -76,10 +77,18 @@ public class UserInteractionController : ControllerBase
 
         GenreInfo genreInfo = await context.GenreInfos.AsNoTracking().FirstAsync();
 
-        interaction.Interaction(userGenres, content, contentGenres, userInteration, genreInfo.Count);
+        interaction.Interaction(userGenres, content, contentGenres, userInteraction, genreInfo.Count);
 
-        return Ok(new GenreVectorsResponse(
-            userGenres.GetUserGenreVectors(),
-            contentGenres.GetContentGenreVectors()));
+        return Created($"api/interaction/user/{userInteraction.UserId}/content/{userInteraction.ContentId}",
+            new GenreVectorsResponse(
+                userGenres.GetUserGenreVectors(),
+                contentGenres.GetContentGenreVectors()));
+    }
+
+    [HttpGet("user/{UserId}/content/{ContentId}")]
+    [Authorize(Policy = nameof(UserRole.User))]
+    public async Task<ActionResult> GetInteraction(Guid UserId, Guid ContentId)
+    {
+        return NotFound("Dont released this end point");
     }
 }

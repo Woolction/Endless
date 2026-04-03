@@ -28,20 +28,23 @@ public class SubscriptionController : ControllerBase
 
         User? currentUser = await context.Users.FindAsync(currentUserId);
         var domain = await context.Domains
-            .Select(domain => new {
-                d = domain, dResponse = new DomainResponseDto(
+            .Select(domain => new
+            {
+                d = domain,
+                dResponse = new DomainResponseDto(
                     domain.Id, domain.Name, "@" + domain.Slug,
                     domain.Description ?? "", domain.CreatedDate,
                     domain.AvatarPhotoUrl, domain.Subscribers.Count,
                     domain.Contents.Count, domain.Owners.Count,
-                    domain.TotalLikes, domain.TotalViews)})
+                    domain.TotalLikes, domain.TotalViews)
+            })
             .AsNoTracking()
             .FirstOrDefaultAsync(domain => domain.d.Id == DomainId);
 
         if (currentUser is null)
-            return BadRequest("User not found");
+            return NotFound("User not found");
         if (domain is null || domain is null)
-            return BadRequest("Domain not found");
+            return NotFound("Domain not found");
 
         DomainSubscription domainSubscription = new()
         {
@@ -55,7 +58,22 @@ public class SubscriptionController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        return Ok(domain.dResponse);
+        return Created($"api/subscription/user/{currentUserId}/domain/{DomainId}",
+            domain.dResponse);
+    }
+
+    [HttpGet("user/{UserId}/domain/{DomainId}")]
+    [Authorize(Policy = nameof(UserRole.User))]
+    public async Task<ActionResult> GetSubscribedDomains(Guid UserId, Guid DomainId)
+    {
+        return NotFound("Dont released this end point");
+    }
+
+    [HttpGet("domain/{DomainId}")]
+    [Authorize(Policy = nameof(UserRole.User))]
+    public async Task<ActionResult> GetCurrentUserSubscribedDomains(Guid DomainId)
+    {
+        return NotFound("Dont released this end point");
     }
 
     [HttpDelete("domain/{DomainId}")]
@@ -72,7 +90,7 @@ public class SubscriptionController : ControllerBase
                 domainSubscription.DomainId == DomainId);
 
         if (domainSubscription is null)
-            return BadRequest("Subscriped Domain not found");
+            return NotFound("Subscriped Domain not found");
 
         context.DomainSubscriptions.Remove(domainSubscription);
 

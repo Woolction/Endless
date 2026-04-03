@@ -28,21 +28,24 @@ public class SavingController : ControllerBase
 
         User? currentUser = await context.Users.FindAsync(currentUserId);
         var content = await context.Contents
-            .Select(content => new {
-                c = content, cResponse = new ContentResponseDto(
+            .Select(content => new
+            {
+                c = content,
+                cResponse = new ContentResponseDto(
                     content.Id, content.DomainId, content.CreatorId,
                     content.Title, content.Slug, content.Description,
                     content.CreatedDate, content.ContentType.ToString(),
                     content.VideoMeta != null ? content.VideoMeta.DurationSeconds : 0,
                     content.ContentUrl, content.PrewievPhotoUrl, content.Savers.Count,
                     content.Likers.Count, content.Comments.Count, content.DizLikers.Count,
-                    content.ViewsCount)})
+                    content.ViewsCount)
+            })
             .FirstOrDefaultAsync(content => content.c.Id == ContentId);
 
         if (currentUser is null)
-            return BadRequest("User not found");
+            return NotFound("User not found");
         if (content is null || content.c is null)
-            return BadRequest("Content not found");
+            return NotFound("Content not found");
 
         SavedContent savedContent = new()
         {
@@ -55,8 +58,24 @@ public class SavingController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        return Ok(content.cResponse);
+        return Created($"api/saving/user/{savedContent.UserId}/content/{savedContent.ContentId}",
+            content.cResponse);
     }
+
+    [HttpGet("user/{UserId}/content/{ContentId}")]
+    [Authorize(Policy = nameof(UserRole.User))]
+    public async Task<ActionResult> GetSavedContents(Guid UserId, Guid ContentId)
+    {
+        return NotFound("Dont released this end point");
+    }
+
+    [HttpGet("content/{ContentId}")]
+    [Authorize(Policy = nameof(UserRole.User))]
+    public async Task<ActionResult> GetCurrentUserSavedContents(Guid ContentId)
+    {
+        return NotFound("Dont released this end point");
+    }
+
 
     [HttpDelete("content/{ContentId}")]
     [Authorize(Policy = nameof(UserRole.User))]
@@ -74,11 +93,11 @@ public class SavingController : ControllerBase
                 savedContent.ContentId == ContentId);
 
         if (currentUser is null)
-            return BadRequest("User not found");
+            return NotFound("User not found");
         if (content is null)
-            return BadRequest("Content not found");
+            return NotFound("Content not found");
         if (savedContent is null)
-            return BadRequest("Save dont placed");
+            return NotFound("Save dont placed");
 
         context.SavedContents.Remove(savedContent);
 

@@ -27,24 +27,27 @@ public class FollowController : ControllerBase
         Guid currentUserId = this.GetIDFromClaim();
 
         if (currentUserId == UserId)
-            return BadRequest("You dont have a follow you");
+            return Forbid("You dont have a follow you");
 
         User? currentUser = await context.Users.FindAsync(currentUserId);
         var user = await context.Users
-            .Select(user => new{
-                u = user, uResponse = new UserResponseDto(
+            .Select(user => new
+            {
+                u = user,
+                uResponse = new UserResponseDto(
                     user.Id, user.Name, "@" + user.Slug,
                     user.Description ?? "", user.RegistryData, user.Email,
                     user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
                     user.Comments.Count, user.Contents.Count, user.Followers.Count,
-                    user.Following.Count, user.OwnedDomains.Count, user.SubscripedDomains.Count)})
+                    user.Following.Count, user.OwnedDomains.Count, user.SubscripedDomains.Count)
+            })
             .AsNoTracking()
             .FirstOrDefaultAsync(user => user.u.Id == UserId);
 
         if (currentUser is null)
-            return BadRequest("Current user not found");
+            return NotFound("Current user not found");
         if (user is null || user.u is null)
-            return BadRequest("User not found");
+            return NotFound("User not found");
 
         UserFollowing userFollowing = new()
         {
@@ -57,8 +60,24 @@ public class FollowController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        return Ok(user.uResponse);
+        return Created($"api/follow/follower/{userFollowing.FollowerId}/followed/{userFollowing.FollowedUserId}",
+            user.uResponse);
     }
+
+    [HttpGet("follower/{FollowerId}/followed/{FollowedId}")]
+    [Authorize(Policy = nameof(UserRole.User))]
+    public async Task<ActionResult> GetFollowings(Guid FollowerId, Guid FollowedId)
+    {
+        return NotFound("Dont released this end point");
+    }
+
+    [HttpGet("followed/{FollowedId}")]
+    [Authorize(Policy = nameof(UserRole.User))]
+    public async Task<ActionResult> GetCurrentUserFollowings(Guid FollowedId)
+    {
+        return NotFound("Dont released this end point");
+    }
+
 
     [HttpDelete("{UserId}")]
     [Authorize(Policy = nameof(UserRole.User))]
@@ -67,7 +86,7 @@ public class FollowController : ControllerBase
         Guid currentUserId = this.GetIDFromClaim();
 
         if (currentUserId == UserId)
-            return BadRequest("You dont have a refollow you");
+            return Forbid("You dont have a refollow you");
 
         UserFollowing? userFollowing = await context.UserFollowings
             .FirstOrDefaultAsync(userFollowing =>
@@ -75,7 +94,7 @@ public class FollowController : ControllerBase
                 userFollowing.FollowedUserId == UserId);
 
         if (userFollowing is null)
-            return BadRequest("Followed User not found");
+            return NotFound("Followed User not found");
 
         context.UserFollowings.Remove(userFollowing);
 

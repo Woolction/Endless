@@ -29,16 +29,16 @@ public class UsersController : ControllerBase
 
     [HttpPost]
     [EnableRateLimiting("RegistryLimit")]
-    public async Task<ActionResult<AuthResponseDto>> CreateUser(AuthRequestDto requestDto)
+    public async Task<ActionResult<RegistryResponseDto>> CreateUser(AuthRequestDto requestDto)
     {
-        AuthResponseDto? responseDto = await authService.RegistryAsync(requestDto);
+        RegistryResponseDto? responseDto = await authService.RegistryAsync(requestDto);
 
         if (responseDto is null)
-            return BadRequest("");
+            return Conflict($"User with Email: {requestDto.Email} existn");
 
-        this.CraeteTokensInCookies(responseDto);
+        this.CraeteTokensInCookies(new AuthResponseDto(responseDto.Token, responseDto.RefreshToken));
 
-        return Ok(responseDto);
+        return Created($"api/users/{responseDto.NewUserId}", responseDto);
     }
 
     [HttpGet("search")]
@@ -104,7 +104,7 @@ public class UsersController : ControllerBase
             .FirstOrDefaultAsync(user => user.Id == UserId);
 
         if (userResponse == null)
-            return BadRequest("User not found");
+            return NotFound();
 
         return Ok(userResponse);
     }
@@ -117,7 +117,6 @@ public class UsersController : ControllerBase
         Guid currentUserId = this.GetIDFromClaim();
 
         UserResponseDto? user = await context.Users
-            //.Where(u => u.Id == currentUserId)
             .Select(user => new UserResponseDto(
                 user.Id, user.Name, "@" + user.Slug,
                 user.Description ?? "", user.RegistryData, user.Email,
@@ -125,7 +124,7 @@ public class UsersController : ControllerBase
                 user.Comments.Count, user.Contents.Count, user.Followers.Count,
                 user.Following.Count, user.OwnedDomains.Count, user.SubscripedDomains.Count))
             .AsNoTracking()
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(u => u.Id == currentUserId);
 
         if (user is null)
             return NotFound();
@@ -140,17 +139,20 @@ public class UsersController : ControllerBase
         Guid currentUserId = this.GetIDFromClaim();
 
         var user = await context.Users
-            .Select(user => new {
-                u = user, uResponse = new UserResponseDto(
+            .Select(user => new
+            {
+                u = user,
+                uResponse = new UserResponseDto(
                     user.Id, user.Name, "@" + user.Slug,
                     user.Description ?? "", user.RegistryData, user.Email,
                     user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
                     user.Comments.Count, user.Contents.Count, user.Followers.Count,
-                    user.Following.Count, user.OwnedDomains.Count, user.SubscripedDomains.Count)})
+                    user.Following.Count, user.OwnedDomains.Count, user.SubscripedDomains.Count)
+            })
             .FirstOrDefaultAsync(user => user.u.Id == currentUserId);
 
         if (user is null || user.u is null)
-            return BadRequest("User not found");
+            return NotFound();
 
         if (!string.IsNullOrEmpty(updateDto.Name))
         {

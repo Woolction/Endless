@@ -18,7 +18,7 @@ public class AuthController : ControllerBase
         this.authService = authService;
     }
 
-    [HttpPost("token")]
+    [HttpGet("token")]
     [EnableRateLimiting("LoginLimit")]
     public async Task<ActionResult<AuthResponseDto>> Login(AuthRequestDto requestDto)
     {

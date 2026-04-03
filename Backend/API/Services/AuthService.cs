@@ -11,6 +11,7 @@ using System.Security.Claims;
 using Backend.API.Dtos;
 using System.Text;
 using Npgsql;
+using System.ComponentModel.DataAnnotations;
 
 namespace Backend.API.Services;
 
@@ -36,7 +37,7 @@ public class AuthService : IAuthService
         this.passwordHasher = passwordHasher;
     }
 
-    public async Task<AuthResponseDto?> RegistryAsync(AuthRequestDto requestDto)
+    public async Task<RegistryResponseDto?> RegistryAsync(AuthRequestDto requestDto)
     {
         if (await context.Users.AnyAsync(users => users.Email == requestDto.Email))
             return null;
@@ -70,7 +71,9 @@ public class AuthService : IAuthService
         {
             await context.SaveChangesAsync();
 
-            return await CraeteTokenResponse(user);
+            AuthResponseDto authResponse = await CraeteTokenResponse(user);
+
+            return new RegistryResponseDto(user.Id, authResponse.Token, authResponse.RefreshToken);
         }
         catch (DbUpdateException ex)
         {
@@ -104,7 +107,6 @@ public class AuthService : IAuthService
         return await CraeteTokenResponse(user);
     }
 
-    #region GenerateTokens
     private async Task<AuthResponseDto> CraeteTokenResponse(User user)
     {
         return new AuthResponseDto(GenerateJWTToken(user), await GenerateRefreshToken(user));
@@ -147,21 +149,20 @@ public class AuthService : IAuthService
 
         return token;
     }
-    #endregion +----------+
 
     private async Task<User?> ValidateRefreshToken(RefreshTokenRequestDto requestDto)
     {
         if (string.IsNullOrEmpty(requestDto.Token))
             return null;
             
-        User? user = await context.Users.Include(u => u.RefreshToken)
-                        .FirstOrDefaultAsync(user => user.RefreshToken!.Token == requestDto.Token);
+        User? user = await context.Users
+            .Include(u => u.RefreshToken)
+            .FirstOrDefaultAsync(user =>
+                user.RefreshToken!.Token == requestDto.Token);
 
         if (user is not null)
         {
-            RefreshToken userRefreshToken = user.RefreshToken!;
-
-            if (userRefreshToken.ValidityPeriod >= DateTime.UtcNow)
+            if (user.RefreshToken!.ValidityPeriod >= DateTime.UtcNow)
                 return user;
         }
 

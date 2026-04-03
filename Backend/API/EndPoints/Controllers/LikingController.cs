@@ -28,21 +28,24 @@ public class LikingController : ControllerBase
 
         User? currentUser = await context.Users.FindAsync(currentUserId);
         var content = await context.Contents
-            .Select(content => new { 
-                c = content, cResponse = new ContentResponseDto(
+            .Select(content => new
+            {
+                c = content,
+                cResponse = new ContentResponseDto(
                     content.Id, content.DomainId, content.CreatorId,
                     content.Title, content.Slug, content.Description,
                     content.CreatedDate, content.ContentType.ToString(),
                     content.VideoMeta != null ? content.VideoMeta.DurationSeconds : 0,
                     content.ContentUrl, content.PrewievPhotoUrl, content.Savers.Count,
                     content.Likers.Count, content.Comments.Count, content.DizLikers.Count,
-                    content.ViewsCount)})
+                    content.ViewsCount)
+            })
             .FirstOrDefaultAsync(content => content.c.Id == ContentId);
 
         if (currentUser is null)
-            return BadRequest("User not found");
+            return NotFound("User not found");
         if (content is null || content.c is null)
-            return BadRequest("Content not found");
+            return NotFound("Content not found");
 
         LikedContent likedContent = new()
         {
@@ -55,7 +58,22 @@ public class LikingController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        return Ok(content.cResponse);
+        return Created($"api/liking/user/{likedContent.UserId}/content/{likedContent.ContentId}",
+            content.cResponse);
+    }
+
+    [HttpGet("user/{UserId}/content/{ContentId}")]
+    [Authorize(Policy = nameof(UserRole.User))]
+    public async Task<ActionResult> GetLikedContents(Guid UserId, Guid ContentId)
+    {
+        return NotFound("Dont released this end point");
+    }
+
+    [HttpGet("content/{ContentId}")]
+    [Authorize(Policy = nameof(UserRole.User))]
+    public async Task<ActionResult> GetCurrentUserLikedContents(Guid ContentId)
+    {
+        return NotFound("Dont released this end point");
     }
 
     [HttpDelete("content/{ContentId}")]
@@ -74,9 +92,9 @@ public class LikingController : ControllerBase
                 likedContent.UserId == currentUserId);
 
         if (content is null)
-            return BadRequest("Content not found");
+            return NotFound("Content not found");
         if (likedContent is null)
-            return BadRequest("Like dont placed");
+            return NotFound("Like dont placed");
 
         context.LikedContents.Remove(likedContent);
 
@@ -93,8 +111,10 @@ public class LikingController : ControllerBase
 
         User? currentUser = await context.Users.FindAsync(currentUserId);
         var comment = await context.Comments
-            .Select(comment => new {
-                c = comment, cResponse = new CommentResponseDto(
+            .Select(comment => new
+            {
+                c = comment,
+                cResponse = new CommentResponseDto(
                     comment.Id,
                     comment.Text,
                     comment.PublicatedDate,
@@ -106,9 +126,9 @@ public class LikingController : ControllerBase
             .FirstOrDefaultAsync(comment => comment.c.Id == CommentId);
 
         if (currentUser is null)
-            return BadRequest("User not found");
+            return NotFound("User not found");
         if (comment is null || comment.c is null)
-            return BadRequest("Comment not found");
+            return NotFound("Comment not found");
 
         LikedComment likedComment = new()
         {
@@ -121,8 +141,24 @@ public class LikingController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        return Ok(comment.cResponse);
+        return Created($"api/liking/user/{likedComment.UserId}/comment/{likedComment.CommentId}",
+            comment.cResponse);
     }
+
+    [HttpGet("user/{UserId}/comment/{CommentId}")]
+    [Authorize(Policy = nameof(UserRole.User))]
+    public async Task<ActionResult> GetLikedComments(Guid UserId, Guid CommentId)
+    {
+        return NotFound("Dont released this end point");
+    }
+
+    [HttpGet("comment/{CommentId}")]
+    [Authorize(Policy = nameof(UserRole.User))]
+    public async Task<ActionResult> GetCurrentUserLikedComments(Guid CommentId)
+    {
+        return NotFound("Dont released this end point");
+    }
+
 
     [HttpDelete("comment/{CommentId}")]
     [Authorize(Policy = nameof(UserRole.User))]
@@ -139,9 +175,9 @@ public class LikingController : ControllerBase
                 likedComment.CommentId == CommentId);
 
         if (comment is null)
-            return BadRequest("Comment not found");
+            return NotFound("Comment not found");
         if (likedComment is null)
-            return BadRequest("Like dont placed");
+            return NotFound("Like dont placed");
 
         context.LikedComments.Remove(likedComment);
 
