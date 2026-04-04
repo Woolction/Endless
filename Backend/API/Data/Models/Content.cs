@@ -33,7 +33,7 @@ public class Content
 
     public List<SavedContent> Savers { get; set; } = new List<SavedContent>();
     public List<LikedContent> Likers { get; set; } = new List<LikedContent>();
-    public List<DizLikedContent> DizLikers { get; set; } = new List<DizLikedContent>();
+    public List<DisLikedContent> DisLikers { get; set; } = new List<DisLikedContent>();
 
     public List<Comment> Comments { get; set; } = new List<Comment>();
 }

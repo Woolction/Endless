@@ -15,9 +15,13 @@ public class GenreVectorsController : ControllerBase
 {
     private readonly EndlessContext context;
 
-    public GenreVectorsController(EndlessContext context)
+    private readonly ILogger<GenreVectorsController> logger;
+
+    public GenreVectorsController(EndlessContext context, ILogger<GenreVectorsController> logger)
     {
         this.context = context;
+
+        this.logger = logger;
     }
     
     [HttpPost]
@@ -70,6 +74,9 @@ public class GenreVectorsController : ControllerBase
         }
 
         await context.SaveChangesAsync();
+
+        logger.LogInformation("Created new genres {Count}",
+            newGenres.Count);
 
         return Ok(newGenres.GetGenreResponsesDto());
     }

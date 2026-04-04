@@ -13,9 +13,13 @@ public class AuthController : ControllerBase
 {
     private readonly IAuthService authService;
 
-    public AuthController(IAuthService authService)
+    private readonly ILogger<AuthController> logger;
+
+    public AuthController(IAuthService authService, ILogger<AuthController> logger)
     {
         this.authService = authService;
+
+        this.logger = logger;
     }
 
     [HttpGet("token")]
@@ -26,6 +30,8 @@ public class AuthController : ControllerBase
 
         if (responseDto is null)
             return BadRequest("Password or Email dont correct");
+
+        logger.LogInformation("User {UserId} Logined", this.GetIDFromClaim());
 
         this.CraeteTokensInCookies(responseDto);
 
@@ -42,6 +48,8 @@ public class AuthController : ControllerBase
         if (responseDto is null || responseDto.Token is null || responseDto.RefreshToken is null)
             return BadRequest("Invalid refresh token");
 
+        logger.LogInformation("User {UserId} Refreshed Token", this.GetIDFromClaim());
+
         this.CraeteTokensInCookies(responseDto);
 
         return Ok(responseDto);
@@ -51,6 +59,8 @@ public class AuthController : ControllerBase
     [HttpDelete("token")]
     public IActionResult Logout()
     {
+        logger.LogInformation("User {UserId} Logout", this.GetIDFromClaim());
+
         this.DeleteTokensInCookies();
 
         return NoContent();

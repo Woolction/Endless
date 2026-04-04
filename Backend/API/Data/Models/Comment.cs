@@ -16,5 +16,5 @@ public class Comment
     public long ViewsCount { get; set; }
 
     public List<LikedComment> Likers { get; set; } = new List<LikedComment>();
-    public List<DizLikedComment> DizLikers { get; set; } = new List<DizLikedComment>();
+    public List<DisLikedComment> DisLikers { get; set; } = new List<DisLikedComment>();
 }

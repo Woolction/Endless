@@ -7,21 +7,23 @@ using Backend.API.Data.Models;
 using Backend.API.Extensions;
 using Backend.API.Services;
 using Backend.API.Dtos;
-using Microsoft.AspNetCore.Http.HttpResults;
+using System.Diagnostics;
 
 [ApiController]
-[Route("api/[user][controller]")]
+[Route("api/[controller]")]
 public class UserInteractionController : ControllerBase
 {
     private readonly EndlessContext context;
 
+    private readonly ILogger<UserInteractionController> logger;
     private readonly IInteractionService interaction;
 
-    public UserInteractionController(EndlessContext context, IInteractionService interaction)
+    public UserInteractionController(EndlessContext context, ILogger<UserInteractionController> logger, IInteractionService interaction)
     {
         this.context = context;
 
         this.interaction = interaction;
+        this.logger = logger;
     }
 
     [HttpPost("content/{ContentId}")]
@@ -78,6 +80,9 @@ public class UserInteractionController : ControllerBase
         GenreInfo genreInfo = await context.GenreInfos.AsNoTracking().FirstAsync();
 
         interaction.Interaction(userGenres, content, contentGenres, userInteraction, genreInfo.Count);
+
+        logger.LogInformation("User {UserId} created an interaction on the content {ContentId}",
+            currentUserId, ContentId);
 
         return Created($"api/interaction/user/{userInteraction.UserId}/content/{userInteraction.ContentId}",
             new GenreVectorsResponse(

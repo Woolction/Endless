@@ -15,9 +15,13 @@ public class DomainOwnersController : ControllerBase
 {
     private readonly EndlessContext context;
 
-    public DomainOwnersController(EndlessContext context)
+    private readonly ILogger<DomainOwnersController> logger;
+
+    public DomainOwnersController(EndlessContext context, ILogger<DomainOwnersController> logger)
     {
         this.context = context;
+
+        this.logger = logger;
     }
 
     [HttpGet("user/{UserId}/domain/{DomainId}")]
@@ -34,6 +38,9 @@ public class DomainOwnersController : ControllerBase
         if (domainOwner == null)
             return NotFound();
 
+        logger.LogInformation("Returned owner {OwnerId} domain {DomainId}",
+            UserId, DomainId);
+
         return Ok(domainOwner);
     }
 
@@ -45,6 +52,9 @@ public class DomainOwnersController : ControllerBase
             .Select(owner => new DomainOwnerResponseDto(
                 owner.OwnerId, owner.DomainId, owner.OwnedDate,
                 owner.OwnerRole.ToString())).AsNoTracking().ToArrayAsync();
+
+        logger.LogInformation("Returned owners {Count} for domain {DomainId}",
+            domainOwners.Length, DomainId);
 
         return Ok(domainOwners);
     }
@@ -61,9 +71,17 @@ public class DomainOwnersController : ControllerBase
                 owner.DomainId == DomainId);
 
         if (currentOwner is null)
+        {
+            logger.LogWarning("User {UserId} tried to create owner for domain {DomainId} without permission",
+                currentUserId, DomainId);
             return Forbid("You not owner the domain");
+        }
         if (currentOwner.OwnerRole != DomainOwnerRole.Admin)
+        {
+            logger.LogWarning("User {UserId} tried to create owner for domain {DomainId} without permission",
+                currentUserId, DomainId);
             return Forbid("You do not have sufficient rights");
+        }
 
         User? user = await context.Users.FindAsync(UserId);
 
@@ -91,6 +109,9 @@ public class DomainOwnersController : ControllerBase
 
         await context.SaveChangesAsync();
 
+        logger.LogInformation("User {UserId} create owner {OwnerId} for domain {DomainId}",
+            currentUserId, UserId, DomainId);
+
         return Created($"api/domainowners/user/{UserId}/domain/{DomainId}",
             context.Domains.Select(domain => new DomainResponseDto(
                 domain.Id, domain.Name, "@" + domain.Slug,
@@ -112,11 +133,6 @@ public class DomainOwnersController : ControllerBase
                 owner.OwnerId == currentUserId &&
                 owner.DomainId == DomainId);
 
-        if (currentOwner is null)
-            return Forbid("You not owner the domain");
-        if (currentOwner.OwnerRole != DomainOwnerRole.Admin)
-            return Forbid("You do not have sufficient rights");
-
         DomainOwner? owner = await context.DomainOwners
             .FirstOrDefaultAsync(owner =>
                 owner.OwnerId == OwnerId &&
@@ -125,9 +141,25 @@ public class DomainOwnersController : ControllerBase
         if (owner == null)
             return NotFound("Owner not found");
 
+        if (currentOwner is null)
+        {
+            logger.LogWarning("User {UserId} tried to delete owner {OwnerId} for domain {DomainId} without permission",
+               currentUserId, OwnerId, DomainId);
+            return Forbid("You not owner the domain");
+        }
+        if (currentOwner.OwnerRole != DomainOwnerRole.Admin)
+        {
+            logger.LogWarning("User {UserId} tried to delete owner {OwnerId} for domain {DomainId} without permission",
+               currentUserId, OwnerId, DomainId);
+            return Forbid("You do not have sufficient rights");
+        }
+
         context.DomainOwners.Remove(owner);
 
         await context.SaveChangesAsync();
+
+        logger.LogInformation("Owner {OwnerId} for Domain {DomainId} deleted",
+            OwnerId, DomainId);
 
         return NoContent();
     }

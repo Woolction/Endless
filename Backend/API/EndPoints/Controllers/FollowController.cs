@@ -15,9 +15,13 @@ public class FollowController : ControllerBase
 {
     private readonly EndlessContext context;
 
-    public FollowController(EndlessContext context)
+    private readonly ILogger<FollowController> logger;
+
+    public FollowController(EndlessContext context, ILogger<FollowController> logger)
     {
         this.context = context;
+
+        this.logger = logger;
     }
 
     [HttpPost("{UserId}")]
@@ -27,7 +31,11 @@ public class FollowController : ControllerBase
         Guid currentUserId = this.GetIDFromClaim();
 
         if (currentUserId == UserId)
+        {
+            logger.LogWarning("User {UserId} tried to following on yourself",
+                currentUserId);
             return Forbid("You dont have a follow you");
+        }
 
         User? currentUser = await context.Users.FindAsync(currentUserId);
         var user = await context.Users
@@ -59,6 +67,9 @@ public class FollowController : ControllerBase
         context.UserFollowings.Add(userFollowing);
 
         await context.SaveChangesAsync();
+
+        logger.LogInformation("User {UserId} following to User {FollowedUserId}",
+            currentUserId, UserId);
 
         return Created($"api/follow/follower/{userFollowing.FollowerId}/followed/{userFollowing.FollowedUserId}",
             user.uResponse);
@@ -93,7 +104,11 @@ public class FollowController : ControllerBase
         Guid currentUserId = this.GetIDFromClaim();
 
         if (currentUserId == UserId)
+        {
+            logger.LogWarning("User {UserId} tried to re following on yourself",
+               currentUserId);
             return Forbid("You dont have a refollow you");
+        }
 
         UserFollowing? userFollowing = await context.UserFollowings
             .FirstOrDefaultAsync(userFollowing =>
@@ -106,6 +121,9 @@ public class FollowController : ControllerBase
         context.UserFollowings.Remove(userFollowing);
 
         await context.SaveChangesAsync();
+
+        logger.LogInformation("User {UserId} re following to User {FollowedUserId}",
+           currentUserId, UserId);
 
         return NoContent();
     }

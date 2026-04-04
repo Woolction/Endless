@@ -22,12 +22,12 @@ public class User
 
     public long TotalLikes { get; set; }
 
-    public List<DizLikedContent> DizLikedContents { get; set; } = new List<DizLikedContent>();
+    public List<DisLikedContent> DisLikedContents { get; set; } = new List<DisLikedContent>();
     public List<SavedContent> SavedContents { get; set; } = new List<SavedContent>();
     public List<LikedContent> LikedContents { get; set; } = new List<LikedContent>();
     public List<Content> Contents { get; set; } = new List<Content>();
 
-    public List<DizLikedComment> DizLikedComments { get; set; } = new List<DizLikedComment>();
+    public List<DisLikedComment> DisLikedComments { get; set; } = new List<DisLikedComment>();
     public List<LikedComment> LikedComments { get; set; } = new List<LikedComment>();
     public List<Comment> Comments { get; set; } = new List<Comment>();
 

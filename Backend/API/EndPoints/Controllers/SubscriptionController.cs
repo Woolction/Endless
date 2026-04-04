@@ -15,14 +15,18 @@ public class SubscriptionController : ControllerBase
 {
     private readonly EndlessContext context;
 
-    public SubscriptionController(EndlessContext context)
+    private readonly ILogger<SubscriptionController> logger;
+
+    public SubscriptionController(EndlessContext context, ILogger<SubscriptionController> logger)
     {
         this.context = context;
+
+        this.logger = logger;
     }
 
     [HttpPost("domain/{DomainId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<ActionResult<DomainResponseDto>> Subscrioption(Guid DomainId)
+    public async Task<ActionResult<DomainResponseDto>> Subscription(Guid DomainId)
     {
         Guid currentUserId = this.GetIDFromClaim();
 
@@ -58,6 +62,9 @@ public class SubscriptionController : ControllerBase
 
         await context.SaveChangesAsync();
 
+        logger.LogInformation("User {UserId} subscriped domain {DomainId}",
+          currentUserId, DomainId);
+
         return Created($"api/subscription/user/{currentUserId}/domain/{DomainId}",
             domain.dResponse);
     }
@@ -78,7 +85,7 @@ public class SubscriptionController : ControllerBase
 
     [HttpDelete("domain/{DomainId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<IActionResult> ReSubscrioption(Guid DomainId)
+    public async Task<IActionResult> ReSubscription(Guid DomainId)
     {
         Guid currentUserId = this.GetIDFromClaim();
 
@@ -95,6 +102,9 @@ public class SubscriptionController : ControllerBase
         context.DomainSubscriptions.Remove(domainSubscription);
 
         await context.SaveChangesAsync();
+
+        logger.LogInformation("User {UserId} re subscriped domain {DomainId}",
+          currentUserId, DomainId);
 
         return NoContent();
     }

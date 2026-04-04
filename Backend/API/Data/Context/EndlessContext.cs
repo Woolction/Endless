@@ -11,7 +11,7 @@ public class EndlessContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<UserFollowing> UserFollowings { get; set; }
     public DbSet<UserInterationContent> UserInterationContents { get; set; }
-    
+
     public DbSet<Domain> Domains { get; set; }
     public DbSet<DomainOwner> DomainOwners { get; set; }
     public DbSet<DomainSubscription> DomainSubscriptions { get; set; }
@@ -19,7 +19,7 @@ public class EndlessContext : DbContext
     public DbSet<Content> Contents { get; set; }
     public DbSet<SavedContent> SavedContents { get; set; }
     public DbSet<LikedContent> LikedContents { get; set; }
-    public DbSet<DizLikedContent> DizLikedContents { get; set; } 
+    public DbSet<DisLikedContent> DisLikedContents { get; set; }
 
     public DbSet<Genre> Genres { get; set; }
     public DbSet<GenreInfo> GenreInfos { get; set; }
@@ -27,10 +27,10 @@ public class EndlessContext : DbContext
     public DbSet<ContentGenreVector> ContentVectors { get; set; }
 
     public DbSet<VideoMetaData> VideoMetas { get; set; }
-    
+
     public DbSet<Comment> Comments { get; set; }
     public DbSet<LikedComment> LikedComments { get; set; }
-    public DbSet<DizLikedComment> DizLikedComments { get; set; }
+    public DbSet<DisLikedComment> DisLikedComments { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -172,14 +172,14 @@ public class EndlessContext : DbContext
         likedCBuilder
             .HasIndex(lC => lC.ContentId);
 
-        EntityTypeBuilder<DizLikedContent> DizLikedCBuilder = builder.Entity<DizLikedContent>();
+        EntityTypeBuilder<DisLikedContent> DizLikedCBuilder = builder.Entity<DisLikedContent>();
         DizLikedCBuilder
             .HasOne(lC => lC.User)
-            .WithMany(u => u.DizLikedContents)
+            .WithMany(u => u.DisLikedContents)
             .HasForeignKey(lC => lC.UserId);
         DizLikedCBuilder
             .HasOne(lC => lC.Content)
-            .WithMany(c => c.DizLikers)
+            .WithMany(c => c.DisLikers)
             .HasForeignKey(lC => lC.ContentId);
         DizLikedCBuilder
             .HasKey(lC => new { lC.UserId, lC.ContentId });
@@ -255,14 +255,14 @@ public class EndlessContext : DbContext
         commentLikedBuilder
             .HasKey(cl => new { cl.UserId, cl.CommentId });
 
-        EntityTypeBuilder<DizLikedComment> commentDizLikedBuilder = builder.Entity<DizLikedComment>();
+        EntityTypeBuilder<DisLikedComment> commentDizLikedBuilder = builder.Entity<DisLikedComment>();
         commentDizLikedBuilder
             .HasOne(cL => cL.User)
-            .WithMany(u => u.DizLikedComments)
+            .WithMany(u => u.DisLikedComments)
             .HasForeignKey(cL => cL.UserId);
         commentDizLikedBuilder
             .HasOne(cL => cL.Comment)
-            .WithMany(co => co.DizLikers)
+            .WithMany(co => co.DisLikers)
             .HasForeignKey(cL => cL.CommentId);
         commentDizLikedBuilder
             .HasKey(cl => new { cl.UserId, cl.CommentId });

@@ -15,9 +15,13 @@ public class LikingController : ControllerBase
 {
     private readonly EndlessContext context;
 
-    public LikingController(EndlessContext context)
+    private readonly ILogger<LikingController> logger;
+
+    public LikingController(EndlessContext context, ILogger<LikingController> logger)
     {
         this.context = context;
+
+        this.logger = logger;
     }
 
     [HttpPost("content/{ContentId}")]
@@ -37,7 +41,7 @@ public class LikingController : ControllerBase
                     content.CreatedDate, content.ContentType.ToString(),
                     content.VideoMeta != null ? content.VideoMeta.DurationSeconds : 0,
                     content.ContentUrl, content.PrewievPhotoUrl, content.Savers.Count,
-                    content.Likers.Count, content.Comments.Count, content.DizLikers.Count,
+                    content.Likers.Count, content.Comments.Count, content.DisLikers.Count,
                     content.ViewsCount)
             })
             .FirstOrDefaultAsync(content => content.c.Id == ContentId);
@@ -57,6 +61,9 @@ public class LikingController : ControllerBase
         context.LikedContents.Add(likedContent);
 
         await context.SaveChangesAsync();
+
+        logger.LogInformation("User {UserId} liked content {ContentId}",
+            currentUserId, ContentId);
 
         return Created($"api/liking/user/{likedContent.UserId}/content/{likedContent.ContentId}",
             content.cResponse);
@@ -100,6 +107,9 @@ public class LikingController : ControllerBase
 
         await context.SaveChangesAsync();
 
+        logger.LogInformation("User {UserId} re liked content {ContentId}",
+            currentUserId, ContentId);
+
         return NoContent();
     }
 
@@ -119,7 +129,7 @@ public class LikingController : ControllerBase
                     comment.Text,
                     comment.PublicatedDate,
                     comment.Likers.Count,
-                    comment.DizLikers.Count,
+                    comment.DisLikers.Count,
                     comment.ViewsCount)
             })
             .AsNoTracking()
@@ -140,6 +150,9 @@ public class LikingController : ControllerBase
         context.LikedComments.Add(likedComment);
 
         await context.SaveChangesAsync();
+
+        logger.LogInformation("User {UserId} liked comment {CommentId}",
+            currentUserId, CommentId);
 
         return Created($"api/liking/user/{likedComment.UserId}/comment/{likedComment.CommentId}",
             comment.cResponse);
@@ -181,6 +194,9 @@ public class LikingController : ControllerBase
         context.LikedComments.Remove(likedComment);
 
         await context.SaveChangesAsync();
+
+        logger.LogInformation("User {UserId} re liked comment {CommentId}",
+            currentUserId, CommentId);
 
         return NoContent();
     }

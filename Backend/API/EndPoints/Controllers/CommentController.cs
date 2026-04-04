@@ -15,9 +15,13 @@ public class CommentController : ControllerBase
 {
     private readonly EndlessContext context;
 
-    public CommentController(EndlessContext context)
+    private readonly ILogger<CommentController> logger;
+
+    public CommentController(EndlessContext context, ILogger<CommentController> logger)
     {
         this.context = context;
+
+        this.logger = logger;
     }
 
     [HttpGet("content/{ContentId}")]
@@ -36,7 +40,7 @@ public class CommentController : ControllerBase
                 new CommentResponseDto(
                     comment.Id, comment.Text,
                     comment.PublicatedDate, comment.Likers.Count,
-                    comment.DizLikers.Count, comment.ViewsCount),
+                    comment.DisLikers.Count, comment.ViewsCount),
                 new UserResponseDto(
                     comment.Commentator!.Id, comment.Commentator!.Name, "@" + comment.Commentator!.Slug,
                     comment.Commentator!.Description ?? "", comment.Commentator!.RegistryData, comment.Commentator!.Email,
@@ -45,11 +49,14 @@ public class CommentController : ControllerBase
                     comment.Commentator!.Following.Count, comment.Commentator!.OwnedDomains.Count, comment.Commentator!.SubscripedDomains.Count)))
             .ToArrayAsync();
 
+        logger.LogInformation("Returned {Count} comment in content {ContentId}",
+            comments.Length, ContentId);
+
         return Ok(comments);
     }
 
     [HttpPost("content/{ContentId}")]
-    [Authorize(Policy = nameof(UserRole.User))] 
+    [Authorize(Policy = nameof(UserRole.User))]
     public async Task<ActionResult<SendCommentDto>> SendComment(Guid ContentId, [FromBody] CreateCommentDto commentDto)
     {
         Guid currentUserId = this.GetIDFromClaim();
@@ -67,7 +74,7 @@ public class CommentController : ControllerBase
             })
             .AsNoTracking()
             .FirstOrDefaultAsync(user => user.u.Id == currentUserId);
-            
+
         Content? content = await context.Contents
             .AsNoTracking()
             .FirstOrDefaultAsync(content => content.Id == ContentId);
@@ -89,6 +96,9 @@ public class CommentController : ControllerBase
 
         await context.SaveChangesAsync();
 
+        logger.LogInformation("Created comment {CommentId} in content {ContentId}",
+            newComment.Id, ContentId);
+
         return Created($"api/comment/{newComment.Id}", new SendCommentDto(
             newComment.GetCommentResponseDto(), currentUser.uResponse));
     }
@@ -99,26 +109,33 @@ public class CommentController : ControllerBase
     {
         var comment = await context.Comments
             .Where(comment => comment.Id == CommentId)
-            .Select(comment => new {
+            .Select(comment => new
+            {
                 c = comment,
-                cResponse = new CommentResponseDto(
-                    comment.Id,
-                    comment.Text,
-                    comment.PublicatedDate,
-                    comment.Likers.Count,
-                    comment.DizLikers.Count,
-                    comment.ViewsCount)
+                LikersCount = comment.Likers.Count,
+                DisLikersCount = comment.DisLikers.Count
             })
             .FirstOrDefaultAsync();
 
         if (comment is null || comment.c is null)
             return NotFound("Comment not found");
 
+        string? oldText = comment.c.Text;
+
         comment.c.Text = text;
+
+        CommentResponseDto responseDto = new(
+            comment.c.Id, comment.c.Text,
+            comment.c.PublicatedDate, comment.LikersCount,
+            comment.DisLikersCount, comment.c.ViewsCount);
 
         await context.SaveChangesAsync();
 
-        return Ok(comment.cResponse);
+        logger.LogInformation(
+            "Comment {CommentId} updated successfully. Changed the text from: {OldText} to: {NewText}",
+            CommentId, oldText, comment.c.Text);
+
+        return Ok(responseDto);
     }
 
     [HttpDelete("{CommentId}")]
@@ -134,6 +151,9 @@ public class CommentController : ControllerBase
         context.Comments.Remove(comment);
 
         await context.SaveChangesAsync();
+
+        logger.LogInformation("Comment {CommentId} deleted",
+            CommentId);
 
         return NoContent();
     }

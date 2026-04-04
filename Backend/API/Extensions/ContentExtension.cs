@@ -12,7 +12,6 @@ public static class ContentExtension
             content.Title, content.Slug, content.Description,
             content.CreatedDate, content.ContentType.ToString(),
             content.VideoMeta?.DurationSeconds, content.ContentUrl, content.PrewievPhotoUrl,
-            content.Savers.Count, content.Likers.Count, content.Comments.Count,
-            content.DizLikers.Count, content.ViewsCount);
+            0,0,0,0,0);
     }
 }

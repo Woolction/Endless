@@ -15,9 +15,13 @@ public class SavingController : ControllerBase
 {
     private readonly EndlessContext context;
 
-    public SavingController(EndlessContext context)
+    private readonly ILogger<SavingController> logger;
+
+    public SavingController(EndlessContext context, ILogger<SavingController> logger)
     {
         this.context = context;
+
+        this.logger = logger;
     }
 
     [HttpPost("content/{ContentId}")]
@@ -37,7 +41,7 @@ public class SavingController : ControllerBase
                     content.CreatedDate, content.ContentType.ToString(),
                     content.VideoMeta != null ? content.VideoMeta.DurationSeconds : 0,
                     content.ContentUrl, content.PrewievPhotoUrl, content.Savers.Count,
-                    content.Likers.Count, content.Comments.Count, content.DizLikers.Count,
+                    content.Likers.Count, content.Comments.Count, content.DisLikers.Count,
                     content.ViewsCount)
             })
             .FirstOrDefaultAsync(content => content.c.Id == ContentId);
@@ -57,6 +61,9 @@ public class SavingController : ControllerBase
         context.SavedContents.Add(savedContent);
 
         await context.SaveChangesAsync();
+
+        logger.LogInformation("User {UserId} saved content {ContentId}",
+          currentUserId, ContentId);
 
         return Created($"api/saving/user/{savedContent.UserId}/content/{savedContent.ContentId}",
             content.cResponse);
@@ -102,6 +109,9 @@ public class SavingController : ControllerBase
         context.SavedContents.Remove(savedContent);
 
         await context.SaveChangesAsync();
+
+        logger.LogInformation("User {UserId} re saved content {ContentId}",
+          currentUserId, ContentId);
 
         return NoContent();
     }

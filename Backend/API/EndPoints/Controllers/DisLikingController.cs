@@ -6,24 +6,27 @@ using Backend.API.Data.Context;
 using Backend.API.Data.Models;
 using Backend.API.Extensions;
 using Backend.API.Dtos;
-using System.Runtime.CompilerServices;
 
 namespace Backend.API.EndPoints.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class DizLikingController : ControllerBase
+public class DisLikingController : ControllerBase
 {
     private readonly EndlessContext context;
 
-    public DizLikingController(EndlessContext context)
+    private readonly ILogger<DisLikingController> logger;
+
+    public DisLikingController(EndlessContext context, ILogger<DisLikingController> logger)
     {
         this.context = context;
+
+        this.logger = logger;
     }
 
     [HttpPost("content/{ContentId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<ActionResult<ContentResponseDto>> DizLikeContent(Guid ContentId)
+    public async Task<ActionResult<ContentResponseDto>> DisLikeContent(Guid ContentId)
     {
         Guid currentUserId = this.GetIDFromClaim();
 
@@ -37,7 +40,7 @@ public class DizLikingController : ControllerBase
             content.CreatedDate, content.ContentType.ToString(),
             content.VideoMeta != null ? content.VideoMeta.DurationSeconds : 0,
             content.ContentUrl, content.PrewievPhotoUrl, content.Savers.Count, content.Likers.Count,
-            content.Comments.Count, content.DizLikers.Count, content.ViewsCount)
+            content.Comments.Count, content.DisLikers.Count, content.ViewsCount)
         })
             .FirstOrDefaultAsync(content => content.c.Id == ContentId);
 
@@ -46,30 +49,33 @@ public class DizLikingController : ControllerBase
         if (content is null || content.c is null)
             return NotFound("Content not found");
 
-        DizLikedContent dizLikedContent = new()
+        DisLikedContent DisLikedContent = new()
         {
             UserId = currentUserId,
             ContentId = ContentId,
-            DizLikedDate = DateTime.UtcNow
+            DisLikedDate = DateTime.UtcNow
         };
 
-        context.DizLikedContents.Add(dizLikedContent);
+        context.DisLikedContents.Add(DisLikedContent);
 
         await context.SaveChangesAsync();
+
+        logger.LogInformation("User {UserId} dis liked content {ContentId}",
+            currentUserId, ContentId);
 
         return Created($"api/dizliking/user/{currentUserId}/content/{ContentId}",
             content.cResponse);
     }
 
     [HttpGet("user/{UserId}/content/{ContentId}")]
-    public async Task<ActionResult> GetDizLikedContent(Guid UserId, Guid ContentId)
+    public async Task<ActionResult> GetDisLikedContent(Guid UserId, Guid ContentId)
     {
         return NotFound("Dont released this end point");
     }
 
     [HttpGet("current/contents")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<ActionResult> GetCurrentUserDizLikedContents()
+    public async Task<ActionResult> GetCurrentUserDisLikedContents()
     {
         return NotFound("Dont released this end point");
     }
@@ -80,17 +86,20 @@ public class DizLikingController : ControllerBase
     {
         Guid currentUserId = this.GetIDFromClaim();
 
-        DizLikedContent? dizLikedContent = await context.DizLikedContents
-            .FirstOrDefaultAsync(dizLikedContent =>
-                dizLikedContent.ContentId == ContentId &&
-                dizLikedContent.UserId == currentUserId);
+        DisLikedContent? DisLikedContent = await context.DisLikedContents
+            .FirstOrDefaultAsync(DisLikedContent =>
+                DisLikedContent.ContentId == ContentId &&
+                DisLikedContent.UserId == currentUserId);
 
-        if (dizLikedContent is null)
+        if (DisLikedContent is null)
             return NotFound("Like dont placed");
 
-        context.DizLikedContents.Remove(dizLikedContent);
+        context.DisLikedContents.Remove(DisLikedContent);
 
         await context.SaveChangesAsync();
+
+        logger.LogInformation("User {UserId} re dis liked content {ContentId}",
+            currentUserId, ContentId);
 
         return NoContent();
     }
@@ -111,7 +120,7 @@ public class DizLikingController : ControllerBase
                     comment.Text,
                     comment.PublicatedDate,
                     comment.Likers.Count,
-                    comment.DizLikers.Count,
+                    comment.DisLikers.Count,
                     comment.ViewsCount)
             })
             .AsNoTracking()
@@ -122,29 +131,32 @@ public class DizLikingController : ControllerBase
         if (comment is null || comment.c is null)
             return NotFound("Comment not found");
 
-        DizLikedComment dizLikedComment = new()
+        DisLikedComment DisLikedComment = new()
         {
             UserId = currentUserId,
             CommentId = CommentId,
-            DizLikedDate = DateTime.UtcNow
+            DisLikedDate = DateTime.UtcNow
         };
 
-        context.DizLikedComments.Add(dizLikedComment);
+        context.DisLikedComments.Add(DisLikedComment);
 
         await context.SaveChangesAsync();
+
+        logger.LogInformation("User {UserId} diz liked comment {CommentId}",
+            currentUserId, CommentId);
 
         return Created($"api/dizliking/user/{currentUserId}/comment/{CommentId}", comment.cResponse);
     }
 
     [HttpGet("user/{UserId}/comment/{CommentId}")]
-    public async Task<ActionResult> GetDizLikedComment(Guid UserId, Guid CommentId)
+    public async Task<ActionResult> GetDisLikedComment(Guid UserId, Guid CommentId)
     {
         return NotFound("Dont released this end point");
     }
 
     [HttpGet("current/comments")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<ActionResult> GetCurrentUserDizLikedComments()
+    public async Task<ActionResult> GetCurrentUserDisLikedComments()
     {
         return NotFound("Dont released this end point");
     }
@@ -155,17 +167,20 @@ public class DizLikingController : ControllerBase
     {
         Guid currentUserId = this.GetIDFromClaim();
 
-        DizLikedComment? dizLikedComment = await context.DizLikedComments
-            .FirstOrDefaultAsync(dizLikedComment =>
-                dizLikedComment.CommentId == CommentId &&
-                dizLikedComment.UserId == currentUserId);
+        DisLikedComment? DisLikedComment = await context.DisLikedComments
+            .FirstOrDefaultAsync(DisLikedComment =>
+                DisLikedComment.CommentId == CommentId &&
+                DisLikedComment.UserId == currentUserId);
 
-        if (dizLikedComment is null)
+        if (DisLikedComment is null)
             return NotFound("DizLike dont placed");
 
-        context.DizLikedComments.Remove(dizLikedComment);
+        context.DisLikedComments.Remove(DisLikedComment);
 
         await context.SaveChangesAsync();
+
+        logger.LogInformation("User {UserId} re diz liked comment {CommentId}",
+            currentUserId, CommentId);
 
         return NoContent();
     }

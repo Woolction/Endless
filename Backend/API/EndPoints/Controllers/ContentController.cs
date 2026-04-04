@@ -16,17 +16,19 @@ public class ContentController : ControllerBase
 {
     private readonly EndlessContext context;
 
+    private readonly ILogger<ContentController> logger;
     private readonly IRecommendationService recommendation;
     private readonly IFfmpegService ffmpegService;
     private readonly IR2Service r2Service;
 
-    public ContentController(EndlessContext context, IRecommendationService recommendation, IFfmpegService ffmpegService, IR2Service r2Service)
+    public ContentController(EndlessContext context, IRecommendationService recommendation, IFfmpegService ffmpegService, IR2Service r2Service, ILogger<ContentController> logger)
     {
         this.context = context;
 
         this.recommendation = recommendation;
         this.ffmpegService = ffmpegService;
         this.r2Service = r2Service;
+        this.logger = logger;
     }
 
     [HttpPost("domain/{DomainId}")]
@@ -41,10 +43,18 @@ public class ContentController : ControllerBase
                 owner.DomainId == DomainId);
 
         if (domainOwner is null)
+        {
+            logger.LogWarning("User {UserId} tried to create content without permission",
+               currentUserId);
             return NotFound("User not found");
+        }
 
         if (domainOwner.OwnerRole <= DomainOwnerRole.ContentEditor)
+        {
+            logger.LogWarning("User {UserId} tried to create content without permission",
+               currentUserId);
             return Forbid("You do not have sufficient rights");
+        }
 
         string videoUrl = null!;
         string videoPath = null!;
@@ -103,6 +113,9 @@ public class ContentController : ControllerBase
         );
 
         await context.SaveChangesAsync();
+
+        logger.LogInformation("content {ContentId} created in domain {DomainId}",
+            content.Id, DomainId);
 
         return Created($"api/content/{content.Id}", content.GetContentResponseDto());
     }
@@ -175,6 +188,9 @@ public class ContentController : ControllerBase
 
         await context.SaveChangesAsync();
 
+        logger.LogInformation("content {ContentId} created has user {UserId}",
+            content.Id, currentUserId);
+
         return Created($"api/content/{content.Id}", content.GetContentResponseDto());
     }
 
@@ -190,7 +206,7 @@ public class ContentController : ControllerBase
                     content.CreatedDate, content.ContentType.ToString(),
                     content.VideoMeta != null ? content.VideoMeta.DurationSeconds : 0,
                     content.ContentUrl, content.PrewievPhotoUrl, content.Savers.Count, content.Likers.Count,
-                    content.Comments.Count, content.DizLikers.Count, content.ViewsCount)
+                    content.Comments.Count, content.DisLikers.Count, content.ViewsCount)
             })
             .AsNoTracking()
             .FirstOrDefaultAsync(content => content.c.Id == ContentId);
@@ -218,6 +234,9 @@ public class ContentController : ControllerBase
             .AsNoTracking()
             .FirstOrDefaultAsync();
 
+        logger.LogInformation("Returned content {ContentId}",
+            ContentId);
+
         return Ok(new ChangedContentDto(
             domainResponse, changedContent.cResponse, userResponse));
     }
@@ -233,17 +252,19 @@ public class ContentController : ControllerBase
             .Take(300)
             .ToArrayAsync();
 
-        return Ok(candidates.Select(c =>
-                new ContentRecoDto(
-                    c.Id, c.DomainId, c.CreatorId,
-                    c.Title, c.Slug, c.Description,
-                    c.CreatedDate, c.ContentType.ToString(), Random.Shared.NextDouble(),
-                    c.VideoMeta == null ? 0 : c.VideoMeta.DurationSeconds, c.ContentUrl,
-                    c.PrewievPhotoUrl, c.Savers.Count, c.Likers.Count, c.Comments.Count,
-                    c.DizLikers.Count, c.ViewsCount))
-                .OrderBy(c => c.RandomKey)
-                .Take(25)
-                .ToArray());
+        var randomContents = candidates.Select(c => new ContentRecoDto(
+                c.Id, c.DomainId, c.CreatorId, c.Title, c.Slug, c.Description,
+                c.CreatedDate, c.ContentType.ToString(), Random.Shared.NextDouble(),
+                c.VideoMeta == null ? 0 : c.VideoMeta.DurationSeconds, c.ContentUrl,
+                c.PrewievPhotoUrl, c.Savers.Count, c.Likers.Count, c.Comments.Count,
+                c.DisLikers.Count, c.ViewsCount))
+            .OrderBy(c => c.RandomKey)
+            .Take(25).ToArray();
+
+        logger.LogInformation("Returned {Count} random contents",
+            randomContents.Length);
+
+        return Ok(randomContents);
     }
 
     [HttpGet("recommendations")]
@@ -312,9 +333,12 @@ public class ContentController : ControllerBase
                 c.CreatedDate, c.ContentType.ToString(), Random.Shared.NextDouble(),
                 c.VideoMeta == null ? 0 : c.VideoMeta.DurationSeconds, c.ContentUrl,
                 c.PrewievPhotoUrl, c.Savers.Count, c.Likers.Count, c.Comments.Count,
-                c.DizLikers.Count, c.ViewsCount))
+                c.DisLikers.Count, c.ViewsCount))
             .OrderBy(x => x.RandomKey)
             .ToArray();
+
+        logger.LogInformation("Returned {Count} recommendet contents for User {UserId}",
+            result.Length, currentUserId);
 
         return Ok(new ContentRecoResponseDto(result));
     }
@@ -341,14 +365,15 @@ public class ContentController : ControllerBase
 
         var contents = await query
             .OrderByDescending(content => EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name))
-            .Take(20).Select(content => new {
+            .Take(20).Select(content => new
+            {
                 Content = new ContentResponseDto(
                     content.Id, content.DomainId, content.CreatorId,
                     content.Title, content.Slug, content.Description,
                     content.CreatedDate, content.ContentType.ToString(),
                     content.VideoMeta != null ? content.VideoMeta.DurationSeconds : 0,
                     content.ContentUrl, content.PrewievPhotoUrl, content.Savers.Count,
-                    content.Likers.Count, content.Comments.Count, content.DizLikers.Count,
+                    content.Likers.Count, content.Comments.Count, content.DisLikers.Count,
                     content.ViewsCount),
                 LastLiked = EF.Functions.ILike(content.Title, $"%{requestDto.Name}%"),
                 LastSimilarity = EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name),
@@ -360,6 +385,9 @@ public class ContentController : ControllerBase
         var lastResponse = contents.LastOrDefault();
 
         ContentResponseDto[] contentResponses = contents.Select(contnet => contnet.Content).ToArray();
+
+        logger.LogInformation("Search returned contents {Count} results for {Query}",
+           contentResponses.Length, requestDto.Name);
 
         return Ok(new ContentSearchResponseDto(
             contentResponses, lastResponse == null ? null : GetSearchDto(
@@ -381,7 +409,8 @@ public class ContentController : ControllerBase
             .Where(content =>
                 content.Id == ContentId &&
                 content.CreatorId == currentUserId)
-            .Select(content => new {
+            .Select(content => new
+            {
                 c = content,
                 dto = new ContentResponseDto(
                     content.Id, content.DomainId, content.CreatorId,
@@ -389,8 +418,9 @@ public class ContentController : ControllerBase
                     content.CreatedDate, content.ContentType.ToString(),
                     content.VideoMeta == null ? 0 : content.VideoMeta.DurationSeconds,
                     content.ContentUrl, content.PrewievPhotoUrl, content.Savers.Count,
-                    content.Likers.Count, content.Comments.Count, content.DizLikers.Count,
-                    content.ViewsCount)})
+                    content.Likers.Count, content.Comments.Count, content.DisLikers.Count,
+                    content.ViewsCount)
+            })
             .FirstOrDefaultAsync();
 
         if (content == null)
@@ -433,22 +463,29 @@ public class ContentController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        return Ok(content.dto); 
+        logger.LogInformation("Content {ContentId} updated successfully",
+            ContentId);
+
+        return Ok(content.dto);
     }
 
     [HttpDelete("{ContentId}")]
     [Authorize(Policy = nameof(UserRole.Creator))]
     public async Task<IActionResult> DeleteContent(Guid ContentId)
     {
-        Guid UserId = this.GetIDFromClaim();
+        Guid currentUserId = this.GetIDFromClaim();
 
-        User? user = await context.Users.FindAsync(UserId);
+        User? user = await context.Users.FindAsync(currentUserId);
 
         if (user is null)
             return NotFound("User not found");
 
         if (user.Contents.Any(c => c.Id != ContentId))
+        {
+            logger.LogWarning("User {UserId} tried to create content without permission",
+                currentUserId);
             return Forbid("You doesn't owner the Content");
+        }
 
         Content? content = await context.Contents
             .FirstOrDefaultAsync(c => c.Id == ContentId);
@@ -459,6 +496,9 @@ public class ContentController : ControllerBase
         context.Contents.Remove(content);
 
         await context.SaveChangesAsync();
+
+        logger.LogWarning("Deleted content {ContentId} for user {UserId}",
+            ContentId, currentUserId);
 
         return NoContent();
     }

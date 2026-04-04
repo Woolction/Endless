@@ -17,14 +17,17 @@ public class UsersController : ControllerBase
 {
     private readonly EndlessContext context;
 
+    private readonly ILogger<UsersController> logger;
     private readonly IAuthService authService;
     private readonly IR2Service r2Service;
-    public UsersController(EndlessContext context, IAuthService authService, IR2Service r2Service)
+
+    public UsersController(EndlessContext context, IAuthService authService, IR2Service r2Service, ILogger<UsersController> logger)
     {
         this.context = context;
 
         this.authService = authService;
         this.r2Service = r2Service;
+        this.logger = logger;
     }
 
     [HttpPost]
@@ -34,9 +37,12 @@ public class UsersController : ControllerBase
         RegistryResponseDto? responseDto = await authService.RegistryAsync(requestDto);
 
         if (responseDto is null)
-            return Conflict($"User with Email: {requestDto.Email} existn");
+            return Conflict($"User with Email: {requestDto.Email} exists");
 
         this.CraeteTokensInCookies(new AuthResponseDto(responseDto.Token, responseDto.RefreshToken));
+
+        logger.LogInformation("User {UserId} registred",
+            responseDto.NewUserId);
 
         return Created($"api/users/{responseDto.NewUserId}", responseDto);
     }
@@ -84,6 +90,9 @@ public class UsersController : ControllerBase
 
         UserResponseDto[] userResponses = users.Select(user => user.User).ToArray();
 
+        logger.LogInformation("Search returned users: {Count} results for {Query}",
+            userResponses.Length, requestDto.Name);
+
         return Ok(new UserSearchResponseDto(
             userResponses, lastResponse == null ? null : GetSearchDto(
                 lastResponse.LastLiked, lastResponse.LastSimilarity, lastResponse.LastLevenshit)));
@@ -105,6 +114,9 @@ public class UsersController : ControllerBase
 
         if (userResponse == null)
             return NotFound();
+
+        logger.LogInformation("Returned user {UserId}",
+            UserId);
 
         return Ok(userResponse);
     }
@@ -128,6 +140,8 @@ public class UsersController : ControllerBase
 
         if (user is null)
             return NotFound();
+
+        logger.LogInformation("Returned User {UserId}", currentUserId);
 
         return Ok(user);
     }
@@ -181,10 +195,14 @@ public class UsersController : ControllerBase
         {
             await context.SaveChangesAsync();
 
+            logger.LogInformation("User {UserId} updated", currentUserId);
+
             return Ok(user.uResponse);
         }
         catch (DbUpdateException ex)
         {
+            logger.LogError(ex, "Error while updating user {UserId}", currentUserId);
+
             if (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
                 return Conflict($"This name {updateDto.Name} already existn");
 
@@ -202,6 +220,8 @@ public class UsersController : ControllerBase
         await context.Users.Where(user => user.Id == currentUserId).ExecuteDeleteAsync();
 
         this.DeleteTokensInCookies();
+
+        logger.LogInformation("User {UserId} deleted", currentUserId);
 
         return NoContent();
     }
