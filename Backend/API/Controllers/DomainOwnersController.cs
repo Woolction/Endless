@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Backend.API.Data.Components;
 using Backend.API.Data.Context;
 using Microsoft.AspNetCore.Mvc;
-using Backend.API.Extensions;
+using Backend.API.Managers;
 using Backend.API.Data.Models;
 using Backend.API.Dtos;
 

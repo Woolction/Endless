@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Backend.API.Services.Implementations;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.StaticFiles;
+using Backend.API.Services.Interfaces;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -8,11 +10,10 @@ using Backend.API.Data.Components;
 using Backend.API.Data.Context;
 using Backend.API.Data.Models;
 using Backend.API.Middleware;
-using Backend.API.Services;
 using Scalar.AspNetCore;
 using System.Text;
 
-namespace Backend.API.Extensions;
+namespace Backend.API;
 
 public static class ProgramPipeline
 {
@@ -37,7 +38,7 @@ public static class ProgramPipeline
         {
             options.AddPolicy("Frontend", policy =>
             {
-                policy.WithOrigins("http://localhost:5173");
+                policy.WithOrigins("http://localhost:5100");
                 policy.AllowAnyHeader();
                 policy.AllowAnyMethod();
                 policy.AllowCredentials();
@@ -120,7 +121,7 @@ public static class ProgramPipeline
         builder.Services.AddDbContext<EndlessContext>(context =>
             context.UseNpgsql(DbKey));
 
-        // Custum builder.Services
+        // Custum Services
         
         //      Scoped
         builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
@@ -157,6 +158,7 @@ public static class ProgramPipeline
 
         app.UseHttpsRedirection();
 
+        app.UseMiddleware<ErrorHandlerMiddleware>();
         app.UseMiddleware<ContentSecurityPolicy>();
 
         app.UseRouting();

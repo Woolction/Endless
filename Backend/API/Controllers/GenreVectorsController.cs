@@ -4,8 +4,9 @@ using Backend.API.Data.Components;
 using Backend.API.Data.Context;
 using Microsoft.AspNetCore.Mvc;
 using Backend.API.Data.Models;
-using Backend.API.Extensions;
+using Backend.API.Managers;
 using Backend.API.Dtos;
+using Backend.API.Extensions;
 
 namespace Backend.API.EndPoints.Controllers;
 
@@ -23,7 +24,7 @@ public class GenreVectorsController : ControllerBase
 
         this.logger = logger;
     }
-    
+
     [HttpPost]
     [Authorize(Policy = nameof(UserRole.Admin))]
     public async Task<ActionResult<List<GenreResponseDto>>> CreateGenreVector(GenreVectorCreateDto createDto)

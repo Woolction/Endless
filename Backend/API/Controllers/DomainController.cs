@@ -4,8 +4,8 @@ using Backend.API.Data.Components;
 using Microsoft.AspNetCore.Mvc;
 using Backend.API.Data.Context;
 using Backend.API.Data.Models;
-using Backend.API.Extensions;
-using Backend.API.Services;
+using Backend.API.Managers;
+using Backend.API.Services.Interfaces;
 using Backend.API.Dtos;
 using Npgsql;
 
@@ -20,7 +20,7 @@ public class DomainController : ControllerBase
 
     private readonly ILogger<DomainController> logger;
     private readonly IR2Service r2Service;
-    
+
     public DomainController(EndlessContext context, IR2Service r2Service, ILogger<DomainController> logger)
     {
         this.context = context;
@@ -204,11 +204,13 @@ public class DomainController : ControllerBase
     {
         var domain = await context.Domains
             .Where(domain => domain.Id == DomainId)
-            .Select(domain => new {
+            .Select(domain => new
+            {
                 d = domain,
                 SubscribersCount = domain.Subscribers.Count,
                 ContentsCount = domain.Contents.Count,
-                OwnersCount = domain.Owners.Count})// For mapping
+                OwnersCount = domain.Owners.Count
+            })// For mapping
             .FirstOrDefaultAsync();
 
         if (domain is null || domain.d is null)

@@ -1,7 +1,8 @@
+using Backend.API.Services.Interfaces;
 using Backend.API.Data.Models;
-using Backend.API.Extensions;
+using Backend.API.Managers;
 
-namespace Backend.API.Services;
+namespace Backend.API.Services.Implementations;
 
 public class InteractionService : IInteractionService
 {

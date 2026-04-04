@@ -1,19 +1,18 @@
 using System.IdentityModel.Tokens.Jwt;
+using Backend.API.Services.Interfaces;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Cryptography;
-using Backend.API.Data.Components;
 using Backend.API.Data.Context;
 using Backend.API.Data.Models;
-using Backend.API.Extensions;
 using System.Security.Claims;
+using Backend.API.Managers;
 using Backend.API.Dtos;
 using System.Text;
 using Npgsql;
-using System.ComponentModel.DataAnnotations;
 
-namespace Backend.API.Services;
+namespace Backend.API.Services.Implementations;
 
 public class AuthService : IAuthService
 {

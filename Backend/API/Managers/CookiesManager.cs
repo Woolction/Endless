@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Backend.API.Dtos;
 
-namespace Backend.API.Extensions;
+namespace Backend.API.Managers;
 
 public static class CookiesManager
 {

@@ -1,4 +1,4 @@
-namespace Backend.API.Extensions;
+namespace Backend.API.Managers;
 
 public static class VectorManager
 {

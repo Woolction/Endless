@@ -1,4 +1,4 @@
-namespace Backend.API.Services;
+namespace Backend.API.Services.Interfaces;
 
 public interface IR2Service
 {

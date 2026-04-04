@@ -4,10 +4,11 @@ using Backend.API.Data.Components;
 using Backend.API.Data.Context;
 using Microsoft.AspNetCore.Mvc;
 using Backend.API.Data.Models;
-using Backend.API.Extensions;
-using Backend.API.Services;
+using Backend.API.Managers;
+using Backend.API.Services.Interfaces;
 using Backend.API.Dtos;
 using System.Diagnostics;
+using Backend.API.Extensions;
 
 [ApiController]
 [Route("api/[controller]")]

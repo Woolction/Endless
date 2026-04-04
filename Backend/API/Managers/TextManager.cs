@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace Backend.API.Extensions;
+namespace Backend.API.Managers;
 
 public static partial class TextManager
 {

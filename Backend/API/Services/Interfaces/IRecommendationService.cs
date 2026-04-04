@@ -1,6 +1,6 @@
 using Backend.API.Data.Models;
 
-namespace Backend.API.Services;
+namespace Backend.API.Services.Interfaces;
 
 public interface IRecommendationService
 {

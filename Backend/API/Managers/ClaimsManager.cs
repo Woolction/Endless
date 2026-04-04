@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
-namespace Backend.API.Extensions;
+namespace Backend.API.Managers;
 
 public static class ClaimsManager
 {

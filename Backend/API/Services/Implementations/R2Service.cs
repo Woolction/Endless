@@ -1,7 +1,8 @@
+using Backend.API.Services.Interfaces;
 using Amazon.S3.Transfer;
 using Amazon.S3;
 
-namespace Backend.API.Services;
+namespace Backend.API.Services.Implementations;
 
 public class R2Service : IR2Service
 {
