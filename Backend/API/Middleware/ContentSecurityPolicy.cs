@@ -1,4 +1,4 @@
-namespace Backend.API.Middleware;
+namespace API.Middleware;
 
 public class ContentSecurityPolicy
 {

@@ -1,58 +1,84 @@
+using Application.Commands.Authentications;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
-using Backend.API.Services.Interfaces;
+using Application.Dtos.Authentications;
 using Microsoft.AspNetCore.Mvc;
-using Backend.API.Managers;
-using Backend.API.Dtos;
+using Infrastructure.Managers;
+using Application.Handlers;
+using Application;
 
-namespace Backend.API.EndPoints.Controllers;
+namespace API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly IAuthService authService;
+    private readonly UserUpdateTokenHandler updateTokenHandler;
+    private readonly UserLoginHandler loginHandler;
 
     private readonly ILogger<AuthController> logger;
 
-    public AuthController(IAuthService authService, ILogger<AuthController> logger)
+    public AuthController(UserLoginHandler loginHandler, UserUpdateTokenHandler updateTokenHandler, ILogger<AuthController> logger)
     {
-        this.authService = authService;
+        this.updateTokenHandler = updateTokenHandler;
+        this.loginHandler = loginHandler;
 
         this.logger = logger;
     }
 
     [HttpGet("token")]
     [EnableRateLimiting("LoginLimit")]
-    public async Task<ActionResult<AuthResponseDto>> Login(AuthRequestDto requestDto)
+    public async Task<ActionResult<AuthDto>> Login([FromQuery] AuthCreateCommand cmd)
     {
-        AuthResponseDto? responseDto = await authService.LoginAsync(requestDto);
+        Result<AuthDto> result = await loginHandler.Handle(cmd);
 
-        if (responseDto is null)
-            return BadRequest("Password or Email dont correct");
+        if (!result.IsSuccess)
+        {
+            return result.StatusCode switch
+            {
+                400 => BadRequest(result.Error),
+                404 => NotFound(result.Error),
+                500 => StatusCode(result.StatusCode, result.Error),
+                _ => StatusCode(500, "Unknown error")
+            };
+        }
 
-        logger.LogInformation("User {UserId} Logined", this.GetIDFromClaim());
+        logger.LogInformation("User {UserId} Logined", result.Data!.UserId);
 
-        this.CraeteTokensInCookies(responseDto);
+        this.CraeteTokensInCookies(result.Data.Token, result.Data.RefreshToken);
 
-        return Ok(responseDto);
+        return Ok(result.Data);
     }
 
     [HttpPut("token")]
-    public async Task<ActionResult<AuthResponseDto>> RefreshToken()
+    public async Task<ActionResult<AuthDto>> RefreshToken()
     {
-        RefreshTokenRequestDto refreshDto = new(Request.Cookies["RefreshToken"]!);
+        string? refreshToken = Request.Cookies["RefreshToken"];
 
-        AuthResponseDto? responseDto = await authService.RefreshTokensAsync(refreshDto);
+        if (string.IsNullOrEmpty(refreshToken))
+            return BadRequest("There is no refresh token");
 
-        if (responseDto is null || responseDto.Token is null || responseDto.RefreshToken is null)
-            return BadRequest("Invalid refresh token");
+        Result<AuthDto> result = await updateTokenHandler.Handle(new RefreshTokenCommand(refreshToken));
 
-        logger.LogInformation("User {UserId} Refreshed Token", this.GetIDFromClaim());
+        if (!result.IsSuccess)
+        {
+            if (result.Data is null || result.Data.Token is null || result.Data.RefreshToken is null)
+                return BadRequest("Invalid refresh token");
 
-        this.CraeteTokensInCookies(responseDto);
+            return result.StatusCode switch
+            {
+                400 => BadRequest(result.Error),
+                404 => NotFound(result.Error),
+                500 => StatusCode(result.StatusCode, result.Error),
+                _ => StatusCode(500, "Unknown error")
+            };
+        }
 
-        return Ok(responseDto);
+        logger.LogInformation("User {UserId} Refreshed Token", result.Data!.UserId);
+
+        this.CraeteTokensInCookies(result.Data.Token, result.Data.RefreshToken);
+
+        return Ok(result.Data);
     }
 
     [Authorize()]

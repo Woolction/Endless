@@ -1,13 +1,13 @@
+using Application.Dtos.Contents;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Backend.API.Data.Components;
+using Domain.Components;
 using Microsoft.AspNetCore.Mvc;
-using Backend.API.Data.Context;
-using Backend.API.Data.Models;
-using Backend.API.Managers;
-using Backend.API.Dtos;
+using Infrastructure.Context;
+using Domain.Entities;
+using Infrastructure.Managers;
 
-namespace Backend.API.EndPoints.Controllers;
+namespace API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -26,7 +26,7 @@ public class SavingController : ControllerBase
 
     [HttpPost("content/{ContentId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<ActionResult<ContentResponseDto>> SaveContent(Guid ContentId)
+    public async Task<ActionResult<ContentDto>> SaveContent(Guid ContentId)
     {
         Guid currentUserId = this.GetIDFromClaim();
 
@@ -35,8 +35,8 @@ public class SavingController : ControllerBase
             .Select(content => new
             {
                 c = content,
-                cResponse = new ContentResponseDto(
-                    content.Id, content.DomainId, content.CreatorId,
+                cResponse = new ContentDto(
+                    content.Id, content.ChannelId, content.CreatorId,
                     content.Title, content.Slug, content.Description,
                     content.CreatedDate, content.ContentType.ToString(),
                     content.VideoMeta != null ? content.VideoMeta.DurationSeconds : 0,

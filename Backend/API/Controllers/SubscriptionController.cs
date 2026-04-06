@@ -1,13 +1,13 @@
+using Application.Dtos.Channels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Backend.API.Data.Components;
+using Domain.Components;
 using Microsoft.AspNetCore.Mvc;
-using Backend.API.Data.Context;
-using Backend.API.Data.Models;
-using Backend.API.Managers;
-using Backend.API.Dtos;
+using Infrastructure.Context;
+using Domain.Entities;
+using Infrastructure.Managers;
 
-namespace Backend.API.EndPoints.Controllers;
+namespace API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -24,87 +24,87 @@ public class SubscriptionController : ControllerBase
         this.logger = logger;
     }
 
-    [HttpPost("domain/{DomainId}")]
+    [HttpPost("Channel/{ChannelId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<ActionResult<DomainResponseDto>> Subscription(Guid DomainId)
+    public async Task<ActionResult<ChannelDto>> Subscription(Guid ChannelId)
     {
         Guid currentUserId = this.GetIDFromClaim();
 
         User? currentUser = await context.Users.FindAsync(currentUserId);
-        var domain = await context.Domains
-            .Select(domain => new
+        var Channel = await context.Channels
+            .Select(Channel => new
             {
-                d = domain,
-                dResponse = new DomainResponseDto(
-                    domain.Id, domain.Name, "@" + domain.Slug,
-                    domain.Description ?? "", domain.CreatedDate,
-                    domain.AvatarPhotoUrl, domain.Subscribers.Count,
-                    domain.Contents.Count, domain.Owners.Count,
-                    domain.TotalLikes, domain.TotalViews)
+                d = Channel,
+                dResponse = new ChannelDto(
+                    Channel.Id, Channel.Name, "@" + Channel.Slug,
+                    Channel.Description ?? "", Channel.CreatedDate,
+                    Channel.AvatarPhotoUrl, Channel.Subscribers.Count,
+                    Channel.Contents.Count, Channel.Owners.Count,
+                    Channel.TotalLikes, Channel.TotalViews)
             })
             .AsNoTracking()
-            .FirstOrDefaultAsync(domain => domain.d.Id == DomainId);
+            .FirstOrDefaultAsync(Channel => Channel.d.Id == ChannelId);
 
         if (currentUser is null)
             return NotFound("User not found");
-        if (domain is null || domain is null)
-            return NotFound("Domain not found");
+        if (Channel is null || Channel is null)
+            return NotFound("Channel not found");
 
-        DomainSubscription domainSubscription = new()
+        ChannelSubscription ChannelSubscription = new()
         {
             SubscriberId = currentUserId,
-            DomainId = DomainId,
+            ChannelId = ChannelId,
             SubscribedDate = DateTime.UtcNow,
             Notification = false
         };
 
-        context.DomainSubscriptions.Add(domainSubscription);
+        context.ChannelSubscriptions.Add(ChannelSubscription);
 
         await context.SaveChangesAsync();
 
-        logger.LogInformation("User {UserId} subscriped domain {DomainId}",
-          currentUserId, DomainId);
+        logger.LogInformation("User {UserId} subscriped Channel {ChannelId}",
+          currentUserId, ChannelId);
 
-        return Created($"api/subscription/user/{currentUserId}/domain/{DomainId}",
-            domain.dResponse);
+        return Created($"api/subscription/user/{currentUserId}/Channel/{ChannelId}",
+            Channel.dResponse);
     }
 
-    [HttpGet("user/{UserId}/domain/{DomainId}")]
+    [HttpGet("user/{UserId}/Channel/{ChannelId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<ActionResult> GetSubscribedDomains(Guid UserId, Guid DomainId)
+    public async Task<ActionResult> GetSubscribedChannels(Guid UserId, Guid ChannelId)
     {
         return NotFound("Dont released this end point");
     }
 
-    [HttpGet("domain/{DomainId}")]
+    [HttpGet("Channel/{ChannelId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<ActionResult> GetCurrentUserSubscribedDomains(Guid DomainId)
+    public async Task<ActionResult> GetCurrentUserSubscribedChannels(Guid ChannelId)
     {
         return NotFound("Dont released this end point");
     }
 
-    [HttpDelete("domain/{DomainId}")]
+    [HttpDelete("Channel/{ChannelId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<IActionResult> ReSubscription(Guid DomainId)
+    public async Task<IActionResult> ReSubscription(Guid ChannelId)
     {
         Guid currentUserId = this.GetIDFromClaim();
 
-        DomainSubscription? domainSubscription = await context.DomainSubscriptions
-            .Include(domainSubscription => domainSubscription.Subscriber)
-            .Include(domainSubscription => domainSubscription.Domain)
-            .FirstOrDefaultAsync(domainSubscription =>
-                domainSubscription.SubscriberId == currentUserId &&
-                domainSubscription.DomainId == DomainId);
+        ChannelSubscription? ChannelSubscription = await context.ChannelSubscriptions
+            .Include(ChannelSubscription => ChannelSubscription.Subscriber)
+            .Include(ChannelSubscription => ChannelSubscription.Channel)
+            .FirstOrDefaultAsync(ChannelSubscription =>
+                ChannelSubscription.SubscriberId == currentUserId &&
+                ChannelSubscription.ChannelId == ChannelId);
 
-        if (domainSubscription is null)
-            return NotFound("Subscriped Domain not found");
+        if (ChannelSubscription is null)
+            return NotFound("Subscriped Channel not found");
 
-        context.DomainSubscriptions.Remove(domainSubscription);
+        context.ChannelSubscriptions.Remove(ChannelSubscription);
 
         await context.SaveChangesAsync();
 
-        logger.LogInformation("User {UserId} re subscriped domain {DomainId}",
-          currentUserId, DomainId);
+        logger.LogInformation("User {UserId} re subscriped Channel {ChannelId}",
+          currentUserId, ChannelId);
 
         return NoContent();
     }

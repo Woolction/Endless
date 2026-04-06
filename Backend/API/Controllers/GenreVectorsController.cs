@@ -1,14 +1,14 @@
+using Application.Commands.Genres;
+using Application.Dtos.Genres;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Backend.API.Data.Components;
-using Backend.API.Data.Context;
+using Domain.Components;
+using Infrastructure.Context;
 using Microsoft.AspNetCore.Mvc;
-using Backend.API.Data.Models;
-using Backend.API.Managers;
-using Backend.API.Dtos;
-using Backend.API.Extensions;
+using Domain.Entities;
+using API.Extensions;
 
-namespace Backend.API.EndPoints.Controllers;
+namespace API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -27,7 +27,7 @@ public class GenreVectorsController : ControllerBase
 
     [HttpPost]
     [Authorize(Policy = nameof(UserRole.Admin))]
-    public async Task<ActionResult<List<GenreResponseDto>>> CreateGenreVector(GenreVectorCreateDto createDto)
+    public async Task<ActionResult<List<GenreDto>>> CreateGenreVector(GenreVectorCreateCommand createDto)
     {
         GenreInfo genreInfo = await context.GenreInfos.FirstAsync();
 

@@ -1,15 +1,22 @@
+using Application.Commands.Authentications;
+using Application.Dtos.Authentications;
+using Application.Queries.Searchs;
+using Application.Commands.Users;
+using Application.Dtos.Searchs;
+using Application.Dtos.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
+using Domain.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
-using Backend.API.Data.Context;
-using Backend.API.Data.Models;
-using Backend.API.Managers;
-using Backend.API.Services.Interfaces;
-using Backend.API.Dtos;
+using Infrastructure.Context;
+using Domain.Entities;
+using Infrastructure.Managers;
 using Npgsql;
+using Application.Handlers;
+using Application;
 
-namespace Backend.API.EndPoints.Controllers;
+namespace API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -17,98 +24,109 @@ public class UsersController : ControllerBase
 {
     private readonly EndlessContext context;
 
+    private readonly UserRegistryHandler registryHandler;
+
     private readonly ILogger<UsersController> logger;
-    private readonly IAuthService authService;
     private readonly IR2Service r2Service;
 
-    public UsersController(EndlessContext context, IAuthService authService, IR2Service r2Service, ILogger<UsersController> logger)
+    public UsersController(EndlessContext context, UserRegistryHandler registryHandler, IAuthService authService, IR2Service r2Service, ILogger<UsersController> logger)
     {
         this.context = context;
+        this.registryHandler = registryHandler;
 
-        this.authService = authService;
         this.r2Service = r2Service;
         this.logger = logger;
     }
 
     [HttpPost]
     [EnableRateLimiting("RegistryLimit")]
-    public async Task<ActionResult<RegistryResponseDto>> CreateUser(AuthRequestDto requestDto)
+    public async Task<ActionResult<RegistryDto>> CreateUser(AuthCreateCommand cmd)
     {
-        RegistryResponseDto? responseDto = await authService.RegistryAsync(requestDto);
+        Result<RegistryDto> result = await registryHandler.Handle(cmd);
 
-        if (responseDto is null)
-            return Conflict($"User with Email: {requestDto.Email} exists");
+        if (!result.IsSuccess)
+        {
+            if (result.StatusCode == 409 && result.ResultId == 1)
+                return Conflict(result.Error);
 
-        this.CraeteTokensInCookies(new AuthResponseDto(responseDto.Token, responseDto.RefreshToken));
+            return result.StatusCode switch
+            {
+                409 => Conflict(result.Error),
+                500 => StatusCode(result.StatusCode, result.Error),
+                _ => StatusCode(500, "Unknown error")
+            };
+        }
+
+        this.CraeteTokensInCookies(result.Data!.Token, result.Data.RefreshToken);
 
         logger.LogInformation("User {UserId} registred",
-            responseDto.NewUserId);
+            result.Data.NewUserId);
 
-        return Created($"api/users/{responseDto.NewUserId}", responseDto);
+        return Created($"api/users/{result.Data.NewUserId}", result.Data);
     }
 
     [HttpGet("search")]
-    public async Task<ActionResult<UserSearchResponseDto>> GetUsersForName([FromQuery] SearchRequestDto requestDto) //Searching
+    public async Task<ActionResult<UserSearchQuery>> GetUsersForName([FromQuery] SearchQuery searchQuery) //Searching
     {
-        if (string.IsNullOrEmpty(requestDto.Name))
+        if (string.IsNullOrEmpty(searchQuery.Name))
             return BadRequest("The name is empty");
 
         IQueryable<User> query = context.Users.AsQueryable();
 
-        if (requestDto.LastSearch is not null)
+        if (searchQuery.LastSearch is not null)
         {
             query = query.Where(user =>
-                EF.Functions.ILike(user.Name, $"%{requestDto.Name}%") == requestDto.LastSearch.LastLiked &&
-                EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name) < requestDto.LastSearch.LastSimilarity &&
-                EF.Functions.FuzzyStringMatchLevenshtein(user.Name, requestDto.Name) >= requestDto.LastSearch.LastLevenshit);
+                EF.Functions.ILike(user.Name, $"%{searchQuery.Name}%") == searchQuery.LastSearch.LastLiked &&
+                EF.Functions.TrigramsSimilarity(user.Name, searchQuery.Name) < searchQuery.LastSearch.LastSimilarity &&
+                EF.Functions.FuzzyStringMatchLevenshtein(user.Name, searchQuery.Name) >= searchQuery.LastSearch.LastLevenshit);
         }
         else
         {
             query = query.Where(user =>
-                EF.Functions.ILike(user.Name, $"%{requestDto.Name}%") ||
-                EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name) > 0.2f ||
-                EF.Functions.FuzzyStringMatchLevenshtein(user.Name, requestDto.Name) <= 3);
+                EF.Functions.ILike(user.Name, $"%{searchQuery.Name}%") ||
+                EF.Functions.TrigramsSimilarity(user.Name, searchQuery.Name) > 0.2f ||
+                EF.Functions.FuzzyStringMatchLevenshtein(user.Name, searchQuery.Name) <= 3);
         }
 
         var users = await query
-            .OrderByDescending(user => EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name))
+            .OrderByDescending(user => EF.Functions.TrigramsSimilarity(user.Name, searchQuery.Name))
             .Take(20).Select(user => new
             {
-                User = new UserResponseDto(
+                User = new UserDto(
                     user.Id, user.Name, "@" + user.Slug,
                     user.Description ?? "", user.RegistryData, user.Email,
                     user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
                     user.Comments.Count, user.Contents.Count, user.Followers.Count,
-                    user.Following.Count, user.OwnedDomains.Count, user.SubscripedDomains.Count),
-                LastLiked = EF.Functions.ILike(user.Name, $"%{requestDto.Name}%"),
-                LastSimilarity = EF.Functions.TrigramsSimilarity(user.Name, requestDto.Name),
-                LastLevenshit = EF.Functions.FuzzyStringMatchLevenshtein(user.Name, requestDto.Name)
+                    user.Following.Count, user.OwnedChannels.Count, user.SubscripedChannels.Count),
+                LastLiked = EF.Functions.ILike(user.Name, $"%{searchQuery.Name}%"),
+                LastSimilarity = EF.Functions.TrigramsSimilarity(user.Name, searchQuery.Name),
+                LastLevenshit = EF.Functions.FuzzyStringMatchLevenshtein(user.Name, searchQuery.Name)
             })
             .AsNoTracking().ToArrayAsync();
 
         var lastResponse = users.LastOrDefault();
 
-        UserResponseDto[] userResponses = users.Select(user => user.User).ToArray();
+        UserDto[] userResponses = users.Select(user => user.User).ToArray();
 
         logger.LogInformation("Search returned users: {Count} results for {Query}",
-            userResponses.Length, requestDto.Name);
+            userResponses.Length, searchQuery.Name);
 
-        return Ok(new UserSearchResponseDto(
-            userResponses, lastResponse == null ? null : GetSearchDto(
+        return Ok(new UserSearchQuery(
+            userResponses, lastResponse == null ? null : GetSearchQuery(
                 lastResponse.LastLiked, lastResponse.LastSimilarity, lastResponse.LastLevenshit)));
     }
 
     [HttpGet("{UserId}")]
-    public async Task<ActionResult<UserResponseDto>> GetUser(Guid UserId)
+    public async Task<ActionResult<UserDto>> GetUser(Guid UserId)
     {
-        UserResponseDto? userResponse = await context.Users
+        UserDto? userResponse = await context.Users
             .Select(user =>
-                new UserResponseDto(
+                new UserDto(
                     user.Id, user.Name, "@" + user.Slug,
                     user.Description ?? "", user.RegistryData, user.Email,
                     user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
                     user.Comments.Count, user.Contents.Count, user.Followers.Count,
-                    user.Following.Count, user.OwnedDomains.Count, user.SubscripedDomains.Count))
+                    user.Following.Count, user.OwnedChannels.Count, user.SubscripedChannels.Count))
             .AsNoTracking()
             .FirstOrDefaultAsync(user => user.Id == UserId);
 
@@ -124,17 +142,17 @@ public class UsersController : ControllerBase
     //Current User
     [Authorize]
     [HttpGet("current")]
-    public async Task<ActionResult<UserResponseDto>> GetCurrentUser()
+    public async Task<ActionResult<UserDto>> GetCurrentUser()
     {
         Guid currentUserId = this.GetIDFromClaim();
 
-        UserResponseDto? user = await context.Users
-            .Select(user => new UserResponseDto(
+        UserDto? user = await context.Users
+            .Select(user => new UserDto(
                 user.Id, user.Name, "@" + user.Slug,
                 user.Description ?? "", user.RegistryData, user.Email,
                 user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
                 user.Comments.Count, user.Contents.Count, user.Followers.Count,
-                user.Following.Count, user.OwnedDomains.Count, user.SubscripedDomains.Count))
+                user.Following.Count, user.OwnedChannels.Count, user.SubscripedChannels.Count))
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id == currentUserId);
 
@@ -148,7 +166,7 @@ public class UsersController : ControllerBase
 
     [Authorize]
     [HttpPut("current")]
-    public async Task<ActionResult<UserResponseDto>> UpdateCurrentUser(UserUpdateDto updateDto)
+    public async Task<ActionResult<UserDto>> UpdateCurrentUser(UserUpdateCommand updateDto)
     {
         Guid currentUserId = this.GetIDFromClaim();
 
@@ -156,12 +174,12 @@ public class UsersController : ControllerBase
             .Select(user => new
             {
                 u = user,
-                uResponse = new UserResponseDto(
+                uResponse = new UserDto(
                     user.Id, user.Name, "@" + user.Slug,
                     user.Description ?? "", user.RegistryData, user.Email,
                     user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
                     user.Comments.Count, user.Contents.Count, user.Followers.Count,
-                    user.Following.Count, user.OwnedDomains.Count, user.SubscripedDomains.Count)
+                    user.Following.Count, user.OwnedChannels.Count, user.SubscripedChannels.Count)
             })
             .FirstOrDefaultAsync(user => user.u.Id == currentUserId);
 
@@ -226,7 +244,7 @@ public class UsersController : ControllerBase
         return NoContent();
     }
 
-    private SearchDto GetSearchDto(bool IsLastLiked, double LastSimilarity, int LastLevenshit)
+    private SearchDto GetSearchQuery(bool IsLastLiked, double LastSimilarity, int LastLevenshit)
     {
         return new()
         {

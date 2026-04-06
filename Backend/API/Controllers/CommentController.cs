@@ -1,14 +1,16 @@
+using Application.Commands.Comments;
 using Microsoft.AspNetCore.Authorization;
+using Application.Dtos.Comments;
+using Infrastructure.Managers;
+using Application.Dtos.Users;
+using Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
-using Backend.API.Data.Components;
+using Domain.Components;
+using Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
-using Backend.API.Data.Context;
-using Backend.API.Data.Models;
-using Backend.API.Managers;
-using Backend.API.Dtos;
-using Backend.API.Extensions;
+using API.Extensions;
 
-namespace Backend.API.EndPoints.Controllers;
+namespace API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -26,7 +28,7 @@ public class CommentController : ControllerBase
     }
 
     [HttpGet("content/{ContentId}")]
-    public async Task<ActionResult<SendCommentDto[]>> GetCommentWithContnet(Guid ContentId)
+    public async Task<ActionResult<CommentSendedDto[]>> GetCommentWithContnet(Guid ContentId)
     {
         bool hasContent = await context.Contents
             .AsNoTracking().AnyAsync(content => content.Id == ContentId);
@@ -37,17 +39,17 @@ public class CommentController : ControllerBase
         var comments = await context.Comments
             .Where(comment => comment.ContentId == ContentId)
             .Include(comment => comment.Commentator)
-            .Select(comment => new SendCommentDto(
-                new CommentResponseDto(
+            .Select(comment => new CommentSendedDto(
+                new CommentDto(
                     comment.Id, comment.Text,
                     comment.PublicatedDate, comment.Likers.Count,
                     comment.DisLikers.Count, comment.ViewsCount),
-                new UserResponseDto(
+                new UserDto(
                     comment.Commentator!.Id, comment.Commentator!.Name, "@" + comment.Commentator!.Slug,
                     comment.Commentator!.Description ?? "", comment.Commentator!.RegistryData, comment.Commentator!.Email,
                     comment.Commentator!.Role.ToString(), comment.Commentator!.AvatarPhotoUrl, comment.Commentator!.TotalLikes,
                     comment.Commentator!.Comments.Count, comment.Commentator!.Contents.Count, comment.Commentator!.Followers.Count,
-                    comment.Commentator!.Following.Count, comment.Commentator!.OwnedDomains.Count, comment.Commentator!.SubscripedDomains.Count)))
+                    comment.Commentator!.Following.Count, comment.Commentator!.OwnedChannels.Count, comment.Commentator!.SubscripedChannels.Count)))
             .ToArrayAsync();
 
         logger.LogInformation("Returned {Count} comment in content {ContentId}",
@@ -56,9 +58,15 @@ public class CommentController : ControllerBase
         return Ok(comments);
     }
 
+    [HttpGet("{CommentId}")]
+    public async Task<ActionResult<CommentSendedDto>> GetCommentById(Guid CommentId)
+    {
+        return Ok();
+    }
+
     [HttpPost("content/{ContentId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<ActionResult<SendCommentDto>> SendComment(Guid ContentId, [FromBody] CreateCommentDto commentDto)
+    public async Task<ActionResult<CommentSendedDto>> SendComment(Guid ContentId, [FromBody] CreateCommentCommand commentDto)
     {
         Guid currentUserId = this.GetIDFromClaim();
 
@@ -66,12 +74,12 @@ public class CommentController : ControllerBase
             .Select(user => new
             {
                 u = user,
-                uResponse = new UserResponseDto(
+                uResponse = new UserDto(
                     user.Id, user.Name, "@" + user.Slug,
                     user.Description ?? "", user.RegistryData, user.Email,
                     user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
                     user.Comments.Count, user.Contents.Count, user.Followers.Count,
-                    user.Following.Count, user.OwnedDomains.Count, user.SubscripedDomains.Count)
+                    user.Following.Count, user.OwnedChannels.Count, user.SubscripedChannels.Count)
             })
             .AsNoTracking()
             .FirstOrDefaultAsync(user => user.u.Id == currentUserId);
@@ -100,13 +108,20 @@ public class CommentController : ControllerBase
         logger.LogInformation("Created comment {CommentId} in content {ContentId}",
             newComment.Id, ContentId);
 
-        return Created($"api/comment/{newComment.Id}", new SendCommentDto(
-            newComment.GetCommentResponseDto(), currentUser.uResponse));
+        return Created($"api/comment/{newComment.Id}", new CommentSendedDto(
+            newComment.GetCommentDto(), currentUser.uResponse));
+    }
+
+    [HttpPost("{CommentId}")]
+    [Authorize(Policy = nameof(UserRole.User))]
+    public async Task<ActionResult<CommentSendedDto>> SendCommentToComment(Guid CommentId)
+    {
+        return Created("api / comment /{newComment.Id}", null);
     }
 
     [HttpPut("{CommentId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<ActionResult<CommentResponseDto>> UpdateComment(Guid CommentId, string text)
+    public async Task<ActionResult<CommentDto>> UpdateComment(Guid CommentId, string text)
     {
         var comment = await context.Comments
             .Where(comment => comment.Id == CommentId)
@@ -125,7 +140,7 @@ public class CommentController : ControllerBase
 
         comment.c.Text = text;
 
-        CommentResponseDto responseDto = new(
+        CommentDto responseDto = new(
             comment.c.Id, comment.c.Text,
             comment.c.PublicatedDate, comment.LikersCount,
             comment.DisLikersCount, comment.c.ViewsCount);

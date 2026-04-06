@@ -1,13 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
+using Application.Dtos.Users;
 using Microsoft.EntityFrameworkCore;
-using Backend.API.Data.Components;
+using Domain.Components;
 using Microsoft.AspNetCore.Mvc;
-using Backend.API.Data.Context;
-using Backend.API.Data.Models;
-using Backend.API.Managers;
-using Backend.API.Dtos;
+using Infrastructure.Context;
+using Domain.Entities;
+using Infrastructure.Managers;
 
-namespace Backend.API.EndPoints.Controllers;
+namespace API.Controllers;
 
 [ApiController]
 [Route("api/[controller]/user")]
@@ -26,7 +26,7 @@ public class FollowController : ControllerBase
 
     [HttpPost("{UserId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<ActionResult<UserResponseDto>> Following(Guid UserId)
+    public async Task<ActionResult<UserDto>> Following(Guid UserId)
     {
         Guid currentUserId = this.GetIDFromClaim();
 
@@ -42,12 +42,12 @@ public class FollowController : ControllerBase
             .Select(user => new
             {
                 u = user,
-                uResponse = new UserResponseDto(
+                uResponse = new UserDto(
                     user.Id, user.Name, "@" + user.Slug,
                     user.Description ?? "", user.RegistryData, user.Email,
                     user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
                     user.Comments.Count, user.Contents.Count, user.Followers.Count,
-                    user.Following.Count, user.OwnedDomains.Count, user.SubscripedDomains.Count)
+                    user.Following.Count, user.OwnedChannels.Count, user.SubscripedChannels.Count)
             })
             .AsNoTracking()
             .FirstOrDefaultAsync(user => user.u.Id == UserId);

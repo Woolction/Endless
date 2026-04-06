@@ -1,14 +1,15 @@
 using Microsoft.AspNetCore.Authorization;
+using Domain.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
-using Backend.API.Data.Components;
-using Backend.API.Data.Context;
+using Domain.Components;
+using Infrastructure.Context;
 using Microsoft.AspNetCore.Mvc;
-using Backend.API.Data.Models;
-using Backend.API.Managers;
-using Backend.API.Services.Interfaces;
-using Backend.API.Dtos;
-using System.Diagnostics;
-using Backend.API.Extensions;
+using Domain.Entities;
+using API.Extensions;
+using Infrastructure.Managers;
+using Application.Dtos.Genres;
+
+namespace API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -29,7 +30,7 @@ public class UserInteractionController : ControllerBase
 
     [HttpPost("content/{ContentId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<ActionResult<GenreVectorsResponse>> CreateInteractionForContent(Guid ContentId, int watchTimeSeconds)
+    public async Task<ActionResult<GenreVectorsDto>> CreateInteractionForContent(Guid ContentId, int watchTimeSeconds)
     {
         Guid currentUserId = this.GetIDFromClaim();
 
@@ -86,7 +87,7 @@ public class UserInteractionController : ControllerBase
             currentUserId, ContentId);
 
         return Created($"api/interaction/user/{userInteraction.UserId}/content/{userInteraction.ContentId}",
-            new GenreVectorsResponse(
+            new GenreVectorsDto(
                 userGenres.GetUserGenreVectors(),
                 contentGenres.GetContentGenreVectors()));
     }

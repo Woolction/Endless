@@ -1,24 +1,24 @@
-using Backend.API.Data.Models;
-using Backend.API.Dtos;
+using Application.Dtos.Genres;
+using Domain.Entities;
 
-namespace Backend.API.Extensions;
+namespace API.Extensions;
 
 public static class GenreExtension
 {
-    public static List<GenreResponseDto> GetGenreResponsesDto(this List<Genre> genres)
+    public static List<GenreDto> GetGenreResponsesDto(this List<Genre> genres)
     {
-        List<GenreResponseDto> genreResponses = new();
+        List<GenreDto> genreResponses = new();
 
         for (int i = 0; i < genres.Count; i++)
         {
-            genreResponses.Add(genres[i].GetGenreResponseDto());
+            genreResponses.Add(genres[i].GetGenreDto());
         }
 
         return genreResponses;
     }
 
-    public static GenreResponseDto GetGenreResponseDto(this Genre genre)
+    public static GenreDto GetGenreDto(this Genre genre)
     {
-        return new GenreResponseDto(genre.Id, genre.Name, genre.Order);
+        return new GenreDto(genre.Id, genre.Name, genre.Order);
     }
 }

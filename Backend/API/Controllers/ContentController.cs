@@ -1,15 +1,20 @@
+using Application.Commands.Contents;
+using Application.Queries.Searchs;
+using Application.Dtos.Contents;
+using Application.Dtos.Searchs;
+using Application.Dtos.Channels;
+using Application.Dtos.Users;
 using Microsoft.AspNetCore.Authorization;
+using Domain.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
-using Backend.API.Data.Components;
+using Domain.Components;
 using Microsoft.AspNetCore.Mvc;
-using Backend.API.Data.Context;
-using Backend.API.Data.Models;
-using Backend.API.Managers;
-using Backend.API.Services.Interfaces;
-using Backend.API.Dtos;
-using Backend.API.Extensions;
+using Infrastructure.Context;
+using Domain.Entities;
+using API.Extensions;
+using Infrastructure.Managers;
 
-namespace Backend.API.EndPoints.Controllers;
+namespace API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -32,25 +37,25 @@ public class ContentController : ControllerBase
         this.logger = logger;
     }
 
-    [HttpPost("domain/{DomainId}")]
+    [HttpPost("Channel/{ChannelId}")]
     [Authorize(Policy = nameof(UserRole.Creator))]
-    public async Task<ActionResult<ContentResponseDto>> CreateContent(Guid DomainId, ContentCreateDto createDto)
+    public async Task<ActionResult<ContentDto>> CreateContent(Guid ChannelId, ContentCreateCommand createDto)
     {
         Guid currentUserId = this.GetIDFromClaim();
 
-        DomainOwner? domainOwner = await context.DomainOwners
+        ChannelOwner? ChannelOwner = await context.ChannelOwners
             .FirstOrDefaultAsync(owner =>
                 owner.OwnerId == currentUserId &&
-                owner.DomainId == DomainId);
+                owner.ChannelId == ChannelId);
 
-        if (domainOwner is null)
+        if (ChannelOwner is null)
         {
             logger.LogWarning("User {UserId} tried to create content without permission",
                currentUserId);
             return NotFound("User not found");
         }
 
-        if (domainOwner.OwnerRole <= DomainOwnerRole.ContentEditor)
+        if (ChannelOwner.OwnerRole <= ChannelOwnerRole.ContentEditor)
         {
             logger.LogWarning("User {UserId} tried to create content without permission",
                currentUserId);
@@ -79,7 +84,7 @@ public class ContentController : ControllerBase
         Content content = new()
         {
             CreatorId = currentUserId,
-            DomainId = DomainId,
+            ChannelId = ChannelId,
             Title = createDto.Title,
             Slug = Guid.NewGuid(),
             ContentUrl = videoUrl,
@@ -115,15 +120,15 @@ public class ContentController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        logger.LogInformation("content {ContentId} created in domain {DomainId}",
-            content.Id, DomainId);
+        logger.LogInformation("content {ContentId} created in Channel {ChannelId}",
+            content.Id, ChannelId);
 
-        return Created($"api/content/{content.Id}", content.GetContentResponseDto());
+        return Created($"api/content/{content.Id}", content.GetContentDto());
     }
 
     [HttpPost]
     [Authorize(Policy = nameof(UserRole.Creator))]
-    public async Task<ActionResult<ContentResponseDto>> CreateContentForUser(ContentCreateDto createDto)
+    public async Task<ActionResult<ContentDto>> CreateContentForUser(ContentCreateCommand createDto)
     {
         Guid currentUserId = this.GetIDFromClaim();
 
@@ -192,7 +197,7 @@ public class ContentController : ControllerBase
         logger.LogInformation("content {ContentId} created has user {UserId}",
             content.Id, currentUserId);
 
-        return Created($"api/content/{content.Id}", content.GetContentResponseDto());
+        return Created($"api/content/{content.Id}", content.GetContentDto());
     }
 
     [HttpGet("{ContentId}")]
@@ -202,7 +207,7 @@ public class ContentController : ControllerBase
             .Select(content => new
             {
                 c = content,
-                cResponse = new ContentResponseDto(content.Id, content.DomainId, content.CreatorId,
+                cResponse = new ContentDto(content.Id, content.ChannelId, content.CreatorId,
                     content.Title, content.Slug, content.Description,
                     content.CreatedDate, content.ContentType.ToString(),
                     content.VideoMeta != null ? content.VideoMeta.DurationSeconds : 0,
@@ -215,23 +220,23 @@ public class ContentController : ControllerBase
         if (changedContent is null || changedContent.c is null)
             return NotFound("Content not found");
 
-        DomainResponseDto? domainResponse = await context.Domains
-            .Select(domain => new DomainResponseDto(
-                domain.Id, domain.Name,
-                "@" + domain.Slug, domain.Description ?? "",
-                domain.CreatedDate, domain.AvatarPhotoUrl,
-                domain.Subscribers.Count, domain.Contents.Count,
-                domain.Owners.Count, domain.TotalLikes, domain.TotalViews))
+        ChannelDto? ChannelResponse = await context.Channels
+            .Select(Channel => new ChannelDto(
+                Channel.Id, Channel.Name,
+                "@" + Channel.Slug, Channel.Description ?? "",
+                Channel.CreatedDate, Channel.AvatarPhotoUrl,
+                Channel.Subscribers.Count, Channel.Contents.Count,
+                Channel.Owners.Count, Channel.TotalLikes, Channel.TotalViews))
             .AsNoTracking()
-            .FirstOrDefaultAsync(domain => domain.Id == changedContent.c.DomainId);
+            .FirstOrDefaultAsync(Channel => Channel.Id == changedContent.c.ChannelId);
 
-        UserResponseDto? userResponse = await context.Users
-            .Select(user => new UserResponseDto(
+        UserDto? userResponse = await context.Users
+            .Select(user => new UserDto(
                 user.Id, user.Name, "@" + user.Slug,
                 user.Description ?? "", user.RegistryData, user.Email,
                 user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
                 user.Comments.Count, user.Contents.Count, user.Followers.Count,
-                user.Following.Count, user.OwnedDomains.Count, user.SubscripedDomains.Count))
+                user.Following.Count, user.OwnedChannels.Count, user.SubscripedChannels.Count))
             .AsNoTracking()
             .FirstOrDefaultAsync();
 
@@ -239,7 +244,7 @@ public class ContentController : ControllerBase
             ContentId);
 
         return Ok(new ChangedContentDto(
-            domainResponse, changedContent.cResponse, userResponse));
+            ChannelResponse, changedContent.cResponse, userResponse));
     }
 
     [HttpGet]
@@ -254,7 +259,7 @@ public class ContentController : ControllerBase
             .ToArrayAsync();
 
         var randomContents = candidates.Select(c => new ContentRecoDto(
-                c.Id, c.DomainId, c.CreatorId, c.Title, c.Slug, c.Description,
+                c.Id, c.ChannelId, c.CreatorId, c.Title, c.Slug, c.Description,
                 c.CreatedDate, c.ContentType.ToString(), Random.Shared.NextDouble(),
                 c.VideoMeta == null ? 0 : c.VideoMeta.DurationSeconds, c.ContentUrl,
                 c.PrewievPhotoUrl, c.Savers.Count, c.Likers.Count, c.Comments.Count,
@@ -270,7 +275,7 @@ public class ContentController : ControllerBase
 
     [HttpGet("recommendations")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<ActionResult<ContentRecoResponseDto>> GetContentForRecommendation()
+    public async Task<ActionResult<ContentRecoDto[]>> GetContentForRecommendation()
     {
         Guid currentUserId = this.GetIDFromClaim();
 
@@ -306,8 +311,8 @@ public class ContentController : ControllerBase
 
         GenreInfo genreInfo = await context.GenreInfos.AsNoTracking().FirstAsync();
 
-        IEnumerable<ContentRecoScoreDto> recommended = candidates
-                .Select(c => new ContentRecoScoreDto(
+        IEnumerable<ContentRecoScoreQuery> recommended = candidates
+                .Select(c => new ContentRecoScoreQuery(
                     c, recommendation.Recommend(userGenres, c, c.VideoMeta, context.ContentVectors
                         .Include(cG => cG.Genre)
                         .OrderBy(cG => cG.Genre!.Order)
@@ -329,7 +334,7 @@ public class ContentController : ControllerBase
 
         var result = combined
             .Select(c => new ContentRecoDto(
-                c.Id, c.DomainId, c.CreatorId,
+                c.Id, c.ChannelId, c.CreatorId,
                 c.Title, c.Slug, c.Description,
                 c.CreatedDate, c.ContentType.ToString(), Random.Shared.NextDouble(),
                 c.VideoMeta == null ? 0 : c.VideoMeta.DurationSeconds, c.ContentUrl,
@@ -341,11 +346,11 @@ public class ContentController : ControllerBase
         logger.LogInformation("Returned {Count} recommendet contents for User {UserId}",
             result.Length, currentUserId);
 
-        return Ok(new ContentRecoResponseDto(result));
+        return Ok(result);
     }
 
     [HttpGet("search")]
-    public async Task<ActionResult<ContentSearchResponseDto>> GetContentForName([FromQuery] SearchRequestDto requestDto)
+    public async Task<ActionResult<ContentSearchQuery>> GetContentForName([FromQuery] SearchQuery requestDto)
     {
         IQueryable<Content> query = context.Contents.AsQueryable();
 
@@ -368,8 +373,8 @@ public class ContentController : ControllerBase
             .OrderByDescending(content => EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name))
             .Take(20).Select(content => new
             {
-                Content = new ContentResponseDto(
-                    content.Id, content.DomainId, content.CreatorId,
+                Content = new ContentDto(
+                    content.Id, content.ChannelId, content.CreatorId,
                     content.Title, content.Slug, content.Description,
                     content.CreatedDate, content.ContentType.ToString(),
                     content.VideoMeta != null ? content.VideoMeta.DurationSeconds : 0,
@@ -385,19 +390,19 @@ public class ContentController : ControllerBase
 
         var lastResponse = contents.LastOrDefault();
 
-        ContentResponseDto[] contentResponses = contents.Select(contnet => contnet.Content).ToArray();
+        ContentDto[] contentResponses = contents.Select(contnet => contnet.Content).ToArray();
 
         logger.LogInformation("Search returned contents {Count} results for {Query}",
            contentResponses.Length, requestDto.Name);
 
-        return Ok(new ContentSearchResponseDto(
-            contentResponses, lastResponse == null ? null : GetSearchDto(
+        return Ok(new ContentSearchQuery(
+            contentResponses, lastResponse == null ? null : GetSearchQuery(
                 lastResponse.LastLiked, lastResponse.LastSimilarity, lastResponse.LastLevenshit)));
     }
 
     [HttpPut("{ContentId}")]
     [Authorize(Policy = nameof(UserRole.Creator))]
-    public async Task<IActionResult> UpdateContent(Guid ContentId, ContentCreateDto createDto)
+    public async Task<ActionResult<ContentDto>> UpdateContent(Guid ContentId, ContentCreateCommand createDto)
     {
         Guid currentUserId = this.GetIDFromClaim();
 
@@ -413,8 +418,8 @@ public class ContentController : ControllerBase
             .Select(content => new
             {
                 c = content,
-                dto = new ContentResponseDto(
-                    content.Id, content.DomainId, content.CreatorId,
+                dto = new ContentDto(
+                    content.Id, content.ChannelId, content.CreatorId,
                     content.Title, content.Slug, content.Description,
                     content.CreatedDate, content.ContentType.ToString(),
                     content.VideoMeta == null ? 0 : content.VideoMeta.DurationSeconds,
@@ -504,7 +509,7 @@ public class ContentController : ControllerBase
         return NoContent();
     }
 
-    private SearchDto GetSearchDto(bool IsLastLiked, double LastSimilarity, int LastLevenshit)
+    private SearchDto GetSearchQuery(bool IsLastLiked, double LastSimilarity, int LastLevenshit)
     {
         return new()
         {

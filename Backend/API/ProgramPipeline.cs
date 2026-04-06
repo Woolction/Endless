@@ -1,19 +1,23 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Backend.API.Services.Implementations;
+using API.Middleware;
+using Domain.Interfaces.Repositories;
+using Infrastructure.Repositories;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.StaticFiles;
-using Backend.API.Services.Interfaces;
+using Domain.Interfaces.Services;
+using Infrastructure.Connector;
+using Infrastructure.Services;
+using Infrastructure.Context;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Backend.API.Data.Components;
-using Backend.API.Data.Context;
-using Backend.API.Data.Models;
-using Backend.API.Middleware;
+using Microsoft.AspNetCore.Identity;
+using Domain.Components;
+using Domain.Entities;
 using Scalar.AspNetCore;
 using System.Text;
+using Application.Handlers;
 
-namespace Backend.API;
+namespace API;
 
 public static class ProgramPipeline
 {
@@ -98,7 +102,7 @@ public static class ProgramPipeline
             options.OnRejected = async (context, token) =>
             {
                 context.HttpContext.Response.StatusCode = 429;
-                await context.HttpContext.Response.WriteAsync("Too many requests", cancellationToken: token); 
+                await context.HttpContext.Response.WriteAsync("Too many requests", cancellationToken: token);
             };
             options.AddSlidingWindowLimiter("LoginLimit", options =>
             {
@@ -122,12 +126,25 @@ public static class ProgramPipeline
             context.UseNpgsql(DbKey));
 
         // Custum Services
-        
+
         //      Scoped
         builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
         builder.Services.AddScoped<IAuthService, AuthService>();
 
+        // Handlers
+        builder.Services.AddScoped<UserUpdateTokenHandler>();
+        builder.Services.AddScoped<UserRegistryHandler>();
+        builder.Services.AddScoped<UserLoginHandler>();
+
+        // Repositories
+        builder.Services.AddScoped<IUserRepository, UserRepository>();
+        builder.Services.AddScoped<IUserVectorsRepository, UserVectorsRepository>();
+
+        builder.Services.AddScoped<IGenreRepository, GenreRepository>();
+
         //      Singleton
+        builder.Services.AddSingleton<DbConnectorFactory>();
+
         builder.Services.AddSingleton<IInteractionService, InteractionService>();
         builder.Services.AddSingleton<IRecommendationService, RecommendationService>();
 
@@ -138,7 +155,7 @@ public static class ProgramPipeline
     }
 
     public static void MiddlewareRegistry(this WebApplication app)
-    {   
+    {
         // Static Files
         var provider = new FileExtensionContentTypeProvider();
 
@@ -158,7 +175,6 @@ public static class ProgramPipeline
 
         app.UseHttpsRedirection();
 
-        app.UseMiddleware<ErrorHandlerMiddleware>();
         app.UseMiddleware<ContentSecurityPolicy>();
 
         app.UseRouting();
@@ -171,11 +187,11 @@ public static class ProgramPipeline
 
         app.UseRateLimiter();
     }
-    
+
     public static void EndPointsRegistry(this WebApplication app)
     {
         app.MapControllers();
-        
+
         //app.MapGet("/", () => "Hello World!");
     }
 }

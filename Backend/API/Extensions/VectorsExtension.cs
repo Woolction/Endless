@@ -1,7 +1,7 @@
-using Backend.API.Data.Models;
-using Backend.API.Dtos;
+using Application.Dtos.Genres;
+using Domain.Entities;
 
-namespace Backend.API.Extensions;
+namespace API.Extensions;
 
 public static class VectorsExtension
 {
@@ -19,7 +19,7 @@ public static class VectorsExtension
 
     public static UserGenreVectorDto GetUserGenreVector(this UserGenreVector userGenre)
     {
-        return new UserGenreVectorDto(userGenre.Genre!.GetGenreResponseDto(), userGenre.Value);
+        return new UserGenreVectorDto(userGenre.Genre!.GetGenreDto(), userGenre.Value);
     }
 
     public static ContentGenreVectorDto[] GetContentGenreVectors(this ContentGenreVector[] contentGenres)
@@ -37,7 +37,7 @@ public static class VectorsExtension
     public static ContentGenreVectorDto GetContentGenreVector(this ContentGenreVector contentGenre)
     {
         return new ContentGenreVectorDto(
-            contentGenre.Genre!.GetGenreResponseDto(),
+            contentGenre.Genre!.GetGenreDto(),
             contentGenre.AuthorVector,
             contentGenre.AudienceVector,
             contentGenre.FinalVector

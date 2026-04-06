@@ -1,13 +1,14 @@
+using Application.Dtos.Contents;
+using Application.Dtos.Comments;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Backend.API.Data.Components;
-using Backend.API.Data.Context;
+using Domain.Components;
+using Infrastructure.Context;
 using Microsoft.AspNetCore.Mvc;
-using Backend.API.Data.Models;
-using Backend.API.Managers;
-using Backend.API.Dtos;
+using Domain.Entities;
+using Infrastructure.Managers;
 
-namespace Backend.API.EndPoints.Controllers;
+namespace API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -26,7 +27,7 @@ public class LikingController : ControllerBase
 
     [HttpPost("content/{ContentId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<ActionResult<ContentResponseDto>> LikeContent(Guid ContentId)
+    public async Task<ActionResult<ContentDto>> LikeContent(Guid ContentId)
     {
         Guid currentUserId = this.GetIDFromClaim();
 
@@ -35,8 +36,8 @@ public class LikingController : ControllerBase
             .Select(content => new
             {
                 c = content,
-                cResponse = new ContentResponseDto(
-                    content.Id, content.DomainId, content.CreatorId,
+                cResponse = new ContentDto(
+                    content.Id, content.ChannelId, content.CreatorId,
                     content.Title, content.Slug, content.Description,
                     content.CreatedDate, content.ContentType.ToString(),
                     content.VideoMeta != null ? content.VideoMeta.DurationSeconds : 0,
@@ -115,7 +116,7 @@ public class LikingController : ControllerBase
 
     [HttpPost("comment/{CommentId}")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<ActionResult<CommentResponseDto>> LikeComment(Guid CommentId)
+    public async Task<ActionResult<CommentDto>> LikeComment(Guid CommentId)
     {
         Guid currentUserId = this.GetIDFromClaim();
 
@@ -124,7 +125,7 @@ public class LikingController : ControllerBase
             .Select(comment => new
             {
                 c = comment,
-                cResponse = new CommentResponseDto(
+                cResponse = new CommentDto(
                     comment.Id,
                     comment.Text,
                     comment.PublicatedDate,

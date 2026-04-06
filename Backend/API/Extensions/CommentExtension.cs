@@ -1,11 +1,11 @@
-using Backend.API.Data.Models;
-using Backend.API.Dtos;
+using Application.Dtos.Comments;
+using Domain.Entities;
 
-namespace Backend.API.Extensions;
+namespace API.Extensions;
 
 public static class CommentExtension
 {
-    public static CommentResponseDto GetCommentResponseDto(this Comment comment)
+    public static CommentDto GetCommentDto(this Comment comment)
     {
         return new(
             comment.Id,
