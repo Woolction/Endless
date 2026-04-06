@@ -1,4 +1,4 @@
-using Application.Dtos.Comments;
+using Contracts.Dtos.Comments;
 using Domain.Entities;
 
 namespace API.Extensions;

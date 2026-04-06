@@ -1,0 +1,14 @@
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+
+namespace Application.Utilities;
+
+public static class ClaimsUtility
+{
+    public static Guid GetIDFromClaim(this ControllerBase controller)
+    {
+        string id = controller.User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+
+        return new(id);
+    }
+}

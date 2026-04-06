@@ -1,5 +1,5 @@
 using Application.Commands.Genres;
-using Application.Dtos.Genres;
+using Contracts.Dtos.Genres;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Domain.Components;

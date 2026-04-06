@@ -1,4 +1,4 @@
-using Application.Dtos.Searchs;
+using Contracts.Dtos.Searchs;
 
 namespace Application.Queries.Searchs;
 

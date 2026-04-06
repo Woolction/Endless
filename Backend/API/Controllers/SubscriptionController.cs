@@ -1,11 +1,11 @@
-using Application.Dtos.Channels;
+using Contracts.Dtos.Channels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Domain.Components;
 using Microsoft.AspNetCore.Mvc;
 using Infrastructure.Context;
 using Domain.Entities;
-using Infrastructure.Managers;
+using Application.Utilities;
 
 namespace API.Controllers;
 

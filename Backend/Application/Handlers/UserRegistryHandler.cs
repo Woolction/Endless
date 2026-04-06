@@ -3,8 +3,8 @@ using Domain.Interfaces.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Domain.Interfaces.Services;
-using Application.Dtos.Users;
-using Application.Utility;
+using Contracts.Dtos.Users;
+using Application.Utilities;
 using Domain.Entities;
 using Npgsql;
 

@@ -1,9 +1,9 @@
 using Application.Commands.Contents;
 using Application.Queries.Searchs;
-using Application.Dtos.Contents;
-using Application.Dtos.Searchs;
-using Application.Dtos.Channels;
-using Application.Dtos.Users;
+using Contracts.Dtos.Contents;
+using Contracts.Dtos.Searchs;
+using Contracts.Dtos.Channels;
+using Contracts.Dtos.Users;
 using Microsoft.AspNetCore.Authorization;
 using Domain.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +12,8 @@ using Microsoft.AspNetCore.Mvc;
 using Infrastructure.Context;
 using Domain.Entities;
 using API.Extensions;
-using Infrastructure.Managers;
+using Application.Utilities;
+using Application.Queries.Contents;
 
 namespace API.Controllers;
 

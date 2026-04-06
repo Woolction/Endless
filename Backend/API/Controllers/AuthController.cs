@@ -1,9 +1,9 @@
 using Application.Commands.Authentications;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
-using Application.Dtos.Authentications;
+using Contracts.Dtos.Authentications;
 using Microsoft.AspNetCore.Mvc;
-using Infrastructure.Managers;
+using Application.Utilities;
 using Application.Handlers;
 using Application;
 

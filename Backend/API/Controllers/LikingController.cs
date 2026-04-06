@@ -1,12 +1,12 @@
-using Application.Dtos.Contents;
-using Application.Dtos.Comments;
+using Contracts.Dtos.Contents;
+using Contracts.Dtos.Comments;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Domain.Components;
 using Infrastructure.Context;
 using Microsoft.AspNetCore.Mvc;
 using Domain.Entities;
-using Infrastructure.Managers;
+using Application.Utilities;
 
 namespace API.Controllers;
 

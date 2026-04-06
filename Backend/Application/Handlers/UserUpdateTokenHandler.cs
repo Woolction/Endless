@@ -1,5 +1,5 @@
 using Application.Commands.Authentications;
-using Application.Dtos.Authentications;
+using Contracts.Dtos.Authentications;
 using Domain.Interfaces.Repositories;
 using Domain.Interfaces.Services;
 using Domain.Entities;
@@ -16,7 +16,7 @@ public class UserUpdateTokenHandler
         this.userRepository = userRepository;
         this.authService = authService;
     }
-    
+
     public async Task<Result<AuthDto>> Handle(RefreshTokenCommand cmd)
     {
         User? user = await userRepository.GetUserByRefreshToken(cmd.Token);

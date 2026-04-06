@@ -1,4 +1,4 @@
-using Application.Dtos.Genres;
+using Contracts.Dtos.Genres;
 using Domain.Entities;
 
 namespace API.Extensions;

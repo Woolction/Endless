@@ -1,5 +1,5 @@
 using Application.Commands.Authentications;
-using Application.Dtos.Authentications;
+using Contracts.Dtos.Authentications;
 using Domain.Interfaces.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Domain.Interfaces.Services;
@@ -19,7 +19,7 @@ public class UserLoginHandler
         this.userRepository = userRepository;
         this.authService = authService;
     }
-    
+
     public async Task<Result<AuthDto>> Handle(AuthCreateCommand cmd)
     {
         User? user = await userRepository.GetUserByEmail(cmd.Email);

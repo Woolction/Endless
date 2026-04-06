@@ -1,4 +1,4 @@
-using Application.Dtos.Contents;
+using Contracts.Dtos.Contents;
 using Domain.Entities;
 
 namespace API.Extensions;

@@ -4,8 +4,8 @@ using Domain.Components;
 using Infrastructure.Context;
 using Microsoft.AspNetCore.Mvc;
 using Domain.Entities;
-using Infrastructure.Managers;
-using Application.Dtos.Channels;
+using Application.Utilities;
+using Contracts.Dtos.Channels;
 
 namespace API.Controllers;
 

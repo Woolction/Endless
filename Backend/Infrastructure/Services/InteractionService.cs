@@ -1,6 +1,6 @@
 using Domain.Interfaces.Services;
 using Domain.Entities;
-using Infrastructure.Managers;
+using Application.Utilities;
 
 namespace Infrastructure.Services;
 

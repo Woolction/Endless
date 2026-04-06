@@ -2,7 +2,6 @@
 using Domain.Entities;
 using Domain.Interfaces.Repositories;
 using Infrastructure.Context;
-using Microsoft.EntityFrameworkCore;
 
 public class UserVectorsRepository : IUserVectorsRepository
 {

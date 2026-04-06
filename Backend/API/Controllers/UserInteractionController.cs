@@ -6,8 +6,8 @@ using Infrastructure.Context;
 using Microsoft.AspNetCore.Mvc;
 using Domain.Entities;
 using API.Extensions;
-using Infrastructure.Managers;
-using Application.Dtos.Genres;
+using Application.Utilities;
+using Contracts.Dtos.Genres;
 
 namespace API.Controllers;
 

@@ -1,8 +1,8 @@
 using Application.Commands.Comments;
 using Microsoft.AspNetCore.Authorization;
-using Application.Dtos.Comments;
-using Infrastructure.Managers;
-using Application.Dtos.Users;
+using Contracts.Dtos.Comments;
+using Application.Utilities;
+using Contracts.Dtos.Users;
 using Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
 using Domain.Components;
