@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Domain.Components;
+using Domain.Common;
 using Infrastructure.Context;
 using Microsoft.AspNetCore.Mvc;
 using Domain.Entities;
 using Application.Utilities;
-using Contracts.Dtos.Channels;
+using Application.Dtos.Channels;
 
 namespace API.Controllers;
 
@@ -28,12 +28,14 @@ public class ChannelOwnersController : ControllerBase
     public async Task<ActionResult<ChannelOwnerDto>> GetChannelOwnerById(Guid UserId, Guid ChannelId)
     {
         ChannelOwnerDto? ChannelOwner = await context.ChannelOwners
+            .Where(owner =>
+                owner.OwnerId == UserId &&
+                owner.ChannelId == ChannelId)
             .Select(owner => new ChannelOwnerDto(
                 owner.OwnerId, owner.ChannelId, owner.OwnedDate,
                 owner.OwnerRole.ToString()))
             .AsNoTracking()
-            .FirstOrDefaultAsync(owner =>
-                owner.OwnerId == UserId && owner.ChannelId == ChannelId);
+            .FirstOrDefaultAsync();
 
         if (ChannelOwner == null)
             return NotFound();

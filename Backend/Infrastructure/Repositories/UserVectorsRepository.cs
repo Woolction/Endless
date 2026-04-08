@@ -1,24 +1,14 @@
-
-using Domain.Entities;
 using Domain.Interfaces.Repositories;
 using Infrastructure.Context;
+using Domain.Entities;
+using Infrastructure.Connector;
 
 public class UserVectorsRepository : IUserVectorsRepository
 {
-    private readonly EndlessContext context;
+    private readonly DbConnectorFactory connector;
 
-    public UserVectorsRepository(EndlessContext context)
+    public UserVectorsRepository(DbConnectorFactory connector)
     {
-        this.context = context;
-    }
-
-    public async Task AddExistsGenres(UserGenreVector[] userVectors)
-    {
-        context.UserVectors.AddRange(userVectors);
-    }
-
-    public async Task<int> SaveChangesAsync()
-    {
-        return await context.SaveChangesAsync();
+        this.connector = connector;
     }
 }

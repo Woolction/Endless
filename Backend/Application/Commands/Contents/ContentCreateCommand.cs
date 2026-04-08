@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Http;
-using Domain.Components;
+using Domain.Common;
 
 namespace Application.Commands.Contents;
 

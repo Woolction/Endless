@@ -1,4 +1,4 @@
-using Domain.Components;
+using Domain.Common;
 using Microsoft.AspNetCore.Http;
 
 namespace Application.Commands.Users;

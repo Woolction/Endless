@@ -11,11 +11,12 @@ using Infrastructure.Context;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
-using Domain.Components;
+using Domain.Common;
 using Domain.Entities;
 using Scalar.AspNetCore;
 using System.Text;
 using Application.Handlers;
+using Domain.Interfaces;
 
 namespace API;
 
@@ -125,6 +126,9 @@ public static class ProgramPipeline
         builder.Services.AddDbContext<EndlessContext>(context =>
             context.UseNpgsql(DbKey));
 
+        builder.Services.AddScoped<IAppDbContext>(provider =>
+            provider.GetRequiredService<EndlessContext>());
+
         // Custum Services
 
         //      Scoped
@@ -133,12 +137,23 @@ public static class ProgramPipeline
 
         // Handlers
         builder.Services.AddScoped<UserUpdateTokenHandler>();
+        builder.Services.AddScoped<UsersCreatingHandler>();
+        builder.Services.AddScoped<UserSearchingHandler>();
         builder.Services.AddScoped<UserRegistryHandler>();
         builder.Services.AddScoped<UserLoginHandler>();
 
+        builder.Services.AddScoped<ChannelSearchingHandler>();
+        builder.Services.AddScoped<ChannelsCreatingHandler>();
+
+        builder.Services.AddScoped<ContentSearchingHandler>();
+
         // Repositories
-        builder.Services.AddScoped<IUserRepository, UserRepository>();
         builder.Services.AddScoped<IUserVectorsRepository, UserVectorsRepository>();
+        builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+        builder.Services.AddScoped<IChannelRepository, ChannelRepository>();
+
+        builder.Services.AddScoped<IContentRepository, ContentRepository>();
 
         builder.Services.AddScoped<IGenreRepository, GenreRepository>();
 

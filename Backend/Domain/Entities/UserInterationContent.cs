@@ -1,6 +1,6 @@
 namespace Domain.Entities;
 
-public class UserInterationContent
+public class UserInteractionContent
 {
     public Guid UserId { get; set; }
     public User? User { get; set; }

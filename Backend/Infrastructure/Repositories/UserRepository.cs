@@ -1,8 +1,6 @@
 using Domain.Interfaces.Repositories;
-using Microsoft.EntityFrameworkCore;
-using Infrastructure.Context;
-using Domain.Entities;
 using Infrastructure.Connector;
+using Contracts.Rows;
 using System.Data;
 using Dapper;
 
@@ -10,52 +8,61 @@ namespace Infrastructure.Repositories;
 
 public class UserRepository : IUserRepository
 {
-    private readonly EndlessContext context;
-    private readonly DbConnectorFactory dbConnector;
+    private readonly DbConnectorFactory connector;
 
-    public UserRepository(EndlessContext context, DbConnectorFactory dbConnector)
+    public UserRepository(DbConnectorFactory connector)
     {
-        this.context = context;
-
-        this.dbConnector = dbConnector;
-    }
-    
-    public void AddUser(User user)
-    {
-        context.Users.Add(user);
+        this.connector = connector;
     }
 
-    public async Task<bool> AnyUserByEmail(string email)
+    public async Task<IEnumerable<UserSearchRow>> SearchUsersByName(string name, bool hasLastSearch, double lastScore, Guid lastId)
     {
-        return await context.Users.AnyAsync(user => user.Email == email);
-    }
+        using IDbConnection db = connector.CreateConnection();
 
-    public async Task<User?> GetUserByEmail(string email)
-    {
-        return await context.Users.FirstOrDefaultAsync(user => user.Email == email);
-    }
+        // u.""Name"" % @name = TRUE for speed
 
-    public async Task<User?> GetUserByRefreshToken(string refreshToken)
-    {
-        return await context.Users
-            .Include(u => u.RefreshToken)
-            .FirstOrDefaultAsync(user =>
-                user.RefreshToken != null && user.RefreshToken.Token == refreshToken);
-    }
-
-    public async Task<User[]> GetUserSearchByName()
-    {
-        using IDbConnection db = dbConnector.CreateConnection();
-
-        string sql = @"SELECT * FROM Users";
-
-        IEnumerable<User> users = await db.QueryAsync<User>(sql);
+        var sql = @"
+        WITH ranked AS (
+            WITH filtered AS (
+                SELECT * FROM ""Users"" u
+                WHERE (u.""Name"" ILike @pattern) = TRUE
+                LIMIT 100
+            )
+            SELECT
+                u.""Id"", u.""Name"", u.""Slug"", 
+                u.""Description"", u.""RegistryData"", 
+                u.""Email"", u.""Role"", u.""AvatarPhotoUrl"",
+                
+                (SELECT COUNT(*) FROM ""Comments"" c WHERE c.""CommentatorId"" = u.""Id"") AS CommentsCount,
+                (SELECT COUNT(*) FROM ""Contents"" c WHERE c.""CreatorId"" = u.""Id"") AS ContentsCount,
+                (SELECT COUNT(*) FROM ""UserFollowings"" f WHERE f.""FollowerId"" = u.""Id"") AS FollowersCount,
+                (SELECT COUNT(*) FROM ""UserFollowings"" f WHERE f.""FollowedUserId"" = u.""Id"") AS FollowingCount,
+                (SELECT COUNT(*) FROM ""ChannelOwners"" c WHERE c.""OwnerId"" = u.""Id"") AS OwnedChannelsCount,
+                (SELECT COUNT(*) FROM ""ChannelSubscriptions"" s WHERE s.""SubscriberId"" = u.""Id"") AS ChannelSubscriptionsCount,
         
-        return [.. users];
-    }
+                similarity(u.""Name"", @name) * 0.75 +
+                (1.0 / (levenshtein(u.""Name"", @name) + 1)) * 0.25 AS ""Score""
+            FROM filtered u
+            
+        )
+        SELECT * FROM ranked
+        WHERE(
+            (@hasLastSearch = FALSE) OR
+            (""Score"", ""Id"") < (@lastScore, @lastId)
+        )
+        ORDER BY ""Score"" DESC, ""Id"" ASC
+        LIMIT 20;
+        ";
 
-    public async Task<int> SaveChangesAsync()
-    {
-        return await context.SaveChangesAsync();
+        IEnumerable<UserSearchRow> result = await db.QueryAsync<UserSearchRow>(sql, new
+        {
+            name,
+            pattern = $"%{name}%",
+            hasLastSearch,
+            lastScore,
+            lastId
+        });
+
+        return result;
     }
 }

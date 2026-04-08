@@ -628,7 +628,7 @@ namespace Infrastructure.Context.Migrations
 
             modelBuilder.Entity("Domain.Entities.User", b =>
                 {
-                    b.OwnsOne("Domain.Components.RefreshToken", "RefreshToken", b1 =>
+                    b.OwnsOne("Domain.Common.RefreshToken", "RefreshToken", b1 =>
                         {
                             b1.Property<Guid>("UserId")
                                 .HasColumnType("uuid");

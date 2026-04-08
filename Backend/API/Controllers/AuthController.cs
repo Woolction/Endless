@@ -1,7 +1,7 @@
 using Application.Commands.Authentications;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
-using Contracts.Dtos.Authentications;
+using Application.Dtos.Authentications;
 using Microsoft.AspNetCore.Mvc;
 using Application.Utilities;
 using Application.Handlers;
@@ -32,7 +32,7 @@ public class AuthController : ControllerBase
     {
         Result<AuthDto> result = await loginHandler.Handle(cmd);
 
-        if (!result.IsSuccess)
+        if (!result.IsSuccess || result.Data == null)
         {
             return result.StatusCode switch
             {
@@ -60,7 +60,7 @@ public class AuthController : ControllerBase
 
         Result<AuthDto> result = await updateTokenHandler.Handle(new RefreshTokenCommand(refreshToken));
 
-        if (!result.IsSuccess)
+        if (!result.IsSuccess || result.Data == null)
         {
             if (result.Data is null || result.Data.Token is null || result.Data.RefreshToken is null)
                 return BadRequest("Invalid refresh token");

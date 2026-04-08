@@ -1,20 +1,19 @@
 using Application.Commands.Authentications;
-using Contracts.Dtos.Authentications;
-using Application.Queries.Searchs;
-using Application.Commands.Users;
-using Contracts.Dtos.Searchs;
-using Contracts.Dtos.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
-using Domain.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
+using Application.Queries.Searchs;
+using Application.Commands.Users;
+using Domain.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
 using Infrastructure.Context;
-using Domain.Entities;
 using Application.Utilities;
-using Npgsql;
 using Application.Handlers;
+using Application.Dtos.Users;
 using Application;
+using Npgsql;
+using Domain.Common;
+using Domain.Entities;
 
 namespace API.Controllers;
 
@@ -24,15 +23,19 @@ public class UsersController : ControllerBase
 {
     private readonly EndlessContext context;
 
+    private readonly UsersCreatingHandler creatingsHandler;
     private readonly UserRegistryHandler registryHandler;
+    private readonly UserSearchingHandler searchingHandler;
 
     private readonly ILogger<UsersController> logger;
     private readonly IR2Service r2Service;
 
-    public UsersController(EndlessContext context, UserRegistryHandler registryHandler, IAuthService authService, IR2Service r2Service, ILogger<UsersController> logger)
+    public UsersController(EndlessContext context, UserRegistryHandler registryHandler, UserSearchingHandler searchingHandler, UsersCreatingHandler creatingsHandler, IR2Service r2Service, ILogger<UsersController> logger)
     {
         this.context = context;
         this.registryHandler = registryHandler;
+        this.searchingHandler = searchingHandler;
+        this.creatingsHandler = creatingsHandler;
 
         this.r2Service = r2Service;
         this.logger = logger;
@@ -44,7 +47,7 @@ public class UsersController : ControllerBase
     {
         Result<RegistryDto> result = await registryHandler.Handle(cmd);
 
-        if (!result.IsSuccess)
+        if (!result.IsSuccess || result.Data == null)
         {
             if (result.StatusCode == 409 && result.ResultId == 1)
                 return Conflict(result.Error);
@@ -65,61 +68,55 @@ public class UsersController : ControllerBase
         return Created($"api/users/{result.Data.NewUserId}", result.Data);
     }
 
-    [HttpGet("search")]
-    public async Task<ActionResult<UserSearchQuery>> GetUsersForName([FromQuery] SearchQuery searchQuery) //Searching
+    [HttpPost("many")]
+    [Authorize(Policy = nameof(UserRole.Admin))]
+    public async Task<ActionResult<UserDto[]>> CreateUsers(UsersCreateCommand cmd)
     {
-        if (string.IsNullOrEmpty(searchQuery.Name))
+        if (cmd.Count < 1)
+            return BadRequest($"Count < 1: {cmd.Count}");
+
+        Result<UserDto[]> result = await creatingsHandler.Handle(cmd);
+
+        if (!result.IsSuccess)
+        {
+            return result.StatusCode switch
+            {
+                409 => Conflict(result.Error),
+                _ => StatusCode(500, "Unknown error")
+            };
+        }
+
+        return Created("", result.Data);
+    }
+
+    [HttpGet("search")]
+    public async Task<ActionResult<UserSearchDto>> SearchUsersByName([FromQuery] SearchQuery query)
+    {
+        if (string.IsNullOrEmpty(query.Name))
             return BadRequest("The name is empty");
 
-        IQueryable<User> query = context.Users.AsQueryable();
+        Result<UserSearchDto> result = await searchingHandler.Handle(query);
 
-        if (searchQuery.LastSearch is not null)
+        if (!result.IsSuccess || result.Data == null)
         {
-            query = query.Where(user =>
-                EF.Functions.ILike(user.Name, $"%{searchQuery.Name}%") == searchQuery.LastSearch.LastLiked &&
-                EF.Functions.TrigramsSimilarity(user.Name, searchQuery.Name) < searchQuery.LastSearch.LastSimilarity &&
-                EF.Functions.FuzzyStringMatchLevenshtein(user.Name, searchQuery.Name) >= searchQuery.LastSearch.LastLevenshit);
-        }
-        else
-        {
-            query = query.Where(user =>
-                EF.Functions.ILike(user.Name, $"%{searchQuery.Name}%") ||
-                EF.Functions.TrigramsSimilarity(user.Name, searchQuery.Name) > 0.2f ||
-                EF.Functions.FuzzyStringMatchLevenshtein(user.Name, searchQuery.Name) <= 3);
-        }
-
-        var users = await query
-            .OrderByDescending(user => EF.Functions.TrigramsSimilarity(user.Name, searchQuery.Name))
-            .Take(20).Select(user => new
+            return result.StatusCode switch
             {
-                User = new UserDto(
-                    user.Id, user.Name, "@" + user.Slug,
-                    user.Description ?? "", user.RegistryData, user.Email,
-                    user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
-                    user.Comments.Count, user.Contents.Count, user.Followers.Count,
-                    user.Following.Count, user.OwnedChannels.Count, user.SubscripedChannels.Count),
-                LastLiked = EF.Functions.ILike(user.Name, $"%{searchQuery.Name}%"),
-                LastSimilarity = EF.Functions.TrigramsSimilarity(user.Name, searchQuery.Name),
-                LastLevenshit = EF.Functions.FuzzyStringMatchLevenshtein(user.Name, searchQuery.Name)
-            })
-            .AsNoTracking().ToArrayAsync();
-
-        var lastResponse = users.LastOrDefault();
-
-        UserDto[] userResponses = users.Select(user => user.User).ToArray();
+                404 => NotFound(result.Error),
+                _ => StatusCode(500, "Unknown error")
+            };
+        }
 
         logger.LogInformation("Search returned users: {Count} results for {Query}",
-            userResponses.Length, searchQuery.Name);
+            result.Data.UserDtos.Length, query.Name);
 
-        return Ok(new UserSearchQuery(
-            userResponses, lastResponse == null ? null : GetSearchQuery(
-                lastResponse.LastLiked, lastResponse.LastSimilarity, lastResponse.LastLevenshit)));
+        return Ok(result.Data);
     }
 
     [HttpGet("{UserId}")]
     public async Task<ActionResult<UserDto>> GetUser(Guid UserId)
     {
         UserDto? userResponse = await context.Users
+            .Where(user => user.Id == UserId)
             .Select(user =>
                 new UserDto(
                     user.Id, user.Name, "@" + user.Slug,
@@ -128,7 +125,7 @@ public class UsersController : ControllerBase
                     user.Comments.Count, user.Contents.Count, user.Followers.Count,
                     user.Following.Count, user.OwnedChannels.Count, user.SubscripedChannels.Count))
             .AsNoTracking()
-            .FirstOrDefaultAsync(user => user.Id == UserId);
+            .FirstOrDefaultAsync();
 
         if (userResponse == null)
             return NotFound();
@@ -147,6 +144,7 @@ public class UsersController : ControllerBase
         Guid currentUserId = this.GetIDFromClaim();
 
         UserDto? user = await context.Users
+            .Where(user => user.Id == currentUserId)
             .Select(user => new UserDto(
                 user.Id, user.Name, "@" + user.Slug,
                 user.Description ?? "", user.RegistryData, user.Email,
@@ -154,7 +152,7 @@ public class UsersController : ControllerBase
                 user.Comments.Count, user.Contents.Count, user.Followers.Count,
                 user.Following.Count, user.OwnedChannels.Count, user.SubscripedChannels.Count))
             .AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Id == currentUserId);
+            .FirstOrDefaultAsync();
 
         if (user is null)
             return NotFound();
@@ -174,12 +172,12 @@ public class UsersController : ControllerBase
             .Select(user => new
             {
                 u = user,
-                uResponse = new UserDto(
-                    user.Id, user.Name, "@" + user.Slug,
-                    user.Description ?? "", user.RegistryData, user.Email,
-                    user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
-                    user.Comments.Count, user.Contents.Count, user.Followers.Count,
-                    user.Following.Count, user.OwnedChannels.Count, user.SubscripedChannels.Count)
+                CommentsCount = user.Comments.Count,
+                ContentsCount = user.Contents.Count,
+                FollowersCount = user.Followers.Count,
+                FollowingCount = user.Following.Count,
+                OwnedChannelsCount = user.OwnedChannels.Count,
+                SubscripedChannelsCount = user.SubscripedChannels.Count
             })
             .FirstOrDefaultAsync(user => user.u.Id == currentUserId);
 
@@ -215,7 +213,24 @@ public class UsersController : ControllerBase
 
             logger.LogInformation("User {UserId} updated", currentUserId);
 
-            return Ok(user.uResponse);
+            UserDto userDto = new(
+                    user.u.Id,
+                    user.u.Name,
+                    "@" + user.u.Slug,
+                    user.u.Description ?? "",
+                    user.u.RegistryData,
+                    user.u.Email,
+                    user.u.Role.ToString(),
+                    user.u.AvatarPhotoUrl,
+                    user.u.TotalLikes,
+                    user.CommentsCount,
+                    user.ContentsCount,
+                    user.FollowersCount,
+                    user.FollowingCount,
+                    user.OwnedChannelsCount,
+                    user.SubscripedChannelsCount);
+
+            return Ok(userDto);
         }
         catch (DbUpdateException ex)
         {
@@ -242,15 +257,5 @@ public class UsersController : ControllerBase
         logger.LogInformation("User {UserId} deleted", currentUserId);
 
         return NoContent();
-    }
-
-    private SearchDto GetSearchQuery(bool IsLastLiked, double LastSimilarity, int LastLevenshit)
-    {
-        return new()
-        {
-            LastLiked = IsLastLiked,
-            LastSimilarity = LastSimilarity,
-            LastLevenshit = LastLevenshit
-        };
     }
 }

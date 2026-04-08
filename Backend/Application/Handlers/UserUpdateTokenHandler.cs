@@ -1,25 +1,30 @@
 using Application.Commands.Authentications;
-using Contracts.Dtos.Authentications;
+using Application.Dtos.Authentications;
 using Domain.Interfaces.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Domain.Interfaces.Services;
+using Domain.Interfaces;
 using Domain.Entities;
 
 namespace Application.Handlers;
 
 public class UserUpdateTokenHandler
 {
-    private readonly IUserRepository userRepository;
     private readonly IAuthService authService;
+    private readonly IAppDbContext context;
 
-    public UserUpdateTokenHandler(IUserRepository userRepository, IAuthService authService)
+    public UserUpdateTokenHandler(IAuthService authService, IAppDbContext context)
     {
-        this.userRepository = userRepository;
         this.authService = authService;
+        this.context = context;
     }
 
     public async Task<Result<AuthDto>> Handle(RefreshTokenCommand cmd)
     {
-        User? user = await userRepository.GetUserByRefreshToken(cmd.Token);
+        User? user = await context.Users
+            .Include(u => u.RefreshToken)
+            .FirstOrDefaultAsync(user =>
+                user.RefreshToken != null && user.RefreshToken.Token == cmd.Token);
 
         if (user == null)
             return Result<AuthDto>.Failure(404, $"User by Token: {cmd.Token} not found");

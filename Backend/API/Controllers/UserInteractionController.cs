@@ -1,13 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Domain.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
-using Domain.Components;
+using Domain.Common;
 using Infrastructure.Context;
 using Microsoft.AspNetCore.Mvc;
 using Domain.Entities;
 using API.Extensions;
 using Application.Utilities;
-using Contracts.Dtos.Genres;
+using Application.Dtos.Genres;
 
 namespace API.Controllers;
 
@@ -42,7 +42,7 @@ public class UserInteractionController : ControllerBase
         if (currentUser == null || content == null || content.VideoMeta == null)
             return NotFound("User or Content or Meta not found");
 
-        UserInterationContent? userInteraction = await context.UserInterationContents.FindAsync(currentUserId);
+        UserInteractionContent? userInteraction = await context.UserInteractionContents.FindAsync(currentUserId);
 
         if (userInteraction is null)
         {
@@ -52,7 +52,7 @@ public class UserInteractionController : ControllerBase
                 ContentId = content.Id,
             };
 
-            context.UserInterationContents.Add(userInteraction);
+            context.UserInteractionContents.Add(userInteraction);
         }
 
         userInteraction.Liked = await context.LikedContents

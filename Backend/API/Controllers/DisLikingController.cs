@@ -1,8 +1,8 @@
-using Contracts.Dtos.Contents;
-using Contracts.Dtos.Comments;
+using Application.Dtos.Contents;
+using Application.Dtos.Comments;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Domain.Components;
+using Domain.Common;
 using Microsoft.AspNetCore.Mvc;
 using Infrastructure.Context;
 using Domain.Entities;
@@ -32,17 +32,18 @@ public class DisLikingController : ControllerBase
         Guid currentUserId = this.GetIDFromClaim();
 
         bool hasUser = await context.Users.AsNoTracking().AnyAsync(user => user.Id == currentUserId);
-        var content = await context.Contents.Select(content => new
-        {
-            c = content,
-            cResponse = new ContentDto(
-            content.Id, content.ChannelId, content.CreatorId,
-            content.Title, content.Slug, content.Description,
-            content.CreatedDate, content.ContentType.ToString(),
-            content.VideoMeta != null ? content.VideoMeta.DurationSeconds : 0,
-            content.ContentUrl, content.PrewievPhotoUrl, content.Savers.Count, content.Likers.Count,
-            content.Comments.Count, content.DisLikers.Count, content.ViewsCount)
-        })
+        var content = await context.Contents
+            .Select(content => new
+            {
+                c = content,
+                cResponse = new ContentDto(
+                    content.Id, content.ChannelId, content.CreatorId,
+                    content.Title, content.Slug, content.Description,
+                    content.CreatedDate, content.ContentType.ToString(),
+                    content.VideoMeta != null ? content.VideoMeta.DurationSeconds : 0,
+                    content.ContentUrl, content.PrewievPhotoUrl, content.Savers.Count, content.Likers.Count,
+                    content.Comments.Count, content.DisLikers.Count, content.ViewsCount)
+            })
             .FirstOrDefaultAsync(content => content.c.Id == ContentId);
 
         if (!hasUser)

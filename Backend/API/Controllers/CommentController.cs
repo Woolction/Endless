@@ -1,11 +1,11 @@
 using Application.Commands.Comments;
 using Microsoft.AspNetCore.Authorization;
-using Contracts.Dtos.Comments;
+using Application.Dtos.Comments;
 using Application.Utilities;
-using Contracts.Dtos.Users;
+using Application.Dtos.Users;
 using Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
-using Domain.Components;
+using Domain.Common;
 using Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 using API.Extensions;
@@ -124,14 +124,13 @@ public class CommentController : ControllerBase
     public async Task<ActionResult<CommentDto>> UpdateComment(Guid CommentId, string text)
     {
         var comment = await context.Comments
-            .Where(comment => comment.Id == CommentId)
             .Select(comment => new
             {
                 c = comment,
                 LikersCount = comment.Likers.Count,
                 DisLikersCount = comment.DisLikers.Count
             })
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(comment => comment.c.Id == CommentId);
 
         if (comment is null || comment.c is null)
             return NotFound("Comment not found");

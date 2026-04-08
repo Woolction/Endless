@@ -1,4 +1,4 @@
-namespace Domain.Components;
+namespace Domain.Common;
 
 public enum PrivateType
 {

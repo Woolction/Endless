@@ -1,28 +1,31 @@
 using Application.Commands.Authentications;
-using Contracts.Dtos.Authentications;
 using Domain.Interfaces.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Domain.Interfaces.Services;
 using Domain.Entities;
+using Domain.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using Application.Dtos.Authentications;
 
 namespace Application.Handlers;
 
 public class UserLoginHandler
 {
     private readonly IPasswordHasher<User> passwordHasher;
-    private readonly IUserRepository userRepository;
     private readonly IAuthService authService;
+    private readonly IAppDbContext context;
 
-    public UserLoginHandler(IPasswordHasher<User> passwordHasher, IUserRepository userRepository, IAuthService authService)
+    public UserLoginHandler(IPasswordHasher<User> passwordHasher, IAuthService authService, IAppDbContext context)
     {
         this.passwordHasher = passwordHasher;
-        this.userRepository = userRepository;
         this.authService = authService;
+        this.context = context;
     }
 
     public async Task<Result<AuthDto>> Handle(AuthCreateCommand cmd)
     {
-        User? user = await userRepository.GetUserByEmail(cmd.Email);
+        User? user = await context.Users.FirstOrDefaultAsync(user =>
+            user.Email == cmd.Email);
 
         if (user is null)
             return Result<AuthDto>.Failure(404, "User not found");

@@ -1,4 +1,4 @@
-using Domain.Components;
+using Domain.Common;
 
 namespace Domain.Entities;
 
@@ -29,7 +29,7 @@ public class Content
 
     public List<ContentGenreVector> Vectors { get; set; } = new List<ContentGenreVector>();
 
-    public List<UserInterationContent> UsersInteration { get; set; } = new List<UserInterationContent>();
+    public List<UserInteractionContent> UsersInteration { get; set; } = new List<UserInteractionContent>();
 
     public List<SavedContent> Savers { get; set; } = new List<SavedContent>();
     public List<LikedContent> Likers { get; set; } = new List<LikedContent>();

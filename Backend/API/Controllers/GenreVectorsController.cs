@@ -1,8 +1,8 @@
 using Application.Commands.Genres;
-using Contracts.Dtos.Genres;
+using Application.Dtos.Genres;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Domain.Components;
+using Domain.Common;
 using Infrastructure.Context;
 using Microsoft.AspNetCore.Mvc;
 using Domain.Entities;

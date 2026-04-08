@@ -1,4 +1,4 @@
-using Domain.Components;
+using Domain.Common;
 
 namespace Domain.Entities;
 
@@ -38,13 +38,13 @@ public class User
     public List<ChannelSubscription> SubscripedChannels { get; set; } = new List<ChannelSubscription>(); //Following the Channel
 
     public List<UserGenreVector> Vectors { get; set; } = new List<UserGenreVector>();
-    public List<UserInterationContent> UserInterations { get; set; } = new List<UserInterationContent>();
+    public List<UserInteractionContent> UserInterations { get; set; } = new List<UserInteractionContent>();
 
     public void SetName(string name)
     {
         Name = name;
     }
-    
+
     public void SetSlug(string slug)
     {
         Slug = slug;

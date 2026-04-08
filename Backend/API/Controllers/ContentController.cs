@@ -1,19 +1,21 @@
 using Application.Commands.Contents;
 using Application.Queries.Searchs;
-using Contracts.Dtos.Contents;
-using Contracts.Dtos.Searchs;
-using Contracts.Dtos.Channels;
-using Contracts.Dtos.Users;
+using Application.Dtos.Contents;
+using Application.Dtos.Searchs;
+using Application.Dtos.Channels;
+using Application.Dtos.Users;
 using Microsoft.AspNetCore.Authorization;
 using Domain.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
-using Domain.Components;
+using Domain.Common;
 using Microsoft.AspNetCore.Mvc;
 using Infrastructure.Context;
 using Domain.Entities;
 using API.Extensions;
 using Application.Utilities;
 using Application.Queries.Contents;
+using Application.Handlers;
+using Application;
 
 namespace API.Controllers;
 
@@ -23,14 +25,17 @@ public class ContentController : ControllerBase
 {
     private readonly EndlessContext context;
 
+    private readonly ContentSearchingHandler searchingHandler;
+
     private readonly ILogger<ContentController> logger;
     private readonly IRecommendationService recommendation;
     private readonly IFfmpegService ffmpegService;
     private readonly IR2Service r2Service;
 
-    public ContentController(EndlessContext context, IRecommendationService recommendation, IFfmpegService ffmpegService, IR2Service r2Service, ILogger<ContentController> logger)
+    public ContentController(EndlessContext context, ContentSearchingHandler searchingHandler, IRecommendationService recommendation, IFfmpegService ffmpegService, IR2Service r2Service, ILogger<ContentController> logger)
     {
         this.context = context;
+        this.searchingHandler = searchingHandler;
 
         this.recommendation = recommendation;
         this.ffmpegService = ffmpegService;
@@ -351,7 +356,27 @@ public class ContentController : ControllerBase
     }
 
     [HttpGet("search")]
-    public async Task<ActionResult<ContentSearchQuery>> GetContentForName([FromQuery] SearchQuery requestDto)
+    public async Task<ActionResult<ContentSearchDto>> GetContentByName([FromQuery] SearchQuery query)
+    {
+        Result<ContentSearchDto> result = await searchingHandler.Handle(query);
+
+        if (!result.IsSuccess || result.Data == null)
+        {
+            return result.StatusCode switch
+            {
+                404 => NotFound(result.Error),
+                _ => StatusCode(500, "Unknown error")
+            };
+        }
+
+        logger.LogInformation("Search returned Contents {Count} results for {Query}",
+           result.Data.ContentsDto.Length, query.Name);
+
+        return Ok(result.Data);
+    }
+
+    /*[HttpGet("search")]
+    public async Task<ActionResult<ContentSearchDto>> GetContentForName([FromQuery] SearchQuery requestDto)
     {
         IQueryable<Content> query = context.Contents.AsQueryable();
 
@@ -360,7 +385,7 @@ public class ContentController : ControllerBase
             query = query.Where(content =>
                 EF.Functions.ILike(content.Title, $"%{requestDto.Name}%") == requestDto.LastSearch.LastLiked &&
                 EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name) < requestDto.LastSearch.LastSimilarity &&
-                EF.Functions.FuzzyStringMatchLevenshtein(content.Title, requestDto.Name) >= requestDto.LastSearch.LastLevenshit);
+                EF.Functions.FuzzyStringMatchLevenshtein(content.Title, requestDto.Name) >= requestDto.LastSearch.LastLevenshtein);
         }
         else
         {
@@ -384,7 +409,7 @@ public class ContentController : ControllerBase
                     content.ViewsCount),
                 LastLiked = EF.Functions.ILike(content.Title, $"%{requestDto.Name}%"),
                 LastSimilarity = EF.Functions.TrigramsSimilarity(content.Title, requestDto.Name),
-                LastLevenshit = EF.Functions.FuzzyStringMatchLevenshtein(content.Title, requestDto.Name)
+                LastLevenshtein = EF.Functions.FuzzyStringMatchLevenshtein(content.Title, requestDto.Name)
             })
             .AsNoTracking()
             .ToArrayAsync();
@@ -396,10 +421,10 @@ public class ContentController : ControllerBase
         logger.LogInformation("Search returned contents {Count} results for {Query}",
            contentResponses.Length, requestDto.Name);
 
-        return Ok(new ContentSearchQuery(
+        return Ok(new ContentSearchDto(
             contentResponses, lastResponse == null ? null : GetSearchQuery(
-                lastResponse.LastLiked, lastResponse.LastSimilarity, lastResponse.LastLevenshit)));
-    }
+                lastResponse.LastLiked, lastResponse.LastSimilarity, lastResponse.LastLevenshtein)));
+    }*/
 
     [HttpPut("{ContentId}")]
     [Authorize(Policy = nameof(UserRole.Creator))]
@@ -508,15 +533,5 @@ public class ContentController : ControllerBase
             ContentId, currentUserId);
 
         return NoContent();
-    }
-
-    private SearchDto GetSearchQuery(bool IsLastLiked, double LastSimilarity, int LastLevenshit)
-    {
-        return new()
-        {
-            LastLiked = IsLastLiked,
-            LastSimilarity = LastSimilarity,
-            LastLevenshit = LastLevenshit
-        };
     }
 }

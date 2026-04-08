@@ -282,6 +282,44 @@ namespace Infrastructure.Context.Migrations
                     NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Name"), new[] { "gin_trgm_ops" });
 
                     b.ToTable("Genres");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("018f47ac-8b72-7c2f-b8d1-9f3c2e7a6d11"),
+                            Name = "Vlog",
+                            Order = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("018f47ac-8b72-7c30-a2f4-6b1d9c8e2a55"),
+                            Name = "Gaming",
+                            Order = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("018f47ac-8b72-7c31-91aa-3e7f5b2c4d88"),
+                            Name = "Tutorial",
+                            Order = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("018f47ac-8b72-7c32-b7c1-0a9d6e4f2b33"),
+                            Name = "Review",
+                            Order = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("018f47ac-8b72-7c33-8d2e-5c1a9b7f3e66"),
+                            Name = "Education",
+                            Order = 4
+                        },
+                        new
+                        {
+                            Id = new Guid("018f47ac-8b72-7c34-a9f0-2d6c8b1e4a99"),
+                            Name = "Tech",
+                            Order = 5
+                        });
                 });
 
             modelBuilder.Entity("Domain.Entities.GenreInfo", b =>
@@ -296,6 +334,13 @@ namespace Infrastructure.Context.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("GenreInfos");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("018f47ac-8b72-7abc-8def-1234567890ab"),
+                            Count = 6
+                        });
                 });
 
             modelBuilder.Entity("Domain.Entities.LikedComment", b =>
@@ -450,7 +495,7 @@ namespace Infrastructure.Context.Migrations
                     b.ToTable("UserVectors");
                 });
 
-            modelBuilder.Entity("Domain.Entities.UserInterationContent", b =>
+            modelBuilder.Entity("Domain.Entities.UserInteractionContent", b =>
                 {
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
@@ -471,7 +516,7 @@ namespace Infrastructure.Context.Migrations
 
                     b.HasIndex("ContentId");
 
-                    b.ToTable("UserInterationContents");
+                    b.ToTable("UserInteractionContents");
                 });
 
             modelBuilder.Entity("Domain.Entities.VideoMetaData", b =>
@@ -683,7 +728,7 @@ namespace Infrastructure.Context.Migrations
 
             modelBuilder.Entity("Domain.Entities.User", b =>
                 {
-                    b.OwnsOne("Domain.Components.RefreshToken", "RefreshToken", b1 =>
+                    b.OwnsOne("Domain.Common.RefreshToken", "RefreshToken", b1 =>
                         {
                             b1.Property<Guid>("UserId")
                                 .HasColumnType("uuid");
@@ -744,7 +789,7 @@ namespace Infrastructure.Context.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Domain.Entities.UserInterationContent", b =>
+            modelBuilder.Entity("Domain.Entities.UserInteractionContent", b =>
                 {
                     b.HasOne("Domain.Entities.Content", "Content")
                         .WithMany("UsersInteration")

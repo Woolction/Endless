@@ -1,13 +1,13 @@
 using Domain.Interfaces.Services;
 using Domain.Entities;
-using Application.Utilities;
+using Infrastructure.Managers;
 
 namespace Infrastructure.Services;
 
 public class InteractionService : IInteractionService
 {
     //call when user exits the video
-    public void Interaction(UserGenreVector[] userVectors, Content content, ContentGenreVector[] contentVectors, UserInterationContent interaction, int Count)
+    public void Interaction(UserGenreVector[] userVectors, Content content, ContentGenreVector[] contentVectors, UserInteractionContent interaction, int Count)
     {
         VideoMetaData videoMeta = content.VideoMeta!;
 

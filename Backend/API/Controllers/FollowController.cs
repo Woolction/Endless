@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
-using Contracts.Dtos.Users;
+using Application.Dtos.Users;
 using Microsoft.EntityFrameworkCore;
-using Domain.Components;
+using Domain.Common;
 using Microsoft.AspNetCore.Mvc;
 using Infrastructure.Context;
 using Domain.Entities;

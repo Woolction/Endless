@@ -1,16 +1,17 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
+using Domain.Interfaces;
 using Domain.Entities;
 
 namespace Infrastructure.Context;
 
-public class EndlessContext : DbContext
+public class EndlessContext : DbContext, IAppDbContext
 {
     public EndlessContext(DbContextOptions<EndlessContext> options) : base(options) { }
 
     public DbSet<User> Users { get; set; }
     public DbSet<UserFollowing> UserFollowings { get; set; }
-    public DbSet<UserInterationContent> UserInterationContents { get; set; }
+    public DbSet<UserInteractionContent> UserInteractionContents { get; set; }
 
     public DbSet<Channel> Channels { get; set; }
     public DbSet<ChannelOwner> ChannelOwners { get; set; }
@@ -31,6 +32,11 @@ public class EndlessContext : DbContext
     public DbSet<Comment> Comments { get; set; }
     public DbSet<LikedComment> LikedComments { get; set; }
     public DbSet<DisLikedComment> DisLikedComments { get; set; }
+
+    public async Task<int> SaveChangesAsync()
+    {
+        return await base.SaveChangesAsync();
+    }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -69,7 +75,7 @@ public class EndlessContext : DbContext
         userSubBuilder
             .HasIndex(uS => uS.FollowedUserId);
 
-        EntityTypeBuilder<UserInterationContent> userInBuilder = builder.Entity<UserInterationContent>();
+        EntityTypeBuilder<UserInteractionContent> userInBuilder = builder.Entity<UserInteractionContent>();
         userInBuilder
             .HasOne(uI => uI.Content)
             .WithMany(c => c.UsersInteration)
@@ -192,6 +198,19 @@ public class EndlessContext : DbContext
             .HasIndex(g => g.Name)
             .HasMethod("gin")
             .HasOperators("gin_trgm_ops");
+        genreBuilder.HasData([
+            new Genre { Id = Guid.Parse("018f47ac-8b72-7c2f-b8d1-9f3c2e7a6d11"), Name = "Vlog", Order = 0 },
+            new Genre { Id = Guid.Parse("018f47ac-8b72-7c30-a2f4-6b1d9c8e2a55"), Name = "Gaming", Order = 1 },
+            new Genre { Id = Guid.Parse("018f47ac-8b72-7c31-91aa-3e7f5b2c4d88"), Name = "Tutorial", Order = 2 },
+            new Genre { Id = Guid.Parse("018f47ac-8b72-7c32-b7c1-0a9d6e4f2b33"), Name = "Review", Order = 3 },
+            new Genre { Id = Guid.Parse("018f47ac-8b72-7c33-8d2e-5c1a9b7f3e66"), Name = "Education", Order = 4 },
+            new Genre { Id = Guid.Parse("018f47ac-8b72-7c34-a9f0-2d6c8b1e4a99"), Name = "Tech", Order = 5 }
+        ]);
+
+        // Genre Info
+        EntityTypeBuilder<GenreInfo> genreInfoBuilder = builder.Entity<GenreInfo>();
+        genreInfoBuilder
+            .HasData(new GenreInfo() { Id = Guid.Parse("018f47ac-8b72-7abc-8def-1234567890ab"), Count = 6 });
 
         EntityTypeBuilder<UserGenreVector> genreUsBuilder = builder.Entity<UserGenreVector>();
         genreUsBuilder
@@ -236,10 +255,14 @@ public class EndlessContext : DbContext
             .HasOne(co => co.Commentator)
             .WithMany(u => u.Comments)
             .HasForeignKey(co => co.CommentatorId);
+        commentBuilder.
+            HasIndex(co => co.CommentatorId);
         commentBuilder
             .HasOne(co => co.Content)
             .WithMany(c => c.Comments)
             .HasForeignKey(co => co.ContentId);
+        commentBuilder
+            .HasIndex(co => co.ContentId);
         commentBuilder
             .HasIndex(co => co.PublicatedDate);
 
@@ -254,17 +277,21 @@ public class EndlessContext : DbContext
             .HasForeignKey(cL => cL.CommentId);
         commentLikedBuilder
             .HasKey(cl => new { cl.UserId, cl.CommentId });
+        commentLikedBuilder
+            .HasIndex(cl => cl.CommentId);
 
-        EntityTypeBuilder<DisLikedComment> commentDizLikedBuilder = builder.Entity<DisLikedComment>();
-        commentDizLikedBuilder
+        EntityTypeBuilder<DisLikedComment> commentDisLikedBuilder = builder.Entity<DisLikedComment>();
+        commentDisLikedBuilder
             .HasOne(cL => cL.User)
             .WithMany(u => u.DisLikedComments)
             .HasForeignKey(cL => cL.UserId);
-        commentDizLikedBuilder
+        commentDisLikedBuilder
             .HasOne(cL => cL.Comment)
             .WithMany(co => co.DisLikers)
             .HasForeignKey(cL => cL.CommentId);
-        commentDizLikedBuilder
+        commentDisLikedBuilder
             .HasKey(cl => new { cl.UserId, cl.CommentId });
+        commentDisLikedBuilder
+            .HasIndex(cl => cl.CommentId);
     }
 }

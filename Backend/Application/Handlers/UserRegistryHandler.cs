@@ -3,33 +3,30 @@ using Domain.Interfaces.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Domain.Interfaces.Services;
-using Contracts.Dtos.Users;
 using Application.Utilities;
 using Domain.Entities;
 using Npgsql;
+using Domain.Interfaces;
+using Application.Dtos.Users;
 
 namespace Application.Handlers;
 
 public class UserRegistryHandler
 {
     private readonly IPasswordHasher<User> passwordHasher;
-    private readonly IUserVectorsRepository userVectors;
-    private readonly IGenreRepository genreRepository;
-    private readonly IUserRepository userRepository;
     private readonly IAuthService authService;
+    private readonly IAppDbContext context;
 
-    public UserRegistryHandler(IPasswordHasher<User> passwordHasher, IUserVectorsRepository userVectors, IGenreRepository genreRepository, IUserRepository userRepository, IAuthService authService)
+    public UserRegistryHandler(IPasswordHasher<User> passwordHasher, IAuthService authService, IAppDbContext context)
     {
-        this.genreRepository = genreRepository;
         this.passwordHasher = passwordHasher;
-        this.userRepository = userRepository;
-        this.userVectors = userVectors;
         this.authService = authService;
+        this.context = context;
     }
 
     public async Task<Result<RegistryDto>> Handle(AuthCreateCommand cmd)
     {
-        if (await userRepository.AnyUserByEmail(cmd.Email))
+        if (await context.Users.AnyAsync(user => user.Email == cmd.Email))
             return Result<RegistryDto>.Failure(409, $"User with Email: {cmd.Email} exists");
 
         User user = new()
@@ -46,15 +43,22 @@ public class UserRegistryHandler
             user.SetSlug(cmd.Name.GenerateSlug());
         }
 
-        var vectors = await genreRepository.CreateGenresForUser(user);
+        var vectors = await context.Genres
+            .Select(genre => new UserGenreVector()
+            {
+                User = user,
+                GenreId = genre.Id
+            })
+            .AsNoTracking()
+            .ToArrayAsync();
 
-        await userVectors.AddExistsGenres(vectors);
+        context.UserVectors.AddRange(vectors);
 
-        userRepository.AddUser(user);
+        context.Users.Add(user);
 
         try
         {
-            await userRepository.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
             string[] tokens = await authService.CreateTokenResponse(user);
 

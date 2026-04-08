@@ -3,14 +3,16 @@ using Microsoft.EntityFrameworkCore;
 using Application.Commands.Channels;
 using Application.Queries.Searchs;
 using Domain.Interfaces.Services;
-using Contracts.Dtos.Channels;
+using Application.Dtos.Channels;
 using Microsoft.AspNetCore.Mvc;
-using Contracts.Dtos.Searchs;
+using Application.Dtos.Searchs;
 using Infrastructure.Context;
 using Application.Utilities;
-using Domain.Components;
+using Domain.Common;
 using Domain.Entities;
 using Npgsql;
+using Application.Handlers;
+using Application;
 
 namespace API.Controllers;
 
@@ -20,12 +22,17 @@ public class ChannelController : ControllerBase
 {
     private readonly EndlessContext context;
 
+    private readonly ChannelSearchingHandler searchingHandler;
+    private readonly ChannelsCreatingHandler channelsCreating;
+
     private readonly ILogger<ChannelController> logger;
     private readonly IR2Service r2Service;
 
-    public ChannelController(EndlessContext context, IR2Service r2Service, ILogger<ChannelController> logger)
+    public ChannelController(EndlessContext context, ChannelSearchingHandler searchingHandler, ChannelsCreatingHandler channelsCreating, IR2Service r2Service, ILogger<ChannelController> logger)
     {
         this.context = context;
+        this.searchingHandler = searchingHandler;
+        this.channelsCreating = channelsCreating;
 
         this.r2Service = r2Service;
         this.logger = logger;
@@ -44,7 +51,7 @@ public class ChannelController : ControllerBase
 
         string slug = createDto.Name.GenerateSlug();
 
-        Channel Channel = new()
+        Channel channel = new()
         {
             Slug = slug,
             Name = createDto.Name,
@@ -58,48 +65,48 @@ public class ChannelController : ControllerBase
 
             string photoUrl = await r2Service.SaveImage(photoPath);
 
-            Channel.AvatarPhotoUrl = photoUrl;
+            channel.AvatarPhotoUrl = photoUrl;
 
             System.IO.File.Delete(photoPath);
         }
 
-        ChannelOwner ChannelOwner = new()
+        ChannelOwner channelOwner = new()
         {
             OwnerId = currentUserId,
-            Channel = Channel,
+            Channel = channel,
             OwnedDate = DateTime.UtcNow,
             OwnerRole = ChannelOwnerRole.Admin
         };
 
-        ChannelSubscription ChannelSubscription = new()
+        ChannelSubscription channelSubscription = new()
         {
-            Channel = Channel,
+            Channel = channel,
             SubscriberId = currentUserId,
             SubscribedDate = DateTime.UtcNow,
             Notification = false
         };
 
-        context.ChannelSubscriptions.Add(ChannelSubscription);
-        context.ChannelOwners.Add(ChannelOwner);
-        context.Channels.Add(Channel);
+        context.ChannelSubscriptions.Add(channelSubscription);
+        context.ChannelOwners.Add(channelOwner);
+        context.Channels.Add(channel);
 
         try
         {
             await context.SaveChangesAsync();
 
             logger.LogInformation("Channel {ChannelId} created with slug {Slug}",
-                Channel.Id, slug);
+                channel.Id, slug);
 
-            return Created($"api/Channel/{Channel.Id}", new ChannelDto(
-                Channel.Id,
-                Channel.Name,
-                "@" + Channel.Slug,
-                Channel.Description ?? "",
-                Channel.CreatedDate,
-                Channel.AvatarPhotoUrl,
+            return Created($"api/Channel/{channel.Id}", new ChannelDto(
+                channel.Id,
+                channel.Name,
+                "@" + channel.Slug,
+                channel.Description ?? "",
+                channel.CreatedDate,
+                channel.AvatarPhotoUrl,
                 1, 0, 1,
-                Channel.TotalLikes,
-                Channel.TotalViews));
+                channel.TotalLikes,
+                channel.TotalViews));
         }
         catch (DbUpdateException ex)
         {
@@ -112,10 +119,41 @@ public class ChannelController : ControllerBase
         }
     }
 
+    [HttpPost("many")]
+    [Authorize(Policy = nameof(UserRole.Admin))]
+    public async Task<ActionResult<ChannelDto[]>> CreateChannels(ChannelsCreateCommand cmd)
+    {
+        if (cmd.Count < 1)
+            return BadRequest($"Count < 1: {cmd.Count}");
+            
+        Guid currentUserId = this.GetIDFromClaim();
+
+        User? user = await context.Users.FindAsync(currentUserId);
+
+        if (user == null)
+            return NotFound("User not found");
+
+        cmd.UserId = currentUserId;
+
+        Result<ChannelDto[]> result = await channelsCreating.Handle(cmd);
+
+        if (!result.IsSuccess)
+        {
+            return result.StatusCode switch
+            {
+                409 => Conflict(result.Error),
+                _ => StatusCode(500, "unknown error")
+            };
+        }
+
+        return Created("", result.Data);
+    }
+
     [HttpGet("{ChannelId}")]
     public async Task<ActionResult<ChannelDto>> GetChannelById(Guid ChannelId)
     {
         ChannelDto? Channel = await context.Channels
+            .Where(Channel => Channel.Id == ChannelId)
             .Select(Channel => new ChannelDto(
                 Channel.Id, Channel.Name, "@" + Channel.Slug,
                 Channel.Description ?? "", Channel.CreatedDate,
@@ -123,7 +161,7 @@ public class ChannelController : ControllerBase
                 Channel.Contents.Count, Channel.Owners.Count,
                 Channel.TotalLikes, Channel.TotalViews))
             .AsNoTracking()
-            .FirstOrDefaultAsync(Channel => Channel.Id == ChannelId);
+            .FirstOrDefaultAsync();
 
         if (Channel == null)
             return NotFound("Channel not found");
@@ -135,52 +173,23 @@ public class ChannelController : ControllerBase
     }
 
     [HttpGet("search")]
-    public async Task<ActionResult<ChannelsearchQuery>> GetChannelsForName([FromQuery] SearchQuery requestDto)
+    public async Task<ActionResult<ChannelSearchDto>> GetChannelsByName([FromQuery] SearchQuery query)
     {
-        IQueryable<Channel> query = context.Channels.AsQueryable();
+        Result<ChannelSearchDto> result = await searchingHandler.Handle(query);
 
-        if (requestDto.LastSearch is not null)
+        if (!result.IsSuccess || result.Data == null)
         {
-            query = query.Where(Channel =>
-                EF.Functions.ILike(Channel.Name, $"%{requestDto.Name}%") == requestDto.LastSearch.LastLiked &&
-                EF.Functions.TrigramsSimilarity(Channel.Name, requestDto.Name) < requestDto.LastSearch.LastSimilarity &&
-                EF.Functions.FuzzyStringMatchLevenshtein(Channel.Name, requestDto.Name) >= requestDto.LastSearch.LastLevenshit);
-        }
-        else
-        {
-            query = query.Where(Channel =>
-                EF.Functions.ILike(Channel.Name, $"%{requestDto.Name}%") ||
-                EF.Functions.TrigramsSimilarity(Channel.Name, requestDto.Name) > 0.2f ||
-                EF.Functions.FuzzyStringMatchLevenshtein(Channel.Name, requestDto.Name) <= 3);
-        }
-
-        var Channels = await query
-            .OrderByDescending(Channel => EF.Functions.TrigramsSimilarity(Channel.Name, requestDto.Name))
-            .Take(20)
-            .Select(Channel => new
+            return result.StatusCode switch
             {
-                Channel = new ChannelDto(
-                    Channel.Id, Channel.Name, "@" + Channel.Slug,
-                    Channel.Description ?? "", Channel.CreatedDate,
-                    Channel.AvatarPhotoUrl, Channel.Subscribers.Count,
-                    Channel.Contents.Count, Channel.Owners.Count,
-                    Channel.TotalLikes, Channel.TotalViews),
-                LastLiked = EF.Functions.ILike(Channel.Name, $"%{requestDto.Name}%"),
-                LastSimilarity = EF.Functions.TrigramsSimilarity(Channel.Name, requestDto.Name),
-                LastLevenshit = EF.Functions.FuzzyStringMatchLevenshtein(Channel.Name, requestDto.Name)
-            })
-            .AsNoTracking().ToArrayAsync();
-
-        var lastResponse = Channels.LastOrDefault();
-
-        ChannelDto[] ChannelResponses = Channels.Select(Channel => Channel.Channel).ToArray();
+                404 => NotFound(result.Error),
+                _ => StatusCode(500, "Unknown error")
+            };
+        }
 
         logger.LogInformation("Search returned Channels {Count} results for {Query}",
-            Channels.Length, requestDto.Name);
+           result.Data.ChannelsDto.Length, query.Name);
 
-        return Ok(new ChannelsearchQuery(
-            ChannelResponses, lastResponse == null ? null : GetSearchQuery(
-                lastResponse.LastLiked, lastResponse.LastSimilarity, lastResponse.LastLevenshit)));
+        return Ok(result.Data);
     }
 
     [HttpGet]
@@ -205,15 +214,14 @@ public class ChannelController : ControllerBase
     public async Task<ActionResult<ChannelDto>> UpdateChannel(Guid ChannelId, ChannelUpdateCommand updateDto)
     {
         var Channel = await context.Channels
-            .Where(Channel => Channel.Id == ChannelId)
             .Select(Channel => new
             {
                 d = Channel,
                 SubscribersCount = Channel.Subscribers.Count,
                 ContentsCount = Channel.Contents.Count,
                 OwnersCount = Channel.Owners.Count
-            })// For mapping
-            .FirstOrDefaultAsync();
+            })
+            .FirstOrDefaultAsync(Channel => Channel.d.Id == ChannelId);
 
         if (Channel is null || Channel.d is null)
             return NotFound("Channel not found");
@@ -254,11 +262,11 @@ public class ChannelController : ControllerBase
         Channel.d.Slug = slug;
 
         ChannelDto responseDto = new(
-                Channel.d.Id, Channel.d.Name, "@" + Channel.d.Slug,
-                Channel.d.Description ?? "", Channel.d.CreatedDate,
-                Channel.d.AvatarPhotoUrl, Channel.SubscribersCount,
-                Channel.ContentsCount, Channel.OwnersCount,
-                Channel.d.TotalLikes, Channel.d.TotalViews);
+            Channel.d.Id, Channel.d.Name, "@" + Channel.d.Slug,
+            Channel.d.Description ?? "", Channel.d.CreatedDate,
+            Channel.d.AvatarPhotoUrl, Channel.SubscribersCount,
+            Channel.ContentsCount, Channel.OwnersCount,
+            Channel.d.TotalLikes, Channel.d.TotalViews);
 
         try
         {
@@ -320,15 +328,5 @@ public class ChannelController : ControllerBase
         logger.LogInformation("Channel {ChannelId} deleted", ChannelId);
 
         return NoContent();
-    }
-
-    private SearchDto GetSearchQuery(bool IsLastLiked, double LastSimilarity, int LastLevenshit)
-    {
-        return new()
-        {
-            LastLiked = IsLastLiked,
-            LastSimilarity = LastSimilarity,
-            LastLevenshit = LastLevenshit
-        };
     }
 }

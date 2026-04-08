@@ -1,8 +1,8 @@
-using Contracts.Dtos.Contents;
-using Contracts.Dtos.Comments;
+using Application.Dtos.Contents;
+using Application.Dtos.Comments;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Domain.Components;
+using Domain.Common;
 using Infrastructure.Context;
 using Microsoft.AspNetCore.Mvc;
 using Domain.Entities;
