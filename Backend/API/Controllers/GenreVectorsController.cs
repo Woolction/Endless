@@ -1,5 +1,5 @@
-using Application.Commands.Genres;
-using Application.Dtos.Genres;
+using Application.Genres.CreateMany;
+using Application.Genres.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Domain.Common;

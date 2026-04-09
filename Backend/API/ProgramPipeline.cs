@@ -15,8 +15,16 @@ using Domain.Common;
 using Domain.Entities;
 using Scalar.AspNetCore;
 using System.Text;
-using Application.Handlers;
+using Application.Channels.CreateMany;
+using Application.Channels;
+using Application.Authentications.Login;
+using Application.Authentications.Update;
 using Domain.Interfaces;
+using Application.Contents.Search;
+using Application.Channels.Search;
+using Application.Users.Create;
+using Application.Users.Search;
+using Application.Users.Registry;
 
 namespace API;
 
@@ -150,11 +158,8 @@ public static class ProgramPipeline
         // Repositories
         builder.Services.AddScoped<IUserVectorsRepository, UserVectorsRepository>();
         builder.Services.AddScoped<IUserRepository, UserRepository>();
-
         builder.Services.AddScoped<IChannelRepository, ChannelRepository>();
-
         builder.Services.AddScoped<IContentRepository, ContentRepository>();
-
         builder.Services.AddScoped<IGenreRepository, GenreRepository>();
 
         //      Singleton

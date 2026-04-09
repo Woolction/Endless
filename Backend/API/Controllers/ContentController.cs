@@ -1,9 +1,8 @@
-using Application.Commands.Contents;
-using Application.Queries.Searchs;
-using Application.Dtos.Contents;
-using Application.Dtos.Searchs;
-using Application.Dtos.Channels;
-using Application.Dtos.Users;
+using Application.Contents.Create;
+using Application.Searchs;
+using Application.Contents.Dtos;
+using Application.Channels.Dtos;
+using Application.Users.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Domain.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
@@ -13,9 +12,10 @@ using Infrastructure.Context;
 using Domain.Entities;
 using API.Extensions;
 using Application.Utilities;
-using Application.Queries.Contents;
-using Application.Handlers;
+using Application.Contents.Recommendate;
+using Application.Channels;
 using Application;
+using Application.Contents.Search;
 
 namespace API.Controllers;
 

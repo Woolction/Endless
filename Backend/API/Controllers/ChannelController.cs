@@ -1,17 +1,19 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Application.Commands.Channels;
-using Application.Queries.Searchs;
+using Application.Channels.CreateMany;
+using Application.Channels;
+using Application.Searchs;
 using Domain.Interfaces.Services;
-using Application.Dtos.Channels;
+using Application.Channels.Dtos;
 using Microsoft.AspNetCore.Mvc;
-using Application.Dtos.Searchs;
+using Application.Channels.Search;
 using Infrastructure.Context;
 using Application.Utilities;
 using Domain.Common;
 using Domain.Entities;
 using Npgsql;
-using Application.Handlers;
+using Application.Channels.CreateOne;
+using Application.Channels.Update;
 using Application;
 
 namespace API.Controllers;
@@ -125,7 +127,7 @@ public class ChannelController : ControllerBase
     {
         if (cmd.Count < 1)
             return BadRequest($"Count < 1: {cmd.Count}");
-            
+
         Guid currentUserId = this.GetIDFromClaim();
 
         User? user = await context.Users.FindAsync(currentUserId);

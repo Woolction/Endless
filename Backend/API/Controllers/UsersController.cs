@@ -1,19 +1,22 @@
-using Application.Commands.Authentications;
+using Application.Authentications.Login;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using Application.Queries.Searchs;
-using Application.Commands.Users;
+using Application.Searchs;
+using Application.Users.Create;
 using Domain.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
 using Infrastructure.Context;
 using Application.Utilities;
-using Application.Handlers;
-using Application.Dtos.Users;
+using Application.Channels;
+using Application.Users.Dtos;
 using Application;
 using Npgsql;
 using Domain.Common;
 using Domain.Entities;
+using Application.Users.Search;
+using Application.Users.Update;
+using Application.Users.Registry;
 
 namespace API.Controllers;
 

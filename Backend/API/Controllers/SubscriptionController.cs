@@ -1,4 +1,4 @@
-using Application.Dtos.Channels;
+using Application.Channels.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Domain.Common;

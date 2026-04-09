@@ -1,10 +1,10 @@
-using Application.Commands.Authentications;
+using Application.Authentications.Login;
+using Application.Authentications.Update;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
-using Application.Dtos.Authentications;
+using Application.Authentications.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using Application.Utilities;
-using Application.Handlers;
 using Application;
 
 namespace API.Controllers;

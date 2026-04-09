@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Domain.Entities;
 using API.Extensions;
 using Application.Utilities;
-using Application.Dtos.Genres;
+using Application.Genres.Dtos;
 
 namespace API.Controllers;
 

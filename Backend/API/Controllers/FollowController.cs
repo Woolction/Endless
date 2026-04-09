@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
-using Application.Dtos.Users;
+using Application.Users.Dtos;
 using Microsoft.EntityFrameworkCore;
 using Domain.Common;
 using Microsoft.AspNetCore.Mvc;

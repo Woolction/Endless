@@ -1,4 +1,4 @@
-using Application.Dtos.Contents;
+using Application.Contents.Dtos;
 using Domain.Entities;
 
 namespace API.Extensions;

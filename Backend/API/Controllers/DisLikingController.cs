@@ -1,5 +1,5 @@
-using Application.Dtos.Contents;
-using Application.Dtos.Comments;
+using Application.Contents.Dtos;
+using Application.Comments.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Domain.Common;

@@ -5,7 +5,7 @@ using Infrastructure.Context;
 using Microsoft.AspNetCore.Mvc;
 using Domain.Entities;
 using Application.Utilities;
-using Application.Dtos.Channels;
+using Application.Channels.Dtos;
 
 namespace API.Controllers;
 
