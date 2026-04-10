@@ -22,6 +22,7 @@ using Application.Contents.Changed;
 using Application.Contents.Random;
 using Application.Contents.Update;
 using Application.Contents.Delete;
+using Application.Users.Changed;
 
 namespace API.Controllers;
 
@@ -94,21 +95,34 @@ public class ContentController : ControllerBase
     [HttpGet("{ContentId}")]
     public async Task<ActionResult<ChangedContentDto>> GetChangedContent(Guid ContentId)
     {
-        ContentChangedQuery query = new(ContentId);
+        ContentChangedQuery contentQuery = new(ContentId);
 
-        Result<ChangedContentDto> result = await mediator.Send(query);
+        Result<ChangedContentDto> resultContent = await mediator.Send(contentQuery);
 
-        if (!result.IsSuccess || result.Data == null)
+        if (!resultContent.IsSuccess || resultContent.Data == null)
         {
-            return result.StatusCode switch
+            return resultContent.StatusCode switch
             {
-                404 => NotFound(result.Error),
+                404 => NotFound(resultContent.Error),
                 _ => StatusCode(500, "unknown error")
             };
         }
 
-        return Ok(result.Data); /*after segregation: new ChangedContentDto(
-            ChannelResponse, changedContent.cResponse, userResponse));*/ 
+        UserChangedQuery userQuery = new(resultContent.Data.ContentDto.CreatorId);
+
+        Result<UserDto> resultUser = await mediator.Send(userQuery);
+
+        if (!resultUser.IsSuccess || resultUser.Data == null)
+        {
+            return resultUser.StatusCode switch
+            {
+                404 => NotFound(resultUser.Error),
+                _ => StatusCode(500, "unknown error")
+            };
+        }
+
+        return Ok(new ChangedContentDto(
+            resultContent.Data.ChannelDto, resultContent.Data.ContentDto, resultUser.Data));
     }
 
     [HttpGet]

@@ -26,3 +26,5 @@ public class Result<T>
     public static Result<T> Failure(int statusCode, string error) =>
         new(statusCode, error);
 }
+
+public class Null { }

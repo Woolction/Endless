@@ -35,7 +35,7 @@ public class ContentChangedHandler : IRequestHandler<ContentChangedQuery, Result
             .AsNoTracking()
             .FirstOrDefaultAsync(content => content.c.Id == query.ContentId, cancellationToken);
 
-        if (changedContent is null || changedContent.c is null)
+        if (changedContent == null || changedContent.c == null)
             return Result<ChangedContentDto>.Failure(404, "Content not found");
 
         ChannelDto? ChannelResponse = await context.Channels //segregate
@@ -48,20 +48,10 @@ public class ContentChangedHandler : IRequestHandler<ContentChangedQuery, Result
             .AsNoTracking()
             .FirstOrDefaultAsync(Channel => Channel.Id == changedContent.c.ChannelId, cancellationToken);
 
-        UserDto? userResponse = await context.Users //segregate
-            .Select(user => new UserDto(
-                user.Id, user.Name, "@" + user.Slug,
-                user.Description ?? "", user.RegistryData, user.Email,
-                user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
-                user.Comments.Count, user.Contents.Count, user.Followers.Count,
-                user.Following.Count, user.OwnedChannels.Count, user.SubscripedChannels.Count))
-            .AsNoTracking()
-            .FirstOrDefaultAsync(cancellationToken);
-
         logger.LogInformation("Returned content {ContentId}",
             query.ContentId);
 
         return Result<ChangedContentDto>.Success(200, new ChangedContentDto(
-            ChannelResponse, changedContent.cResponse, userResponse));
+            ChannelResponse, changedContent.cResponse, null));
     }
 }

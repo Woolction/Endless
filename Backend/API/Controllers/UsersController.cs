@@ -18,6 +18,8 @@ using Application.Users.Search;
 using Application.Users.Update;
 using Application.Users.Registry;
 using MediatR;
+using Application.Users.Changed;
+using Application.Users.Delete;
 
 namespace API.Controllers;
 
@@ -52,7 +54,7 @@ public class UsersController : ControllerBase
             {
                 409 => Conflict(result.Error),
                 500 => StatusCode(result.StatusCode, result.Error),
-                _ => StatusCode(500, "Unknown error")
+                _ => StatusCode(500, "unknown error")
             };
         }
 
@@ -73,12 +75,12 @@ public class UsersController : ControllerBase
 
         Result<UserDto[]> result = await mediator.Send(cmd);
 
-        if (!result.IsSuccess)
+        if (!result.IsSuccess || result.Data == null)
         {
             return result.StatusCode switch
             {
                 409 => Conflict(result.Error),
-                _ => StatusCode(500, "Unknown error")
+                _ => StatusCode(500, "unknown error")
             };
         }
 
@@ -98,7 +100,7 @@ public class UsersController : ControllerBase
             return result.StatusCode switch
             {
                 404 => NotFound(result.Error),
-                _ => StatusCode(500, "Unknown error")
+                _ => StatusCode(500, "unknown error")
             };
         }
 
@@ -111,25 +113,20 @@ public class UsersController : ControllerBase
     [HttpGet("{UserId}")]
     public async Task<ActionResult<UserDto>> GetUser(Guid UserId)
     {
-        UserDto? userResponse = await context.Users
-            .Where(user => user.Id == UserId)
-            .Select(user =>
-                new UserDto(
-                    user.Id, user.Name, "@" + user.Slug,
-                    user.Description ?? "", user.RegistryData, user.Email,
-                    user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
-                    user.Comments.Count, user.Contents.Count, user.Followers.Count,
-                    user.Following.Count, user.OwnedChannels.Count, user.SubscripedChannels.Count))
-            .AsNoTracking()
-            .FirstOrDefaultAsync();
+        UserChangedQuery userQuery = new(UserId);
 
-        if (userResponse == null)
-            return NotFound();
+        Result<UserDto> resultUser = await mediator.Send(userQuery);
 
-        logger.LogInformation("Returned user {UserId}",
-            UserId);
+        if (!resultUser.IsSuccess || resultUser.Data == null)
+        {
+            return resultUser.StatusCode switch
+            {
+                404 => NotFound(resultUser.Error),
+                _ => StatusCode(500, "unknown error")
+            };
+        }
 
-        return Ok(userResponse);
+        return Ok(resultUser.Data);
     }
 
     //Current User
@@ -139,105 +136,44 @@ public class UsersController : ControllerBase
     {
         Guid currentUserId = this.GetIDFromClaim();
 
-        UserDto? user = await context.Users
-            .Where(user => user.Id == currentUserId)
-            .Select(user => new UserDto(
-                user.Id, user.Name, "@" + user.Slug,
-                user.Description ?? "", user.RegistryData, user.Email,
-                user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
-                user.Comments.Count, user.Contents.Count, user.Followers.Count,
-                user.Following.Count, user.OwnedChannels.Count, user.SubscripedChannels.Count))
-            .AsNoTracking()
-            .FirstOrDefaultAsync();
+        UserChangedQuery userQuery = new(currentUserId);
 
-        if (user is null)
-            return NotFound();
+        Result<UserDto> resultUser = await mediator.Send(userQuery);
 
-        logger.LogInformation("Returned User {UserId}", currentUserId);
+        if (!resultUser.IsSuccess || resultUser.Data == null)
+        {
+            return resultUser.StatusCode switch
+            {
+                404 => NotFound(resultUser.Error),
+                _ => StatusCode(500, "unknown error")
+            };
+        }
 
-        return Ok(user);
+        return Ok(resultUser.Data);
     }
 
     [Authorize]
     [HttpPut("current")]
-    public async Task<ActionResult<UserDto>> UpdateCurrentUser(UserUpdateCommand updateDto)
+    public async Task<ActionResult<UserDto>> UpdateCurrentUser(UserUpdateRequest request)
     {
-        Guid currentUserId = this.GetIDFromClaim();
+        UserUpdateCommand cmd = new(
+            this.GetIDFromClaim(), request.Name,
+            request.Description, request.Role,
+            request.AvatarPhoto);
 
-        var user = await context.Users
-            .Select(user => new
+        Result<UserDto> result = await mediator.Send(cmd);
+
+        if (!result.IsSuccess || result.Data == null)
+        {
+            return result.StatusCode switch
             {
-                u = user,
-                CommentsCount = user.Comments.Count,
-                ContentsCount = user.Contents.Count,
-                FollowersCount = user.Followers.Count,
-                FollowingCount = user.Following.Count,
-                OwnedChannelsCount = user.OwnedChannels.Count,
-                SubscripedChannelsCount = user.SubscripedChannels.Count
-            })
-            .FirstOrDefaultAsync(user => user.u.Id == currentUserId);
-
-        if (user is null || user.u is null)
-            return NotFound();
-
-        if (!string.IsNullOrEmpty(updateDto.Name))
-        {
-            user.u.Name = updateDto.Name;
-            user.u.Slug = updateDto.Name.GenerateSlug();
+                404 => NotFound(result.Error),
+                409 => Conflict(result.Error),
+                _ => StatusCode(500, "unknown error")
+            };
         }
 
-        if (!string.IsNullOrEmpty(updateDto.Description))
-            user.u.Description = updateDto.Description;
-
-        if (updateDto.AvatarPhoto is not null && updateDto.AvatarPhoto.Length != 0)
-        {
-            string photoPath = await r2Service.SaveFormFileAsync(updateDto.AvatarPhoto, "Images", ".jpeg");
-
-            string photoUrl = await r2Service.SaveImage(photoPath);
-
-            user.u.AvatarPhotoUrl = photoUrl;
-
-            System.IO.File.Delete(photoPath);
-        }
-
-        //for test
-        user.u.Role = updateDto.Role;
-
-        try
-        {
-            await context.SaveChangesAsync();
-
-            logger.LogInformation("User {UserId} updated", currentUserId);
-
-            UserDto userDto = new(
-                    user.u.Id,
-                    user.u.Name,
-                    "@" + user.u.Slug,
-                    user.u.Description ?? "",
-                    user.u.RegistryData,
-                    user.u.Email,
-                    user.u.Role.ToString(),
-                    user.u.AvatarPhotoUrl,
-                    user.u.TotalLikes,
-                    user.CommentsCount,
-                    user.ContentsCount,
-                    user.FollowersCount,
-                    user.FollowingCount,
-                    user.OwnedChannelsCount,
-                    user.SubscripedChannelsCount);
-
-            return Ok(userDto);
-        }
-        catch (DbUpdateException ex)
-        {
-            logger.LogError(ex, "Error while updating user {UserId}", currentUserId);
-
-            if (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
-                return Conflict($"This name {updateDto.Name} already existn");
-
-            throw;
-        }
-
+        return Ok(result.Data);
     }
 
     [Authorize]
@@ -246,11 +182,19 @@ public class UsersController : ControllerBase
     {
         Guid currentUserId = this.GetIDFromClaim();
 
-        await context.Users.Where(user => user.Id == currentUserId).ExecuteDeleteAsync();
+        Result<Null> result = await mediator.Send(new UserDeleteCommand(
+            this.GetIDFromClaim()));
+
+        if (!result.IsSuccess || result.Data == null)
+        {
+            return result.StatusCode switch
+            {
+                404 => NotFound(result.StatusCode),
+                _ => StatusCode(500, "unknown error")
+            };
+        }
 
         this.DeleteTokensInCookies();
-
-        logger.LogInformation("User {UserId} deleted", currentUserId);
 
         return NoContent();
     }

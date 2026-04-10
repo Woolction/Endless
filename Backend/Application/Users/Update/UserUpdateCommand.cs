@@ -6,4 +6,4 @@ using Microsoft.AspNetCore.Http;
 namespace Application.Users.Update;
 
 public record class UserUpdateCommand(
-    string? Name, string? Description, UserRole Role, IFormFile? AvatarPhoto) : IRequest<Result<UserDto>>;
+    Guid UserId, string? Name, string? Description, UserRole Role, IFormFile? AvatarPhoto) : IRequest<Result<UserDto>>;

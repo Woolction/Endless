@@ -77,7 +77,7 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
             ContentUrl = videoUrl,
             PrewievPhotoUrl = photoUrl,
             CreatedDate = DateTime.UtcNow,
-            RandomKey = Random.Shared.NextDouble(),
+            RandomKey = System.Random.Shared.NextDouble(),
             ContentType = cmd.ContentType
         };
 
