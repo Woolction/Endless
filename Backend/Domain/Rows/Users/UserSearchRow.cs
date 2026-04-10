@@ -1,4 +1,4 @@
-namespace Contracts.Rows;
+namespace Domain.Rows.Users;
 
 public class UserSearchRow
 {

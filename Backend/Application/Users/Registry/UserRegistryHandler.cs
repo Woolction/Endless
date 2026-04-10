@@ -71,7 +71,7 @@ public class UserRegistryHandler : IRequestHandler<UserRegistryCommand, Result<R
         catch (DbUpdateException ex)
         {
             if (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
-                Result<RegistryDto>.Failure(409, "User name already exists", 1);
+                Result<RegistryDto>.Failure(409, "User name already exists");
 
             throw;
         }

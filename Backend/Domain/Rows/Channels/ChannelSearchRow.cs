@@ -1,4 +1,4 @@
-namespace Contracts.Rows;
+namespace Domain.Rows.Channels;
 
 public class ChannelSearchRow
 {

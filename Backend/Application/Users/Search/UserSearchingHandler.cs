@@ -1,8 +1,8 @@
 using Domain.Interfaces.Repositories;
 using Application.Searchs;
 using Application.Users.Dtos;
-using Contracts.Rows;
 using MediatR;
+using Domain.Rows.Users;
 
 namespace Application.Users.Search;
 

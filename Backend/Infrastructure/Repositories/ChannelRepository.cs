@@ -1,9 +1,8 @@
 using System.Data;
-using Contracts.Rows;
 using Dapper;
 using Domain.Interfaces.Repositories;
+using Domain.Rows.Channels;
 using Infrastructure.Connector;
-using Infrastructure.Context;
 
 namespace Infrastructure.Repositories;
 

@@ -5,6 +5,6 @@ using Application.Contents.Dtos;
 
 namespace Application.Contents.Create;
 
-public record class ContentCreateCommand(
-    Guid UserId, Guid ChannelId, IFormFile? ContentFile, IFormFile? PrewievPhoto,
+public record class ContentCreateRequest(
+    IFormFile? ContentFile, IFormFile? PrewievPhoto,
     string Title, string? Description, ContentType ContentType) : IRequest<Result<ContentDto>>;

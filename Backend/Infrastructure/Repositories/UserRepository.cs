@@ -1,8 +1,8 @@
 using Domain.Interfaces.Repositories;
 using Infrastructure.Connector;
-using Contracts.Rows;
 using System.Data;
 using Dapper;
+using Domain.Rows.Users;
 
 namespace Infrastructure.Repositories;
 

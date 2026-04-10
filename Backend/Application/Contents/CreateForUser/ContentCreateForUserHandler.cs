@@ -1,56 +1,39 @@
 using Application.Contents.Dtos;
-using Domain.Common;
 using Domain.Entities;
 using Domain.Interfaces;
 using Domain.Interfaces.Services;
 using MediatR;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace Application.Contents.Create;
+namespace Application.Contents.CreateForUser;
 
-public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result<ContentDto>>
+public class ContentCreateForUserHandler : IRequestHandler<ContentCreateForUserCommand, Result<ContentDto>>
 {
     private readonly IAppDbContext context;
 
-    private readonly ILogger<ContentCreateHandler> logger;
+    private readonly ILogger<ContentCreateForUserHandler> logger;
     private readonly IFfmpegService ffmpegService;
     private readonly IR2Service r2Service;
 
-    public ContentCreateHandler(IAppDbContext context, IFfmpegService ffmpegService, IR2Service r2Service, ILogger<ContentCreateHandler> logger)
+    public ContentCreateForUserHandler(IAppDbContext context, IFfmpegService ffmpegService, IR2Service r2Service, ILogger<ContentCreateForUserHandler> logger)
     {
         this.context = context;
-        
+
         this.ffmpegService = ffmpegService;
         this.r2Service = r2Service;
         this.logger = logger;
     }
 
-    public async Task<Result<ContentDto>> Handle(ContentCreateCommand cmd, CancellationToken cancellationToken)
+    public async Task<Result<ContentDto>> Handle(ContentCreateForUserCommand cmd, CancellationToken cancellationToken)
     {
-        ChannelOwner? channelOwner = await context.ChannelOwners
-            .FirstOrDefaultAsync(owner =>
-                owner.OwnerId == cmd.UserId &&
-                owner.ChannelId == cmd.ChannelId,
-                cancellationToken: cancellationToken);
+        User? user = await context.Users.FindAsync(cmd.UserId);
 
-        if (channelOwner == null)
-        {
-            logger.LogWarning("User {UserId} tried to create content without permission",
-               cmd.UserId);
+        if (user == null)
             return Result<ContentDto>.Failure(404, "User not found");
-        }
 
-        if (channelOwner.OwnerRole <= ChannelOwnerRole.ContentEditor)
-        {
-            logger.LogWarning("User {UserId} tried to create content without permission",
-               cmd.UserId);
-            return Result<ContentDto>.Failure(403, "You do not have sufficient rights");
-        }
-
-        string? videoUrl = null;
-        string? videoPath = null;
+        string videoUrl = null!;
+        string videoPath = null!;
 
         if (cmd.ContentFile != null && cmd.ContentFile.Length != 0)
         {
@@ -58,7 +41,7 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
             videoUrl = await ffmpegService.UploadGeneratedVideos(videoPath);
         }
 
-        string? photoUrl = null;
+        string photoUrl = null!;
 
         if (cmd.PrewievPhoto != null && cmd.PrewievPhoto.Length != 0)
         {
@@ -71,13 +54,12 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
         Content content = new()
         {
             CreatorId = cmd.UserId,
-            ChannelId = cmd.ChannelId,
             Title = cmd.Title,
             Slug = Guid.NewGuid(),
             ContentUrl = videoUrl,
             PrewievPhotoUrl = photoUrl,
             CreatedDate = DateTime.UtcNow,
-            RandomKey = Random.Shared.NextDouble(),
+            RandomKey = System.Random.Shared.NextDouble(),
             ContentType = cmd.ContentType
         };
 
@@ -86,7 +68,7 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
         if (videoPath != null)
         {
             duration = await ffmpegService.GetVideoDuration(videoPath);
-            
+
             VideoMetaData metaData = new()
             {
                 Content = content,
@@ -106,12 +88,12 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
                 GenreId = genre.Id
             })
             .AsNoTracking()
-            .ToArrayAsync(cancellationToken)
+            .ToListAsync()
         );
 
         await context.SaveChangesAsync();
 
-        logger.LogInformation("Content {ContentId} created for user {UserId}",
+        logger.LogInformation("content {ContentId} created has user {UserId}",
             content.Id, cmd.UserId);
 
         return Result<ContentDto>.Success(201, new ContentDto(

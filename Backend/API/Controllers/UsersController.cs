@@ -48,9 +48,6 @@ public class UsersController : ControllerBase
 
         if (!result.IsSuccess || result.Data == null)
         {
-            if (result.StatusCode == 409 && result.ResultId == 1)
-                return Conflict(result.Error);
-
             return result.StatusCode switch
             {
                 409 => Conflict(result.Error),

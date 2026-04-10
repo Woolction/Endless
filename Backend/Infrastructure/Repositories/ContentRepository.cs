@@ -1,4 +1,5 @@
 using Domain.Interfaces.Repositories;
+using Domain.Rows.Contents;
 using Infrastructure.Connector;
 using Infrastructure.Context;
 
@@ -13,7 +14,7 @@ public class ContentRepository : IContentRepository
         this.connector = connector;
     }
 
-    public Task<dynamic[]> SearchContentsByName(string name, bool hasLastSearch, double lastScore)
+    public Task<ContentSearchRow[]> SearchContentsByName(string name, bool hasLastSearch, double lastScore)
     {
         return null!;
     }

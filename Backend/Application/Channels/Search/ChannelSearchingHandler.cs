@@ -1,8 +1,8 @@
 using Application.Searchs;
 using Application.Channels.Dtos;
 using Domain.Interfaces.Repositories;
-using Contracts.Rows;
 using MediatR;
+using Domain.Rows.Channels;
 
 namespace Application.Channels.Search;
 

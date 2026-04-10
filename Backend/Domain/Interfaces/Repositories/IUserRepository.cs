@@ -1,5 +1,4 @@
-using Contracts.Rows;
-using Domain.Entities;
+using Domain.Rows.Users;
 
 namespace Domain.Interfaces.Repositories;
 

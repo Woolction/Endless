@@ -1,4 +1,4 @@
-using Contracts.Rows;
+using Domain.Rows.Channels;
 
 namespace Domain.Interfaces.Repositories;
 
