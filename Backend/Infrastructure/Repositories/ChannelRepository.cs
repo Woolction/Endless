@@ -16,7 +16,7 @@ public class ChannelRepository : IChannelRepository
         this.connector = connector;
     }
 
-    public async Task<IEnumerable<ChannelSearchRow>> SearchChannelsByName(string name, bool hasLastSearch, double lastScore, Guid lastId)
+    public async Task<IEnumerable<ChannelSearchRow>> SearchChannelsByName(string name, bool hasLastSearch, double lastScore, Guid lastId, CancellationToken token)
     {
         using IDbConnection db = connector.CreateConnection();
 
@@ -49,14 +49,18 @@ public class ChannelRepository : IChannelRepository
         LIMIT 20
         ";
 
-        IEnumerable<ChannelSearchRow> result = await db.QueryAsync<ChannelSearchRow>(sql, new
-        {
-            name,
-            pattern = $"%{name}%",
-            hasLastSearch,
-            lastScore,
-            lastId
-        });
+        CommandDefinition command = new(
+            sql, new
+            {
+                name,
+                pattern = $"%{name}%",
+                hasLastSearch,
+                lastScore,
+                lastId
+            },
+            cancellationToken: token);
+
+        IEnumerable<ChannelSearchRow> result = await db.QueryAsync<ChannelSearchRow>(command);
 
         return result;
     }

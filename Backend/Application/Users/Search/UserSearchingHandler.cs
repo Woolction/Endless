@@ -2,10 +2,11 @@ using Domain.Interfaces.Repositories;
 using Application.Searchs;
 using Application.Users.Dtos;
 using Contracts.Rows;
+using MediatR;
 
 namespace Application.Users.Search;
 
-public class UserSearchingHandler
+public class UserSearchingHandler : IRequestHandler<UserSearchQuery, Result<UserSearchDto>>
 {
     private readonly IUserRepository userRepository;
 
@@ -14,14 +15,14 @@ public class UserSearchingHandler
         this.userRepository = userRepository;
     }
 
-    public async Task<Result<UserSearchDto>> Handle(SearchQuery query)
+    public async Task<Result<UserSearchDto>> Handle(UserSearchQuery query, CancellationToken cancellationToken)
     {
         bool hasLastSearch = query.LastSearch != null;
 
         SearchDto searchDto = hasLastSearch == true ? query.LastSearch! : new SearchDto();
 
         IEnumerable<UserSearchRow> result = await userRepository.SearchUsersByName(
-            query.Name, hasLastSearch, searchDto.LastScore, searchDto.LastId);
+            query.Name, hasLastSearch, searchDto.LastScore, searchDto.LastId, cancellationToken);
 
         UserDto[] users = result.Select(u => new UserDto(
             u.Id, u.Name, "@" + u.Slug, u.Description ?? "",

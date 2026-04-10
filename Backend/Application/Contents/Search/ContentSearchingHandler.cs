@@ -4,7 +4,7 @@ using Domain.Interfaces.Repositories;
 
 namespace Application.Contents.Search;
 
-public class ContentSearchingHandler
+public class ContentSearchingHandler 
 {
     private readonly IContentRepository contentRepository;
 

@@ -1,10 +1,11 @@
 using Domain.Entities;
 using Domain.Interfaces;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Contents.Create;
 
-public class ContentCreateHandler
+public class ContentCreateHandler : IRequestHandler<ContentCreateCommand>
 {
     private readonly IAppDbContext context;
 
@@ -13,15 +14,8 @@ public class ContentCreateHandler
         this.context = context;
     }
 
-    public async Task Handle()
+    public async Task Handle(ContentCreateCommand cmd, CancellationToken cancellationToken)
     {
-        await context.Genres
-            .Select(genre => new ContentGenreVector()
-            {
-                Content = new Content(),
-                GenreId = genre.Id
-            })
-            .AsNoTracking()
-            .ToArrayAsync();
+        
     }
 }

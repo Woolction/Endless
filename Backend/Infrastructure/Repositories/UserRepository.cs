@@ -15,7 +15,7 @@ public class UserRepository : IUserRepository
         this.connector = connector;
     }
 
-    public async Task<IEnumerable<UserSearchRow>> SearchUsersByName(string name, bool hasLastSearch, double lastScore, Guid lastId)
+    public async Task<IEnumerable<UserSearchRow>> SearchUsersByName(string name, bool hasLastSearch, double lastScore, Guid lastId, CancellationToken cancellationToken)
     {
         using IDbConnection db = connector.CreateConnection();
 
@@ -54,14 +54,18 @@ public class UserRepository : IUserRepository
         LIMIT 20;
         ";
 
-        IEnumerable<UserSearchRow> result = await db.QueryAsync<UserSearchRow>(sql, new
-        {
-            name,
-            pattern = $"%{name}%",
-            hasLastSearch,
-            lastScore,
-            lastId
-        });
+        CommandDefinition command = new(
+            sql, new
+            {
+                name,
+                pattern = $"%{name}%",
+                hasLastSearch,
+                lastScore,
+                lastId
+            },
+            cancellationToken: cancellationToken);
+
+        IEnumerable<UserSearchRow> result = await db.QueryAsync<UserSearchRow>(command);
 
         return result;
     }

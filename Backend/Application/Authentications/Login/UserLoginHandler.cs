@@ -4,10 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using Domain.Interfaces.Services;
 using Domain.Interfaces;
 using Domain.Entities;
+using MediatR;
 
 namespace Application.Authentications.Login;
 
-public class UserLoginHandler
+public class UserLoginHandler : IRequestHandler<AuthCreateCommand, Result<AuthDto>>
 {
     private readonly IPasswordHasher<User> passwordHasher;
     private readonly IAuthService authService;
@@ -20,10 +21,10 @@ public class UserLoginHandler
         this.context = context;
     }
 
-    public async Task<Result<AuthDto>> Handle(AuthCreateCommand cmd)
+    public async Task<Result<AuthDto>> Handle(AuthCreateCommand cmd, CancellationToken cancellationToken)
     {
         User? user = await context.Users.FirstOrDefaultAsync(user =>
-            user.Email == cmd.Email);
+            user.Email == cmd.Email, cancellationToken);
 
         if (user is null)
             return Result<AuthDto>.Failure(404, "User not found");

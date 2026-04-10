@@ -6,6 +6,7 @@ using Application.Authentications.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using Application.Utilities;
 using Application;
+using MediatR;
 
 namespace API.Controllers;
 
@@ -13,16 +14,12 @@ namespace API.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly UserUpdateTokenHandler updateTokenHandler;
-    private readonly UserLoginHandler loginHandler;
-
     private readonly ILogger<AuthController> logger;
+    private readonly IMediator mediator;
 
-    public AuthController(UserLoginHandler loginHandler, UserUpdateTokenHandler updateTokenHandler, ILogger<AuthController> logger)
+    public AuthController(ILogger<AuthController> logger, IMediator mediator)
     {
-        this.updateTokenHandler = updateTokenHandler;
-        this.loginHandler = loginHandler;
-
+        this.mediator = mediator;
         this.logger = logger;
     }
 
@@ -30,7 +27,7 @@ public class AuthController : ControllerBase
     [EnableRateLimiting("LoginLimit")]
     public async Task<ActionResult<AuthDto>> Login([FromQuery] AuthCreateCommand cmd)
     {
-        Result<AuthDto> result = await loginHandler.Handle(cmd);
+        Result<AuthDto> result = await mediator.Send(cmd);
 
         if (!result.IsSuccess || result.Data == null)
         {
@@ -58,7 +55,7 @@ public class AuthController : ControllerBase
         if (string.IsNullOrEmpty(refreshToken))
             return BadRequest("There is no refresh token");
 
-        Result<AuthDto> result = await updateTokenHandler.Handle(new RefreshTokenCommand(refreshToken));
+        Result<AuthDto> result = await mediator.Send(new RefreshTokenCommand(refreshToken));
 
         if (!result.IsSuccess || result.Data == null)
         {

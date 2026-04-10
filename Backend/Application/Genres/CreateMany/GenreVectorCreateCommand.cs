@@ -1,4 +1,6 @@
+using MediatR;
+
 namespace Application.Genres.CreateMany;
 
 public record class GenreVectorCreateCommand(
-    params string[] GenreNames);
+    params string[] GenreNames) : IRequest;

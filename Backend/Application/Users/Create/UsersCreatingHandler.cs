@@ -3,6 +3,7 @@ using Application.Users.Dtos;
 using Application.Utilities;
 using Domain.Entities;
 using Domain.Interfaces;
+using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -10,27 +11,25 @@ using Npgsql;
 
 namespace Application.Users.Create;
 
-public class UsersCreatingHandler
+public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<UserDto[]>>
 {
-    private readonly ILogger<UsersCreatingHandler> logger;
     private readonly IPasswordHasher<User> passwordHasher;
     private readonly IAppDbContext context;
 
-    public UsersCreatingHandler(ILogger<UsersCreatingHandler> logger, IAppDbContext context, IPasswordHasher<User> passwordHasher)
+    public UsersCreatingHandler(IAppDbContext context, IPasswordHasher<User> passwordHasher)
     {
         this.passwordHasher = passwordHasher;
         this.context = context;
-        this.logger = logger;
     }
 
-    public async Task<Result<UserDto[]>> Handle(UsersCreateCommand cmd)
+    public async Task<Result<UserDto[]>> Handle(UsersCreateCommand cmd, CancellationToken cancellationToken)
     {
         List<User> users = new();
         List<UserGenreVector> vectors = new();
 
         var genres = await context.Genres
                 .Select(genre => genre.Id)
-                .ToArrayAsync();
+                .ToArrayAsync(cancellationToken);
 
         for (int i = 0; i < cmd.Count; i++)
         {

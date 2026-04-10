@@ -17,6 +17,7 @@ using Domain.Entities;
 using Application.Users.Search;
 using Application.Users.Update;
 using Application.Users.Registry;
+using MediatR;
 
 namespace API.Controllers;
 
@@ -25,20 +26,15 @@ namespace API.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly EndlessContext context;
-
-    private readonly UsersCreatingHandler creatingsHandler;
-    private readonly UserRegistryHandler registryHandler;
-    private readonly UserSearchingHandler searchingHandler;
+    private readonly IMediator mediator;
 
     private readonly ILogger<UsersController> logger;
     private readonly IR2Service r2Service;
 
-    public UsersController(EndlessContext context, UserRegistryHandler registryHandler, UserSearchingHandler searchingHandler, UsersCreatingHandler creatingsHandler, IR2Service r2Service, ILogger<UsersController> logger)
+    public UsersController(EndlessContext context, IMediator mediator, IR2Service r2Service, ILogger<UsersController> logger)
     {
         this.context = context;
-        this.registryHandler = registryHandler;
-        this.searchingHandler = searchingHandler;
-        this.creatingsHandler = creatingsHandler;
+        this.mediator = mediator;
 
         this.r2Service = r2Service;
         this.logger = logger;
@@ -46,9 +42,9 @@ public class UsersController : ControllerBase
 
     [HttpPost]
     [EnableRateLimiting("RegistryLimit")]
-    public async Task<ActionResult<RegistryDto>> CreateUser(AuthCreateCommand cmd)
+    public async Task<ActionResult<RegistryDto>> CreateUser(UserRegistryCommand cmd)
     {
-        Result<RegistryDto> result = await registryHandler.Handle(cmd);
+        Result<RegistryDto> result = await mediator.Send(cmd);
 
         if (!result.IsSuccess || result.Data == null)
         {
@@ -78,7 +74,7 @@ public class UsersController : ControllerBase
         if (cmd.Count < 1)
             return BadRequest($"Count < 1: {cmd.Count}");
 
-        Result<UserDto[]> result = await creatingsHandler.Handle(cmd);
+        Result<UserDto[]> result = await mediator.Send(cmd);
 
         if (!result.IsSuccess)
         {
@@ -93,12 +89,12 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("search")]
-    public async Task<ActionResult<UserSearchDto>> SearchUsersByName([FromQuery] SearchQuery query)
+    public async Task<ActionResult<UserSearchDto>> SearchUsersByName([FromQuery] UserSearchQuery query)
     {
         if (string.IsNullOrEmpty(query.Name))
             return BadRequest("The name is empty");
 
-        Result<UserSearchDto> result = await searchingHandler.Handle(query);
+        Result<UserSearchDto> result = await mediator.Send(query);
 
         if (!result.IsSuccess || result.Data == null)
         {

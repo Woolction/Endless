@@ -2,10 +2,11 @@ using Application.Searchs;
 using Application.Channels.Dtos;
 using Domain.Interfaces.Repositories;
 using Contracts.Rows;
+using MediatR;
 
 namespace Application.Channels.Search;
 
-public class ChannelSearchingHandler
+public class ChannelSearchingHandler : IRequestHandler<ChannelSearchQuery, Result<ChannelSearchDto>>
 {
     private readonly IChannelRepository channelRepository;
 
@@ -14,13 +15,13 @@ public class ChannelSearchingHandler
         this.channelRepository = channelRepository;
     }
 
-    public async Task<Result<ChannelSearchDto>> Handle(SearchQuery query)
+    public async Task<Result<ChannelSearchDto>> Handle(ChannelSearchQuery query, CancellationToken cancellationToken)
     {
         bool hasLastSearch = query.LastSearch != null;
 
         SearchDto searchDto = hasLastSearch == true ? query.LastSearch! : new SearchDto();
 
-        IEnumerable<ChannelSearchRow> result = await channelRepository.SearchChannelsByName(query.Name, hasLastSearch, searchDto.LastScore, searchDto.LastId);
+        IEnumerable<ChannelSearchRow> result = await channelRepository.SearchChannelsByName(query.Name, hasLastSearch, searchDto.LastScore, searchDto.LastId, cancellationToken);
 
         ChannelDto[] channelDtos = result.Select(c => new ChannelDto(
             c.Id, c.Name, c.Slug, c.Description, c.CreatedDate,

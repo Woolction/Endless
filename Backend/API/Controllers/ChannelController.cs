@@ -15,6 +15,7 @@ using Npgsql;
 using Application.Channels.CreateOne;
 using Application.Channels.Update;
 using Application;
+using MediatR;
 
 namespace API.Controllers;
 
@@ -23,18 +24,15 @@ namespace API.Controllers;
 public class ChannelController : ControllerBase
 {
     private readonly EndlessContext context;
-
-    private readonly ChannelSearchingHandler searchingHandler;
-    private readonly ChannelsCreatingHandler channelsCreating;
-
     private readonly ILogger<ChannelController> logger;
     private readonly IR2Service r2Service;
+    private readonly IMediator mediator;
 
-    public ChannelController(EndlessContext context, ChannelSearchingHandler searchingHandler, ChannelsCreatingHandler channelsCreating, IR2Service r2Service, ILogger<ChannelController> logger)
+
+    public ChannelController(EndlessContext context, IMediator mediator, IR2Service r2Service, ILogger<ChannelController> logger)
     {
         this.context = context;
-        this.searchingHandler = searchingHandler;
-        this.channelsCreating = channelsCreating;
+        this.mediator = mediator;
 
         this.r2Service = r2Service;
         this.logger = logger;
@@ -137,7 +135,7 @@ public class ChannelController : ControllerBase
 
         cmd.UserId = currentUserId;
 
-        Result<ChannelDto[]> result = await channelsCreating.Handle(cmd);
+        Result<ChannelDto[]> result = await mediator.Send(cmd);
 
         if (!result.IsSuccess)
         {
@@ -175,9 +173,9 @@ public class ChannelController : ControllerBase
     }
 
     [HttpGet("search")]
-    public async Task<ActionResult<ChannelSearchDto>> GetChannelsByName([FromQuery] SearchQuery query)
+    public async Task<ActionResult<ChannelSearchDto>> GetChannelsByName([FromQuery] ChannelSearchQuery query)
     {
-        Result<ChannelSearchDto> result = await searchingHandler.Handle(query);
+        Result<ChannelSearchDto> result = await mediator.Send(query);
 
         if (!result.IsSuccess || result.Data == null)
         {

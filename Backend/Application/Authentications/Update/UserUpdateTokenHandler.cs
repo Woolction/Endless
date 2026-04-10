@@ -3,10 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using Domain.Interfaces.Services;
 using Domain.Interfaces;
 using Domain.Entities;
+using MediatR;
 
 namespace Application.Authentications.Update;
 
-public class UserUpdateTokenHandler
+public class UserUpdateTokenHandler : IRequestHandler<RefreshTokenCommand, Result<AuthDto>>
 {
     private readonly IAuthService authService;
     private readonly IAppDbContext context;
@@ -17,12 +18,12 @@ public class UserUpdateTokenHandler
         this.context = context;
     }
 
-    public async Task<Result<AuthDto>> Handle(RefreshTokenCommand cmd)
+    public async Task<Result<AuthDto>> Handle(RefreshTokenCommand cmd, CancellationToken cancellationToken)
     {
         User? user = await context.Users
             .Include(u => u.RefreshToken)
             .FirstOrDefaultAsync(user =>
-                user.RefreshToken != null && user.RefreshToken.Token == cmd.Token);
+                user.RefreshToken != null && user.RefreshToken.Token == cmd.Token, cancellationToken);
 
         if (user == null)
             return Result<AuthDto>.Failure(404, $"User by Token: {cmd.Token} not found");

@@ -25,6 +25,7 @@ using Application.Channels.Search;
 using Application.Users.Create;
 using Application.Users.Search;
 using Application.Users.Registry;
+using Application;
 
 namespace API;
 
@@ -137,22 +138,17 @@ public static class ProgramPipeline
         builder.Services.AddScoped<IAppDbContext>(provider =>
             provider.GetRequiredService<EndlessContext>());
 
+        // MediatR
+
+        builder.Services.AddMediatR(cf =>
+            cf.RegisterServicesFromAssembly(typeof(AppMaker).Assembly));
+
         // Custum Services
 
         //      Scoped
         builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
         builder.Services.AddScoped<IAuthService, AuthService>();
-
-        // Handlers
-        builder.Services.AddScoped<UserUpdateTokenHandler>();
-        builder.Services.AddScoped<UsersCreatingHandler>();
-        builder.Services.AddScoped<UserSearchingHandler>();
-        builder.Services.AddScoped<UserRegistryHandler>();
-        builder.Services.AddScoped<UserLoginHandler>();
-
-        builder.Services.AddScoped<ChannelSearchingHandler>();
-        builder.Services.AddScoped<ChannelsCreatingHandler>();
-
+        
         builder.Services.AddScoped<ContentSearchingHandler>();
 
         // Repositories

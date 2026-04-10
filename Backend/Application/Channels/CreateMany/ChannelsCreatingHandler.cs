@@ -3,12 +3,13 @@ using Application.Utilities;
 using Domain.Common;
 using Domain.Entities;
 using Domain.Interfaces;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
 namespace Application.Channels.CreateMany;
 
-public class ChannelsCreatingHandler
+public class ChannelsCreatingHandler : IRequestHandler<ChannelsCreateCommand, Result<ChannelDto[]>>
 {
     private readonly IAppDbContext context;
 
@@ -17,7 +18,7 @@ public class ChannelsCreatingHandler
         this.context = context;
     }
 
-    public async Task<Result<ChannelDto[]>> Handle(ChannelsCreateCommand cmd)
+    public async Task<Result<ChannelDto[]>> Handle(ChannelsCreateCommand cmd, CancellationToken cancellationToken)
     {
         List<Channel> channels = new();
         List<ChannelOwner> channelOwners = new();

@@ -8,10 +8,12 @@ using Domain.Entities;
 using Npgsql;
 using Domain.Interfaces;
 using Application.Users.Dtos;
+using MediatR;
+using Application.Users.Search;
 
 namespace Application.Users.Registry;
 
-public class UserRegistryHandler
+public class UserRegistryHandler : IRequestHandler<UserRegistryCommand, Result<RegistryDto>>
 {
     private readonly IPasswordHasher<User> passwordHasher;
     private readonly IAuthService authService;
@@ -24,9 +26,9 @@ public class UserRegistryHandler
         this.context = context;
     }
 
-    public async Task<Result<RegistryDto>> Handle(AuthCreateCommand cmd)
+    public async Task<Result<RegistryDto>> Handle(UserRegistryCommand cmd, CancellationToken cancellationToken)
     {
-        if (await context.Users.AnyAsync(user => user.Email == cmd.Email))
+        if (await context.Users.AnyAsync(user => user.Email == cmd.Email, cancellationToken))
             return Result<RegistryDto>.Failure(409, $"User with Email: {cmd.Email} exists");
 
         User user = new()
@@ -50,10 +52,9 @@ public class UserRegistryHandler
                 GenreId = genre.Id
             })
             .AsNoTracking()
-            .ToArrayAsync();
+            .ToArrayAsync(cancellationToken);
 
         context.UserVectors.AddRange(vectors);
-
         context.Users.Add(user);
 
         try
