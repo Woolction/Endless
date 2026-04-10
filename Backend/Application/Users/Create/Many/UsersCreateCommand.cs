@@ -1,7 +1,7 @@
 using Application.Users.Dtos;
 using MediatR;
 
-namespace Application.Users.Create;
+namespace Application.Users.Create.Many;
 
 public record class UsersCreateCommand(
     int Count,

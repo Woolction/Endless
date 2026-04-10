@@ -15,16 +15,16 @@ using Domain.Common;
 using Domain.Entities;
 using Scalar.AspNetCore;
 using System.Text;
-using Application.Channels.CreateMany;
+using Application.Channels.Create.Many;
 using Application.Channels;
 using Application.Authentications.Login;
 using Application.Authentications.Update;
 using Domain.Interfaces;
 using Application.Contents.Search;
 using Application.Channels.Search;
-using Application.Users.Create;
+using Application.Users.Create.Many;
 using Application.Users.Search;
-using Application.Users.Registry;
+using Application.Users.Create.Registry;
 using Application;
 
 namespace API;
@@ -148,7 +148,7 @@ public static class ProgramPipeline
         //      Scoped
         builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
         builder.Services.AddScoped<IAuthService, AuthService>();
-        
+
         builder.Services.AddScoped<ContentSearchingHandler>();
 
         // Repositories

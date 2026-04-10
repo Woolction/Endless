@@ -4,19 +4,19 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace Application.Users.Changed;
+namespace Application.Users.Choose;
 
-public class UserChangedHandler : IRequestHandler<UserChangedQuery, Result<UserDto>>
+public class UserChooseHandler : IRequestHandler<UserChooseQuery, Result<UserDto>>
 {
-    private readonly ILogger<UserChangedHandler> logger;
+    private readonly ILogger<UserChooseHandler> logger;
     private readonly IAppDbContext context;
-    public UserChangedHandler(IAppDbContext context, ILogger<UserChangedHandler> logger)
+    public UserChooseHandler(IAppDbContext context, ILogger<UserChooseHandler> logger)
     {
         this.context = context;
         this.logger = logger;
     }
-    
-    public async Task<Result<UserDto>> Handle(UserChangedQuery query, CancellationToken cancellationToken)
+
+    public async Task<Result<UserDto>> Handle(UserChooseQuery query, CancellationToken cancellationToken)
     {
         UserDto? userDto = await context.Users
             .Where(user => user.Id == query.UserId)

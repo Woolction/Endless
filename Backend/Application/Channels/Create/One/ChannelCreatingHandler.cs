@@ -1,7 +1,7 @@
 using Application.Channels.Dtos;
 using MediatR;
 
-namespace Application.Channels.CreateOne;
+namespace Application.Channels.Create.One;
 
 public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Result<ChannelDto>>
 {

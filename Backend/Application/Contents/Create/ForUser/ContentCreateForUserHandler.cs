@@ -6,7 +6,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace Application.Contents.CreateForUser;
+namespace Application.Contents.Create.ForUser;
 
 public class ContentCreateForUserHandler : IRequestHandler<ContentCreateForUserCommand, Result<ContentDto>>
 {

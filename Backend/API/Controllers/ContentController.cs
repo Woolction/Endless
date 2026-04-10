@@ -17,12 +17,12 @@ using Application.Channels;
 using Application;
 using Application.Contents.Search;
 using MediatR;
-using Application.Contents.CreateForUser;
-using Application.Contents.Changed;
+using Application.Contents.Create.ForUser;
+using Application.Contents.Choose;
 using Application.Contents.Random;
 using Application.Contents.Update;
 using Application.Contents.Delete;
-using Application.Users.Changed;
+using Application.Users.Choose;
 
 namespace API.Controllers;
 
@@ -95,7 +95,7 @@ public class ContentController : ControllerBase
     [HttpGet("{ContentId}")]
     public async Task<ActionResult<ChangedContentDto>> GetChangedContent(Guid ContentId)
     {
-        ContentChangedQuery contentQuery = new(ContentId);
+        ContentChooseQuery contentQuery = new(ContentId);
 
         Result<ChangedContentDto> resultContent = await mediator.Send(contentQuery);
 
@@ -108,7 +108,7 @@ public class ContentController : ControllerBase
             };
         }
 
-        UserChangedQuery userQuery = new(resultContent.Data.ContentDto.CreatorId);
+        UserChooseQuery userQuery = new(resultContent.Data.ContentDto.CreatorId);
 
         Result<UserDto> resultUser = await mediator.Send(userQuery);
 
@@ -149,7 +149,7 @@ public class ContentController : ControllerBase
                 _ => StatusCode(500, "unknown error")
             };
         }
-        
+
         return Ok(result.Data);
     }
 

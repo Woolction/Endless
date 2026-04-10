@@ -1,4 +1,4 @@
-using Application.Users.Create;
+using Application.Users.Create.Many;
 using Application.Users.Dtos;
 using Application.Utilities;
 using Domain.Entities;
@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 
-namespace Application.Users.Create;
+namespace Application.Users.Create.Many;
 
 public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<UserDto[]>>
 {

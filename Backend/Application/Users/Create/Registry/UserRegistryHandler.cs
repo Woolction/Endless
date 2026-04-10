@@ -11,7 +11,7 @@ using Application.Users.Dtos;
 using MediatR;
 using Application.Users.Search;
 
-namespace Application.Users.Registry;
+namespace Application.Users.Create.Registry;
 
 public class UserRegistryHandler : IRequestHandler<UserRegistryCommand, Result<RegistryDto>>
 {

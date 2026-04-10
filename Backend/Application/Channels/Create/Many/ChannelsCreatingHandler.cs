@@ -7,7 +7,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
-namespace Application.Channels.CreateMany;
+namespace Application.Channels.Create.Many;
 
 public class ChannelsCreatingHandler : IRequestHandler<ChannelsCreateCommand, Result<ChannelDto[]>>
 {

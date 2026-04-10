@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Application.Searchs;
-using Application.Users.Create;
+using Application.Users.Create.Many;
 using Domain.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
 using Infrastructure.Context;
@@ -16,9 +16,9 @@ using Domain.Common;
 using Domain.Entities;
 using Application.Users.Search;
 using Application.Users.Update;
-using Application.Users.Registry;
+using Application.Users.Create.Registry;
 using MediatR;
-using Application.Users.Changed;
+using Application.Users.Choose;
 using Application.Users.Delete;
 
 namespace API.Controllers;
@@ -113,7 +113,7 @@ public class UsersController : ControllerBase
     [HttpGet("{UserId}")]
     public async Task<ActionResult<UserDto>> GetUser(Guid UserId)
     {
-        UserChangedQuery userQuery = new(UserId);
+        UserChooseQuery userQuery = new(UserId);
 
         Result<UserDto> resultUser = await mediator.Send(userQuery);
 
@@ -136,7 +136,7 @@ public class UsersController : ControllerBase
     {
         Guid currentUserId = this.GetIDFromClaim();
 
-        UserChangedQuery userQuery = new(currentUserId);
+        UserChooseQuery userQuery = new(currentUserId);
 
         Result<UserDto> resultUser = await mediator.Send(userQuery);
 

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Application.Channels.CreateMany;
+using Application.Channels.Create.Many;
 using Application.Channels;
 using Application.Searchs;
 using Domain.Interfaces.Services;
@@ -12,7 +12,7 @@ using Application.Utilities;
 using Domain.Common;
 using Domain.Entities;
 using Npgsql;
-using Application.Channels.CreateOne;
+using Application.Channels.Create.One;
 using Application.Channels.Update;
 using Application;
 using MediatR;

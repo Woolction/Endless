@@ -6,20 +6,20 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace Application.Contents.Changed;
+namespace Application.Contents.Choose;
 
-public class ContentChangedHandler : IRequestHandler<ContentChangedQuery, Result<ChangedContentDto>>
+public class ContentChooseHandler : IRequestHandler<ContentChooseQuery, Result<ChangedContentDto>>
 {
-    private readonly ILogger<ContentChangedHandler> logger;
+    private readonly ILogger<ContentChooseHandler> logger;
     private readonly IAppDbContext context;
 
-    public ContentChangedHandler(IAppDbContext context, ILogger<ContentChangedHandler> logger)
+    public ContentChooseHandler(IAppDbContext context, ILogger<ContentChooseHandler> logger)
     {
         this.context = context;
         this.logger = logger;
     }
-    
-    public async Task<Result<ChangedContentDto>> Handle(ContentChangedQuery query, CancellationToken cancellationToken)
+
+    public async Task<Result<ChangedContentDto>> Handle(ContentChooseQuery query, CancellationToken cancellationToken)
     {
         var changedContent = await context.Contents
             .Select(content => new

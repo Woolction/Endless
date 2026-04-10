@@ -3,7 +3,7 @@ using Domain.Common;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 
-namespace Application.Contents.CreateForUser;
+namespace Application.Contents.Create.ForUser;
 
 public record class ContentCreateForUserCommand(
     Guid UserId, IFormFile? ContentFile, IFormFile? PrewievPhoto,
