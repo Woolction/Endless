@@ -23,6 +23,7 @@ using Application.Contents.Random;
 using Application.Contents.Update;
 using Application.Contents.Delete;
 using Application.Users.Choose;
+using Application.Channels.Choose.One;
 
 namespace API.Controllers;
 
@@ -97,7 +98,7 @@ public class ContentController : ControllerBase
     {
         ContentChooseQuery contentQuery = new(ContentId);
 
-        Result<ChangedContentDto> resultContent = await mediator.Send(contentQuery);
+        Result<ContentDto> resultContent = await mediator.Send(contentQuery);
 
         if (!resultContent.IsSuccess || resultContent.Data == null)
         {
@@ -108,7 +109,7 @@ public class ContentController : ControllerBase
             };
         }
 
-        UserChooseQuery userQuery = new(resultContent.Data.ContentDto.CreatorId);
+        UserChooseQuery userQuery = new(resultContent.Data.CreatorId);
 
         Result<UserDto> resultUser = await mediator.Send(userQuery);
 
@@ -121,8 +122,26 @@ public class ContentController : ControllerBase
             };
         }
 
+        Result<ChannelDto> resultChannel = new(); 
+
+        if (resultContent.Data.ChannelId != null)
+        {
+            ChannelChooseOneQuery channelQuery = new(resultContent.Data.ChannelId.Value);
+
+            resultChannel = await mediator.Send(channelQuery);
+
+            if (!resultUser.IsSuccess || resultUser.Data == null)
+            {
+                return resultUser.StatusCode switch
+                {
+                    404 => NotFound(resultUser.Error),
+                    _ => StatusCode(500, "unknown error")
+                };
+            }
+        }
+
         return Ok(new ChangedContentDto(
-            resultContent.Data.ChannelDto, resultContent.Data.ContentDto, resultUser.Data));
+            resultChannel.Data, resultContent.Data, resultUser.Data));
     }
 
     [HttpGet]

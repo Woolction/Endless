@@ -1,4 +1,7 @@
+using Application.Channels.Dtos;
+using MediatR;
+
 namespace Application.Channels.Update;
 
 public record class ChannelUpdateCommand(
-    string Name, string Description);
+    Guid UserId, Guid ChannelId, string Name, string Description) : IRequest<Result<ChannelDto>>;

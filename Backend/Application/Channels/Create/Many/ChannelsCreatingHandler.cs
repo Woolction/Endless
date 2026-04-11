@@ -20,6 +20,11 @@ public class ChannelsCreatingHandler : IRequestHandler<ChannelsCreateCommand, Re
 
     public async Task<Result<ChannelDto[]>> Handle(ChannelsCreateCommand cmd, CancellationToken cancellationToken)
     {
+        User? user = await context.Users.FindAsync(cmd.UserId);
+
+        if (user == null)
+            Result<ChannelDto[]>.Failure(404, "User not found");
+
         List<Channel> channels = new();
         List<ChannelOwner> channelOwners = new();
         List<ChannelSubscription> channelSubscriptions = new();

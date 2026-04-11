@@ -3,7 +3,5 @@ using MediatR;
 
 namespace Application.Channels.Create.Many;
 
-public record class ChannelsCreateCommand(int Count) : IRequest<Result<ChannelDto[]>>
-{
-    public Guid? UserId;
-}
+public record class ChannelsCreateCommand(
+    Guid UserId, int Count) : IRequest<Result<ChannelDto[]>>;

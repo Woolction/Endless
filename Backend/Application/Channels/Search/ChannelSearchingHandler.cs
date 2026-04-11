@@ -3,16 +3,19 @@ using Application.Channels.Dtos;
 using Domain.Interfaces.Repositories;
 using MediatR;
 using Domain.Rows.Channels;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Channels.Search;
 
 public class ChannelSearchingHandler : IRequestHandler<ChannelSearchQuery, Result<ChannelSearchDto>>
 {
+    private readonly ILogger<ChannelSearchingHandler> logger;
     private readonly IChannelRepository channelRepository;
 
-    public ChannelSearchingHandler(IChannelRepository channelRepository)
+    public ChannelSearchingHandler(IChannelRepository channelRepository, ILogger<ChannelSearchingHandler> logger)
     {
         this.channelRepository = channelRepository;
+        this.logger = logger;
     }
 
     public async Task<Result<ChannelSearchDto>> Handle(ChannelSearchQuery query, CancellationToken cancellationToken)
@@ -39,6 +42,9 @@ public class ChannelSearchingHandler : IRequestHandler<ChannelSearchQuery, Resul
             LastScore = last.Score,
             LastId = last.Id
         };
+
+        logger.LogInformation("Search returned Channels {Count} results for {Query}",
+           channelDtos.Length, query.Name);
 
         return Result<ChannelSearchDto>.Success(
             200, new ChannelSearchDto(channelDtos, lastSearch));

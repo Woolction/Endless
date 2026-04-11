@@ -1,19 +1,15 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
+using Application.Channels.Choose.Many;
 using Application.Channels.Create.Many;
-using Application.Channels;
-using Application.Searchs;
-using Domain.Interfaces.Services;
+using Application.Channels.Create.One;
+using Application.Channels.Choose.One;
+using Application.Channels.Delete;
+using Application.Channels.Update;
+using Application.Channels.Search;
 using Application.Channels.Dtos;
 using Microsoft.AspNetCore.Mvc;
-using Application.Channels.Search;
-using Infrastructure.Context;
 using Application.Utilities;
 using Domain.Common;
-using Domain.Entities;
-using Npgsql;
-using Application.Channels.Create.One;
-using Application.Channels.Update;
 using Application;
 using MediatR;
 
@@ -23,117 +19,44 @@ namespace API.Controllers;
 [Route("api/[controller]")]
 public class ChannelController : ControllerBase
 {
-    private readonly EndlessContext context;
-    private readonly ILogger<ChannelController> logger;
-    private readonly IR2Service r2Service;
     private readonly IMediator mediator;
 
-
-    public ChannelController(EndlessContext context, IMediator mediator, IR2Service r2Service, ILogger<ChannelController> logger)
+    public ChannelController(IMediator mediator)
     {
-        this.context = context;
         this.mediator = mediator;
-
-        this.r2Service = r2Service;
-        this.logger = logger;
     }
 
     [HttpPost]
     [Authorize(Policy = nameof(UserRole.Creator))]
-    public async Task<ActionResult<ChannelDto>> CreateChannel(ChannelCreateCommand createDto)
+    public async Task<ActionResult<ChannelDto>> CreateChannel(ChannelCreateRequest request)
     {
-        Guid currentUserId = this.GetIDFromClaim();
+        ChannelCreateCommand cmd = new(
+            this.GetIDFromClaim(), request.Name, request.AvatarPhoto);
 
-        User? user = await context.Users.FindAsync(currentUserId);
+        Result<ChannelDto> result = await mediator.Send(cmd);
 
-        if (user is null)
-            return NotFound("User not found");
-
-        string slug = createDto.Name.GenerateSlug();
-
-        Channel channel = new()
+        if (!result.IsSuccess || result.Data == null)
         {
-            Slug = slug,
-            Name = createDto.Name,
-            CreatedDate = DateTime.UtcNow,
-        };
-
-        if (createDto.AvatarPhoto is not null && createDto.AvatarPhoto.Length != 0)
-        {
-            string photoPath = await r2Service.SaveFormFileAsync(
-                createDto.AvatarPhoto, "Images", ".jpeg");
-
-            string photoUrl = await r2Service.SaveImage(photoPath);
-
-            channel.AvatarPhotoUrl = photoUrl;
-
-            System.IO.File.Delete(photoPath);
+            return result.StatusCode switch
+            {
+                404 => NotFound(result.Error),
+                409 => Conflict(result.Error),
+                _ => StatusCode(500, "unknown error")
+            };
         }
 
-        ChannelOwner channelOwner = new()
-        {
-            OwnerId = currentUserId,
-            Channel = channel,
-            OwnedDate = DateTime.UtcNow,
-            OwnerRole = ChannelOwnerRole.Admin
-        };
-
-        ChannelSubscription channelSubscription = new()
-        {
-            Channel = channel,
-            SubscriberId = currentUserId,
-            SubscribedDate = DateTime.UtcNow,
-            Notification = false
-        };
-
-        context.ChannelSubscriptions.Add(channelSubscription);
-        context.ChannelOwners.Add(channelOwner);
-        context.Channels.Add(channel);
-
-        try
-        {
-            await context.SaveChangesAsync();
-
-            logger.LogInformation("Channel {ChannelId} created with slug {Slug}",
-                channel.Id, slug);
-
-            return Created($"api/Channel/{channel.Id}", new ChannelDto(
-                channel.Id,
-                channel.Name,
-                "@" + channel.Slug,
-                channel.Description ?? "",
-                channel.CreatedDate,
-                channel.AvatarPhotoUrl,
-                1, 0, 1,
-                channel.TotalLikes,
-                channel.TotalViews));
-        }
-        catch (DbUpdateException ex)
-        {
-            logger.LogError(ex, "Error while creating Channel for user {UserId}", currentUserId);
-
-            if (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
-                return Conflict("Channel name already exists");
-
-            throw;
-        }
+        return Created($"api/Channel/{result.Data.Id}", result.Data);
     }
 
     [HttpPost("many")]
     [Authorize(Policy = nameof(UserRole.Admin))]
-    public async Task<ActionResult<ChannelDto[]>> CreateChannels(ChannelsCreateCommand cmd)
+    public async Task<ActionResult<ChannelDto[]>> CreateChannels(ChannelsCreateRequest request)
     {
-        if (cmd.Count < 1)
-            return BadRequest($"Count < 1: {cmd.Count}");
+        if (request.Count < 1)
+            return BadRequest($"Count < 1: {request.Count}");
 
-        Guid currentUserId = this.GetIDFromClaim();
-
-        User? user = await context.Users.FindAsync(currentUserId);
-
-        if (user == null)
-            return NotFound("User not found");
-
-        cmd.UserId = currentUserId;
+        ChannelsCreateCommand cmd = new(
+            this.GetIDFromClaim(), request.Count);
 
         Result<ChannelDto[]> result = await mediator.Send(cmd);
 
@@ -141,6 +64,7 @@ public class ChannelController : ControllerBase
         {
             return result.StatusCode switch
             {
+                404 => NotFound(result.Error),
                 409 => Conflict(result.Error),
                 _ => StatusCode(500, "unknown error")
             };
@@ -152,24 +76,20 @@ public class ChannelController : ControllerBase
     [HttpGet("{ChannelId}")]
     public async Task<ActionResult<ChannelDto>> GetChannelById(Guid ChannelId)
     {
-        ChannelDto? Channel = await context.Channels
-            .Where(Channel => Channel.Id == ChannelId)
-            .Select(Channel => new ChannelDto(
-                Channel.Id, Channel.Name, "@" + Channel.Slug,
-                Channel.Description ?? "", Channel.CreatedDate,
-                Channel.AvatarPhotoUrl, Channel.Subscribers.Count,
-                Channel.Contents.Count, Channel.Owners.Count,
-                Channel.TotalLikes, Channel.TotalViews))
-            .AsNoTracking()
-            .FirstOrDefaultAsync();
+        ChannelChooseOneQuery query = new(ChannelId);
 
-        if (Channel == null)
-            return NotFound("Channel not found");
+        Result<ChannelDto> result = await mediator.Send(query);
 
-        logger.LogInformation("Getted Channel {ChannelId}",
-            ChannelId);
+        if (!result.IsSuccess || result.Data == null)
+        {
+            return result.StatusCode switch
+            {
+                404 => NotFound(result.Error),
+                _ => StatusCode(500, "unknown error")
+            };
+        }
 
-        return Ok(Channel);
+        return Ok(result.Data);
     }
 
     [HttpGet("search")]
@@ -186,146 +106,64 @@ public class ChannelController : ControllerBase
             };
         }
 
-        logger.LogInformation("Search returned Channels {Count} results for {Query}",
-           result.Data.ChannelsDto.Length, query.Name);
-
         return Ok(result.Data);
     }
 
     [HttpGet]
     public async Task<ActionResult<ChannelDto[]>> GetChannels()
     {
-        ChannelDto[] Channels = await context.Channels
-            .Select(Channel => new ChannelDto(
-                Channel.Id, Channel.Name, "@" + Channel.Slug,
-                Channel.Description ?? "", Channel.CreatedDate,
-                Channel.AvatarPhotoUrl, Channel.Subscribers.Count,
-                Channel.Contents.Count, Channel.Owners.Count,
-                Channel.TotalLikes, Channel.TotalViews))
-            .AsNoTracking().ToArrayAsync();
+        Result<ChannelDto[]> result = await mediator.Send(
+            new ChannelChooseManyQuery());
 
-        logger.LogInformation("Returned {Count} Channels", Channels.Length);
+        if (result.Data == null)
+        {
+            return StatusCode(500, "unknown error");
+        }
 
-        return Ok(Channels);
+        return Ok(result.Data);
     }
 
     [HttpPut("{ChannelId}")]
     [Authorize(Policy = nameof(UserRole.Creator))]
-    public async Task<ActionResult<ChannelDto>> UpdateChannel(Guid ChannelId, ChannelUpdateCommand updateDto)
+    public async Task<ActionResult<ChannelDto>> UpdateChannel(Guid ChannelId, ChannelUpdateRequest request)
     {
-        var Channel = await context.Channels
-            .Select(Channel => new
+        ChannelUpdateCommand cmd = new(
+            this.GetIDFromClaim(), ChannelId, request.Name, request.Description);
+
+        Result<ChannelDto> result = await mediator.Send(cmd);
+
+        if (!result.IsSuccess || result.Data == null)
+        {
+            return result.StatusCode switch
             {
-                d = Channel,
-                SubscribersCount = Channel.Subscribers.Count,
-                ContentsCount = Channel.Contents.Count,
-                OwnersCount = Channel.Owners.Count
-            })
-            .FirstOrDefaultAsync(Channel => Channel.d.Id == ChannelId);
-
-        if (Channel is null || Channel.d is null)
-            return NotFound("Channel not found");
-
-        Guid currentUserId = this.GetIDFromClaim();
-
-        ChannelOwner? currentOwner = await context.ChannelOwners
-            .FirstOrDefaultAsync(owner =>
-                owner.OwnerId == currentUserId &&
-                owner.ChannelId == ChannelId);
-
-        if (currentOwner == null)
-        {
-            logger.LogWarning("User {UserId} tried to update Channel without permission",
-                currentUserId);
-            return Forbid("You doesn't owner the Channel");
+                404 => NotFound(result.Error),
+                403 => Forbid(result.Error!),
+                409 => Conflict(result.Error),
+                _ => StatusCode(500, "unknown error")
+            };
         }
 
-        if (currentOwner.OwnerRole != ChannelOwnerRole.Admin)
-        {
-            logger.LogWarning("User {UserId} tried to update Channel without permission",
-                currentUserId);
-            return Forbid("You do not have sufficient rights");
-        }
-
-        if (!string.IsNullOrEmpty(updateDto.Description))
-            Channel.d.Description = updateDto.Description;
-
-        string slug = updateDto.Name.GenerateSlug();
-
-        if (await context.Channels.AnyAsync(Channel => Channel.Name == updateDto.Name || Channel.Slug == slug))
-            return Conflict($"Channel whit name {updateDto.Name} hasted");
-
-        string oldName = Channel.d.Name;
-
-        //Updating
-        Channel.d.Name = updateDto.Name;
-        Channel.d.Slug = slug;
-
-        ChannelDto responseDto = new(
-            Channel.d.Id, Channel.d.Name, "@" + Channel.d.Slug,
-            Channel.d.Description ?? "", Channel.d.CreatedDate,
-            Channel.d.AvatarPhotoUrl, Channel.SubscribersCount,
-            Channel.ContentsCount, Channel.OwnersCount,
-            Channel.d.TotalLikes, Channel.d.TotalViews);
-
-        try
-        {
-            await context.SaveChangesAsync();
-
-            logger.LogInformation(
-                "Channel {ChannelId} updated successfully. Changed the name from: {OldName} to: {NewName}",
-                ChannelId, oldName, updateDto.Name);
-
-            return Ok(responseDto);
-        }
-        catch (DbUpdateException ex)
-        {
-            logger.LogError(ex, "Error while creating Channel for user {UserId}", currentUserId);
-
-            if (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
-                return Conflict("Channel name already exists");
-
-            throw;
-        }
+        return Ok(result.Data);
     }
 
     [HttpDelete("{ChannelId}")]
     [Authorize(Policy = nameof(UserRole.Creator))]
     public async Task<IActionResult> DeleteChannel(Guid ChannelId)
     {
-        Guid currentUserId = this.GetIDFromClaim();
+        ChannelDeleteCommand cmd = new(
+            this.GetIDFromClaim(), ChannelId);
 
-        ChannelOwner? currentOwner = await context.ChannelOwners
-            .FirstOrDefaultAsync(owner =>
-                owner.OwnerId == currentUserId &&
-                owner.ChannelId == ChannelId);
+        Result<Null> result = await mediator.Send(cmd);
 
-        if (currentOwner == null)
+        if (!result.IsSuccess || result.Data == null)
         {
-            logger.LogWarning("User {UserId} tried to delete Channel {ChannelId} without permission",
-                currentUserId, ChannelId);
-
-            return Forbid("You doesn't owner the Channel");
+            return result.StatusCode switch
+            {
+                403 => Forbid(result.Error!),
+                404 => NotFound(result.Error),
+                _ => StatusCode(500, "unknown error")
+            };
         }
-
-        if (currentOwner.OwnerRole != ChannelOwnerRole.Admin)
-        {
-            logger.LogWarning("Delete denied for user {UserId} on Channel {ChannelId}",
-                currentUserId, ChannelId);
-
-            return Forbid("You do not have sufficient rights");
-        }
-
-        Channel? Channel = await context.Channels.FindAsync(ChannelId);
-
-        if (Channel == null)
-            return NotFound("Channel not found");
-
-        context.Channels.Remove(Channel);
-
-        await context.SaveChangesAsync();
-
-        logger.LogInformation("Channel {ChannelId} deleted", ChannelId);
 
         return NoContent();
     }

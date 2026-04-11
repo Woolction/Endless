@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Application.Contents.Choose;
 
-public class ContentChooseHandler : IRequestHandler<ContentChooseQuery, Result<ChangedContentDto>>
+public class ContentChooseHandler : IRequestHandler<ContentChooseQuery, Result<ContentDto>>
 {
     private readonly ILogger<ContentChooseHandler> logger;
     private readonly IAppDbContext context;
@@ -19,39 +19,25 @@ public class ContentChooseHandler : IRequestHandler<ContentChooseQuery, Result<C
         this.logger = logger;
     }
 
-    public async Task<Result<ChangedContentDto>> Handle(ContentChooseQuery query, CancellationToken cancellationToken)
+    public async Task<Result<ContentDto>> Handle(ContentChooseQuery query, CancellationToken cancellationToken)
     {
-        var changedContent = await context.Contents
-            .Select(content => new
-            {
-                c = content,
-                cResponse = new ContentDto(content.Id, content.ChannelId, content.CreatorId,
+        ContentDto? changedContent = await context.Contents
+            .AsNoTracking()
+            .Where(content => content.Id == query.ContentId)
+            .Select(content => new ContentDto(content.Id, content.ChannelId, content.CreatorId,
                     content.Title, content.Slug, content.Description,
                     content.CreatedDate, content.ContentType.ToString(),
                     content.VideoMeta != null ? content.VideoMeta.DurationSeconds : 0,
                     content.ContentUrl, content.PrewievPhotoUrl, content.Savers.Count, content.Likers.Count,
-                    content.Comments.Count, content.DisLikers.Count, content.ViewsCount)
-            })
-            .AsNoTracking()
-            .FirstOrDefaultAsync(content => content.c.Id == query.ContentId, cancellationToken);
+                    content.Comments.Count, content.DisLikers.Count, content.ViewsCount))
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (changedContent == null || changedContent.c == null)
-            return Result<ChangedContentDto>.Failure(404, "Content not found");
-
-        ChannelDto? ChannelResponse = await context.Channels //segregate
-            .Select(Channel => new ChannelDto(
-                Channel.Id, Channel.Name,
-                "@" + Channel.Slug, Channel.Description ?? "",
-                Channel.CreatedDate, Channel.AvatarPhotoUrl,
-                Channel.Subscribers.Count, Channel.Contents.Count,
-                Channel.Owners.Count, Channel.TotalLikes, Channel.TotalViews))
-            .AsNoTracking()
-            .FirstOrDefaultAsync(Channel => Channel.Id == changedContent.c.ChannelId, cancellationToken);
+        if (changedContent == null)
+            return Result<ContentDto>.Failure(404, "Content not found");
 
         logger.LogInformation("Returned content {ContentId}",
             query.ContentId);
 
-        return Result<ChangedContentDto>.Success(200, new ChangedContentDto(
-            ChannelResponse, changedContent.cResponse, null));
+        return Result<ContentDto>.Success(200, changedContent);
     }
 }
