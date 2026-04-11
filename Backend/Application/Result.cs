@@ -20,9 +20,7 @@ public class Result<T>
         Error = error;
     }
 
-    public Result()
-    {
-    }
+    public Result() {}
 
     public static Result<T> Success(int statusCode, T data) =>
         new(data, statusCode);

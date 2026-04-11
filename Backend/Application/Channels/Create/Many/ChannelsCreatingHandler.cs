@@ -45,7 +45,7 @@ public class ChannelsCreatingHandler : IRequestHandler<ChannelsCreateCommand, Re
             channels.Add(channel);
             channelOwners.Add(new ChannelOwner()
             {
-                OwnerId = cmd.UserId!.Value,
+                OwnerId = cmd.UserId,
                 Channel = channel,
                 OwnedDate = DateTime.UtcNow,
                 OwnerRole = ChannelOwnerRole.Admin
@@ -53,7 +53,7 @@ public class ChannelsCreatingHandler : IRequestHandler<ChannelsCreateCommand, Re
             channelSubscriptions.Add(new ChannelSubscription()
             {
                 Channel = channel,
-                SubscriberId = cmd.UserId!.Value,
+                SubscriberId = cmd.UserId,
                 SubscribedDate = DateTime.UtcNow,
                 Notification = false
             });

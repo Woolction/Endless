@@ -10,6 +10,8 @@ public class Program
 
         var app = builder.Build();
 
+        app.Urls.Add("http://0.0.0.0:8080");
+
         app.MiddlewareRegistry();
         app.EndPointsRegistry();
 
