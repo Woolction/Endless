@@ -187,10 +187,17 @@ public static class ProgramPipeline
         {
             app.MapOpenApi();
             app.MapScalarApiReference();
-        }
 
-        if (!app.Environment.IsDevelopment())
+            using (var scope = app.Services.CreateScope())
+            {
+                EndlessContext context = scope.ServiceProvider.GetRequiredService<EndlessContext>();
+                context.Database.Migrate();
+            }
+        }
+        else
+        {
             app.UseHttpsRedirection();
+        }
 
         app.UseMiddleware<ContentSecurityPolicy>();
 

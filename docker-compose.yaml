@@ -1,0 +1,42 @@
+services:
+  api:
+    image: endless-api:latest
+    build: 
+      context: .
+      dockerfile: /Backend/API/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      
+      ConnectionStrings__DB: Host=db;Port=5432;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}
+      
+      JwtSettings__SecretKey: ${SecretKey}
+      JwtSettings__Issuer: ${Issuer}
+      JwtSettings__Audience: ${Audience}
+      JwtSettings__ExpireMinutes: ${ExpireMinutes}
+    ports:
+      - 5000:8080
+  db:
+    image: postgres:18.3
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - 5433:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres-data:/var/lib/postgresql
+  #search:
+   # image: elasticsearch:9.3.3
+  #cache:
+   # image: redis
+  
+volumes:
+  postgres-data:
