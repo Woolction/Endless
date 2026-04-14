@@ -1,29 +1,28 @@
-using Application.Authentications.Login;
-using Domain.Interfaces.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Domain.Interfaces.Services;
 using Application.Utilities;
-using Domain.Entities;
-using Npgsql;
 using Domain.Interfaces;
-using Application.Users.Dtos;
+using Domain.Entities;
 using MediatR;
-using Application.Users.Search;
+using Npgsql;
 
 namespace Application.Users.Create.Registry;
 
 public class UserRegistryHandler : IRequestHandler<UserRegistryCommand, Result<RegistryDto>>
 {
     private readonly IPasswordHasher<User> passwordHasher;
+    private readonly ILogger<UserRegistryHandler> logger;
     private readonly IAuthService authService;
     private readonly IAppDbContext context;
 
-    public UserRegistryHandler(IPasswordHasher<User> passwordHasher, IAuthService authService, IAppDbContext context)
+    public UserRegistryHandler(IPasswordHasher<User> passwordHasher, IAuthService authService, IAppDbContext context, ILogger<UserRegistryHandler> logger)
     {
         this.passwordHasher = passwordHasher;
         this.authService = authService;
         this.context = context;
+        this.logger = logger;
     }
 
     public async Task<Result<RegistryDto>> Handle(UserRegistryCommand cmd, CancellationToken cancellationToken)
@@ -65,6 +64,9 @@ public class UserRegistryHandler : IRequestHandler<UserRegistryCommand, Result<R
 
             if (tokens.Length != 2)
                 return Result<RegistryDto>.Failure(500, "Token could not be created");
+
+            logger.LogInformation("User {UserId} registred",
+                user.Id);
 
             return Result<RegistryDto>.Success(201, new RegistryDto(user.Id, tokens[0], tokens[1]));
         }

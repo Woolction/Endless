@@ -3,16 +3,19 @@ using Application.Searchs;
 using Application.Users.Dtos;
 using MediatR;
 using Domain.Rows.Users;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Users.Search;
 
 public class UserSearchingHandler : IRequestHandler<UserSearchQuery, Result<UserSearchDto>>
 {
+    private readonly ILogger<UserSearchingHandler> logger;
     private readonly IUserRepository userRepository;
 
-    public UserSearchingHandler(IUserRepository userRepository)
+    public UserSearchingHandler(IUserRepository userRepository, ILogger<UserSearchingHandler> logger)
     {
         this.userRepository = userRepository;
+        this.logger = logger;
     }
 
     public async Task<Result<UserSearchDto>> Handle(UserSearchQuery query, CancellationToken cancellationToken)
@@ -42,6 +45,9 @@ public class UserSearchingHandler : IRequestHandler<UserSearchQuery, Result<User
             LastScore = last.Score,
             LastId = last.Id
         };
+
+        logger.LogInformation("Search returned users: {Count} results for {Query}",
+            users.Length, query.Name);
 
         return Result<UserSearchDto>.Success(200, new UserSearchDto(users, lastSearch));
     }

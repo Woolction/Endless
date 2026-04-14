@@ -1,25 +1,17 @@
-using Application.Authentications.Login;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.EntityFrameworkCore;
-using Application.Searchs;
+using Application.Users.Create.Registry;
 using Application.Users.Create.Many;
-using Domain.Interfaces.Services;
-using Microsoft.AspNetCore.Mvc;
-using Infrastructure.Context;
-using Application.Utilities;
-using Application.Channels;
-using Application.Users.Dtos;
-using Application;
-using Npgsql;
-using Domain.Common;
-using Domain.Entities;
 using Application.Users.Search;
 using Application.Users.Update;
-using Application.Users.Create.Registry;
-using MediatR;
 using Application.Users.Choose;
 using Application.Users.Delete;
+using Microsoft.AspNetCore.Mvc;
+using Application.Users.Dtos;
+using Application.Utilities;
+using Domain.Common;
+using Application;
+using MediatR;
 
 namespace API.Controllers;
 
@@ -27,19 +19,11 @@ namespace API.Controllers;
 [Route("api/[controller]")]
 public class UsersController : ControllerBase
 {
-    private readonly EndlessContext context;
     private readonly IMediator mediator;
 
-    private readonly ILogger<UsersController> logger;
-    private readonly IR2Service r2Service;
-
-    public UsersController(EndlessContext context, IMediator mediator, IR2Service r2Service, ILogger<UsersController> logger)
+    public UsersController(IMediator mediator)
     {
-        this.context = context;
         this.mediator = mediator;
-
-        this.r2Service = r2Service;
-        this.logger = logger;
     }
 
     [HttpPost]
@@ -59,9 +43,6 @@ public class UsersController : ControllerBase
         }
 
         this.CraeteTokensInCookies(result.Data!.Token, result.Data.RefreshToken);
-
-        logger.LogInformation("User {UserId} registred",
-            result.Data.NewUserId);
 
         return Created($"api/users/{result.Data.NewUserId}", result.Data);
     }
@@ -103,9 +84,6 @@ public class UsersController : ControllerBase
                 _ => StatusCode(500, "unknown error")
             };
         }
-
-        logger.LogInformation("Search returned users: {Count} results for {Query}",
-            result.Data.UserDtos.Length, query.Name);
 
         return Ok(result.Data);
     }
@@ -180,8 +158,6 @@ public class UsersController : ControllerBase
     [HttpDelete("current")]
     public async Task<IActionResult> DeleteCurrentUser()
     {
-        Guid currentUserId = this.GetIDFromClaim();
-
         Result<Null> result = await mediator.Send(new UserDeleteCommand(
             this.GetIDFromClaim()));
 
