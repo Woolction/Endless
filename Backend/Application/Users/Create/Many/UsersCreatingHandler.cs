@@ -34,16 +34,17 @@ public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<U
                 .Select(genre => genre.Id)
                 .ToArrayAsync(cancellationToken);
 
-        for (int i = 0; i < cmd.Count; i++)
+        for (int i = 0; i < cmd.Names.Length; i++)
         {
-            string IdForName = Guid.CreateVersion7().ToString();
+            User user = new()
+            {
+                RegistryData = DateTime.UtcNow
+            };
 
-            User user = new();
-
-            user.SetName(IdForName);
-            user.SetSlug(IdForName.GenerateSlug());
-            user.SetEmail(IdForName + "@gmail.com");
-            user.RegistryData = DateTime.UtcNow;
+            user.SetName(cmd.Names[i]);
+            user.SetSlug(cmd.Names[i].GenerateSlug());
+            user.SetEmail(cmd.Names[i] + "@gmail.com");
+            user.SetPassword($"{cmd.Password}");
             //user.SetPassword(passwordHasher.HashPassword(user, cmd.Password));
 
             for (int j = 0; j < genres.Length; j++)
