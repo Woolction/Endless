@@ -4,6 +4,7 @@ using Application.Users.Dtos;
 using MediatR;
 using Domain.Rows.Users;
 using Microsoft.Extensions.Logging;
+using Elastic.Clients.Elasticsearch;
 
 namespace Application.Users.Search;
 
@@ -20,30 +21,25 @@ public class UserSearchingHandler : IRequestHandler<UserSearchQuery, Result<User
 
     public async Task<Result<UserSearchDto>> Handle(UserSearchQuery query, CancellationToken cancellationToken)
     {
-        bool hasLastSearch = query.LastSearch != null;
+        FieldValue[]? lastValues = query.LastValues;
 
-        SearchDto searchDto = hasLastSearch == true ? query.LastSearch! : new SearchDto();
+        UserSearchRow result = await userRepository.SearchUsersByName(
+            query.Name, lastValues, cancellationToken);
 
-        IEnumerable<UserSearchRow> result = await userRepository.SearchUsersByName(
-            query.Name, hasLastSearch, searchDto.LastScore, searchDto.LastId, cancellationToken);
-
-        UserDto[] users = result.Select(u => new UserDto(
-            u.Id, u.Name, "@" + u.Slug, u.Description ?? "",
-            u.RegistryData, u.Email, u.Role.ToString(),
-            u.AvatarPhotoUrl, u.TotalLikes, u.CommentsCount,
-            u.ContentsCount, u.FollowersCount, u.FollowingCount,
-            u.OwnedChannelsCount, u.ChannelSubscriptionsCount
-        )).ToArray();
-
-        if (users.Length < 1)
+        if (result.SearchedUsers == null || result.SearchedUsers.Count < 1)
             return Result<UserSearchDto>.Failure(404, $"User with name: {query.Name} not found");
 
-        var last = result.Last();
+        UserDto[] users = result.SearchedUsers.Select(u => new UserDto(
+            u.Id, u.Name, "@" + u.Slug, u.Description ?? "",
+            u.RegistryData, u.Email, u.Role.ToString(),
+            u.AvatarPhotoUrl, u.TotalLikes, 0,0,0,0,0,0 /*u.CommentsCount,
+            u.ContentsCount, u.FollowersCount, u.FollowingCount,
+            u.OwnedChannelsCount, u.ChannelSubscriptionsCount*/
+        )).ToArray();
 
         SearchDto lastSearch = new()
         {
-            LastScore = last.Score,
-            LastId = last.Id
+            Last = result.LastValues
         };
 
         logger.LogInformation("Search returned users: {Count} results for {Query}",

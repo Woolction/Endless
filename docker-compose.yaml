@@ -3,7 +3,7 @@ services:
     image: endless-api:latest
     build: 
       context: .
-      dockerfile: /Backend/API/Dockerfile
+      dockerfile: Backend/API/Dockerfile
     depends_on:
       db:
         condition: service_healthy

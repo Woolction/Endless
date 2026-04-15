@@ -4,6 +4,7 @@ using Domain.Interfaces.Services;
 using Domain.Interfaces;
 using Domain.Entities;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Authentications.Update;
 

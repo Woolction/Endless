@@ -3,6 +3,7 @@ using Application.Users.Dtos;
 using Application.Utilities;
 using Domain.Entities;
 using Domain.Interfaces;
+using Domain.Interfaces.Repositories;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -14,11 +15,13 @@ namespace Application.Users.Create.Many;
 public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<UserDto[]>>
 {
     private readonly IPasswordHasher<User> passwordHasher;
+    private readonly IUserRepository userRepository;
     private readonly IAppDbContext context;
 
-    public UsersCreatingHandler(IAppDbContext context, IPasswordHasher<User> passwordHasher)
+    public UsersCreatingHandler(IAppDbContext context, IUserRepository userRepository, IPasswordHasher<User> passwordHasher)
     {
         this.passwordHasher = passwordHasher;
+        this.userRepository = userRepository;
         this.context = context;
     }
 
@@ -43,10 +46,6 @@ public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<U
             user.RegistryData = DateTime.UtcNow;
             //user.SetPassword(passwordHasher.HashPassword(user, cmd.Password));
 
-            user.SetPassword($"{cmd.Password}");
-
-            users.Add(user);
-
             for (int j = 0; j < genres.Length; j++)
             {
                 vectors.Add(new UserGenreVector()
@@ -55,6 +54,10 @@ public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<U
                     GenreId = genres[j]
                 });
             }
+
+            await userRepository.CreateSearchIndex(user);
+
+            users.Add(user);
         }
 
         context.Users.AddRange(users);

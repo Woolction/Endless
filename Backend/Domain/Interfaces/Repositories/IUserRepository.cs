@@ -1,10 +1,11 @@
 using Domain.Entities;
 using Domain.Rows.Users;
+using Elastic.Clients.Elasticsearch;
 
 namespace Domain.Interfaces.Repositories;
 
 public interface IUserRepository
 {
-    Task<IEnumerable<UserSearchRow>> SearchUsersByName(string name, bool hasLastSearch, double lastScore, Guid lastId, CancellationToken cancellationToken);
+    Task<UserSearchRow> SearchUsersByName(string name, FieldValue[]? lastValues, CancellationToken cancellationToken);
     Task CreateSearchIndex(User user);
 }

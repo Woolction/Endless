@@ -12,6 +12,8 @@ using Application.Utilities;
 using Domain.Common;
 using Application;
 using MediatR;
+using Application.Authentications.Dtos;
+using Application.Authentications.Update;
 
 namespace API.Controllers;
 

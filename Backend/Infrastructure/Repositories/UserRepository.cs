@@ -1,81 +1,60 @@
 using Domain.Interfaces.Repositories;
-using Infrastructure.Connector;
-using System.Data;
-using Dapper;
+using Elastic.Clients.Elasticsearch;
 using Domain.Rows.Users;
 using Domain.Entities;
-using Elastic.Clients.Elasticsearch;
 
 namespace Infrastructure.Repositories;
 
 public class UserRepository : IUserRepository
 {
-    private readonly ElasticsearchClient elasticsearch;
-    private readonly DbConnectorFactory connector;
+    private readonly ElasticsearchClient client;
 
-    public UserRepository(DbConnectorFactory connector, ElasticsearchClient elasticsearch)
+    public UserRepository(ElasticsearchClient client)
     {
-        this.elasticsearch = elasticsearch;
-        this.connector = connector;
+        this.client = client;
     }
 
     public async Task CreateSearchIndex(User user)
     {
-        //await elasticsearch.IndexAsync<User>();
+        await client.IndexAsync(user, r =>
+            r.Index("users"));
     }
 
-    public async Task<IEnumerable<UserSearchRow>> SearchUsersByName(string name, bool hasLastSearch, double lastScore, Guid lastId, CancellationToken cancellationToken)
+    public async Task<UserSearchRow> SearchUsersByName(string name, FieldValue[]? lastValues, CancellationToken cancellationToken)
     {
-        using IDbConnection db = connector.CreateConnection();
+        var search = new SearchRequestDescriptor<User>()
+            .Indices("users")
+            .Size(20)
+            .Query(q => q
+                .MultiMatch(m => m
+                    .Fields(f => f.Name)
+                    .Query(name)))
+            .Sort(s => s
+                .Score()
+                .Field(f => f.Id, SortOrder.Asc));
 
-        // u.""Name"" % @name = TRUE for speed
+        if (lastValues != null)
+            search = search.SearchAfter(lastValues);
 
-        var sql = @"
-        WITH ranked AS (
-            WITH filtered AS (
-                SELECT * FROM ""Users"" u
-                WHERE (u.""Name"" ILike @pattern) = TRUE
-                LIMIT 100
-            )
-            SELECT
-                u.""Id"", u.""Name"", u.""Slug"", 
-                u.""Description"", u.""RegistryData"", 
-                u.""Email"", u.""Role"", u.""AvatarPhotoUrl"",
-                
-                (SELECT COUNT(*) FROM ""Comments"" c WHERE c.""CommentatorId"" = u.""Id"") AS CommentsCount,
-                (SELECT COUNT(*) FROM ""Contents"" c WHERE c.""CreatorId"" = u.""Id"") AS ContentsCount,
-                (SELECT COUNT(*) FROM ""UserFollowings"" f WHERE f.""FollowerId"" = u.""Id"") AS FollowersCount,
-                (SELECT COUNT(*) FROM ""UserFollowings"" f WHERE f.""FollowedUserId"" = u.""Id"") AS FollowingCount,
-                (SELECT COUNT(*) FROM ""ChannelOwners"" c WHERE c.""OwnerId"" = u.""Id"") AS OwnedChannelsCount,
-                (SELECT COUNT(*) FROM ""ChannelSubscriptions"" s WHERE s.""SubscriberId"" = u.""Id"") AS ChannelSubscriptionsCount,
-        
-                similarity(u.""Name"", @name) * 0.75 +
-                (1.0 / (levenshtein(u.""Name"", @name) + 1)) * 0.25 AS ""Score""
-            FROM filtered u
-            
-        )
-        SELECT * FROM ranked
-        WHERE(
-            (@hasLastSearch = FALSE) OR
-            (""Score"", ""Id"") < (@lastScore, @lastId)
-        )
-        ORDER BY ""Score"" DESC, ""Id"" ASC
-        LIMIT 20;
-        ";
+        var result = await client.SearchAsync<User>(search, cancellationToken);
 
-        CommandDefinition command = new(
-            sql, new
+        if (result.Hits.Count == 0)
+        {
+            return new UserSearchRow()
             {
-                name,
-                pattern = $"%{name}%",
-                hasLastSearch,
-                lastScore,
-                lastId
-            },
-            cancellationToken: cancellationToken);
+                SearchedUsers = null,
+                LastValues = null
+            };
+        }
 
-        IEnumerable<UserSearchRow> result = await db.QueryAsync<UserSearchRow>(command);
+        var lastHit = result.Hits.Last();
 
-        return result;
+        UserSearchRow usersRow = new()
+        {
+            SearchedUsers = result.Documents.ToList(),
+            LastValues = lastHit.Sort?.ToArray()
+        };
+
+        return usersRow;
     }
 }
