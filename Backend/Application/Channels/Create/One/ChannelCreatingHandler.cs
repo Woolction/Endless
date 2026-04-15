@@ -38,6 +38,7 @@ public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Resu
             Slug = slug,
             Name = cmd.Name,
             CreatedDate = DateTime.UtcNow,
+            IsWound = false
         };
 
         if (cmd.AvatarPhoto != null && cmd.AvatarPhoto.Length != 0)

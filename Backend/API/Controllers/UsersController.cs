@@ -29,7 +29,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost]
-    [EnableRateLimiting("RegistryLimit")]
+    //[EnableRateLimiting("RegistryLimit")]
     public async Task<ActionResult<RegistryDto>> CreateUser(UserRegistryCommand cmd)
     {
         Result<RegistryDto> result = await mediator.Send(cmd);

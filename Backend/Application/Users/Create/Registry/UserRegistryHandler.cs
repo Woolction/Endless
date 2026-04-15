@@ -35,7 +35,8 @@ public class UserRegistryHandler : IRequestHandler<UserRegistryCommand, Result<R
 
         User user = new()
         {
-            RegistryData = DateTime.UtcNow
+            RegistryData = DateTime.UtcNow,
+            IsWound = false
         };
 
         user.SetPassword(passwordHasher.HashPassword(user, cmd.Password));
