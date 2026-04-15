@@ -18,6 +18,7 @@ using System.Text;
 using Domain.Interfaces;
 using Elastic.Clients.Elasticsearch;
 using Application;
+using Infrastructure.Managers;
 
 namespace API;
 
@@ -168,7 +169,7 @@ public static class ProgramPipeline
         //      Transient
     }
 
-    public static void MiddlewareRegistry(this WebApplication app)
+    public static async Task MiddlewareRegistry(this WebApplication app)
     {
         // Static Files
         var provider = new FileExtensionContentTypeProvider();
@@ -195,6 +196,13 @@ public static class ProgramPipeline
         else
         {
             app.UseHttpsRedirection();
+        }
+
+        ElasticsearchClient? client = app.Services.GetService<ElasticsearchClient>();
+
+        if (client != null)
+        {
+            await ElasticsearchInit.CreateIndex(client);
         }
 
         app.UseMiddleware<ContentSecurityPolicy>();

@@ -7,6 +7,7 @@ using Domain.Interfaces;
 using Domain.Entities;
 using MediatR;
 using Npgsql;
+using Domain.Interfaces.Repositories;
 
 namespace Application.Users.Create.Registry;
 
@@ -14,13 +15,15 @@ public class UserRegistryHandler : IRequestHandler<UserRegistryCommand, Result<R
 {
     private readonly IPasswordHasher<User> passwordHasher;
     private readonly ILogger<UserRegistryHandler> logger;
+    private readonly IUserRepository repository;
     private readonly IAuthService authService;
     private readonly IAppDbContext context;
 
-    public UserRegistryHandler(IPasswordHasher<User> passwordHasher, IAuthService authService, IAppDbContext context, ILogger<UserRegistryHandler> logger)
+    public UserRegistryHandler(IPasswordHasher<User> passwordHasher, IAuthService authService, IAppDbContext context, ILogger<UserRegistryHandler> logger, IUserRepository repository)
     {
         this.passwordHasher = passwordHasher;
         this.authService = authService;
+        this.repository = repository;
         this.context = context;
         this.logger = logger;
     }
@@ -67,6 +70,8 @@ public class UserRegistryHandler : IRequestHandler<UserRegistryCommand, Result<R
 
             logger.LogInformation("User {UserId} registred",
                 user.Id);
+
+            await repository.CreateSearchIndex(user);
 
             return Result<RegistryDto>.Success(201, new RegistryDto(user.Id, tokens[0], tokens[1]));
         }

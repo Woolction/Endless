@@ -3,16 +3,25 @@ using Infrastructure.Connector;
 using System.Data;
 using Dapper;
 using Domain.Rows.Users;
+using Domain.Entities;
+using Elastic.Clients.Elasticsearch;
 
 namespace Infrastructure.Repositories;
 
 public class UserRepository : IUserRepository
 {
+    private readonly ElasticsearchClient elasticsearch;
     private readonly DbConnectorFactory connector;
 
-    public UserRepository(DbConnectorFactory connector)
+    public UserRepository(DbConnectorFactory connector, ElasticsearchClient elasticsearch)
     {
+        this.elasticsearch = elasticsearch;
         this.connector = connector;
+    }
+
+    public async Task CreateSearchIndex(User user)
+    {
+        //await elasticsearch.IndexAsync<User>();
     }
 
     public async Task<IEnumerable<UserSearchRow>> SearchUsersByName(string name, bool hasLastSearch, double lastScore, Guid lastId, CancellationToken cancellationToken)
