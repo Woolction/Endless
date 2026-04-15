@@ -40,6 +40,7 @@ public class ChannelsCreatingHandler : IRequestHandler<ChannelsCreateCommand, Re
                 Slug = slug,
                 Name = name,
                 CreatedDate = DateTime.UtcNow,
+                IsWound = true
             };
 
             channels.Add(channel);

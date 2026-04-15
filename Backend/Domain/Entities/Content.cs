@@ -27,6 +27,8 @@ public class Content
 
     public double RandomKey { get; set; }
 
+    public bool IsWound { get; set; }
+
     public List<ContentGenreVector> Vectors { get; set; } = new List<ContentGenreVector>();
 
     public List<UserInteractionContent> UsersInteration { get; set; } = new List<UserInteractionContent>();

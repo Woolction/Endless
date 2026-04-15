@@ -13,6 +13,8 @@ public class Channel
     public long TotalViews { get; set; }
     public long TotalLikes { get; set; }
 
+    public bool IsWound { get; set; }
+
     public List<ChannelSubscription> Subscribers { get; set; } = new List<ChannelSubscription>();
 
     public List<ChannelOwner> Owners { get; set; } = new List<ChannelOwner>();

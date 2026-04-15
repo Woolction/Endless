@@ -38,7 +38,8 @@ public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<U
         {
             User user = new()
             {
-                RegistryData = DateTime.UtcNow
+                RegistryData = DateTime.UtcNow,
+                IsWound = true
             };
 
             user.SetName(cmd.Names[i]);
