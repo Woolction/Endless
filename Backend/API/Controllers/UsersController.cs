@@ -153,6 +153,29 @@ public class UsersController : ControllerBase
             };
         }
 
+        string? refreshToken = Request.Cookies["RefreshToken"];
+
+        if (string.IsNullOrEmpty(refreshToken))
+            return BadRequest("There is no refresh token");
+
+        Result<AuthDto> authResult = await mediator.Send(new RefreshTokenCommand(refreshToken));
+
+        if (!authResult.IsSuccess || authResult.Data == null)
+        {
+            if (authResult.Data is null || authResult.Data.Token is null || authResult.Data.RefreshToken is null)
+                return BadRequest("Invalid refresh token");
+
+            return authResult.StatusCode switch
+            {
+                400 => BadRequest(authResult.Error),
+                404 => NotFound(authResult.Error),
+                500 => StatusCode(authResult.StatusCode, authResult.Error),
+                _ => StatusCode(500, "Unknown error")
+            };
+        }
+
+        this.CraeteTokensInCookies(authResult.Data.Token, authResult.Data.RefreshToken);
+
         return Ok(result.Data);
     }
 
