@@ -26,8 +26,10 @@ public class UserSearchingHandler : IRequestHandler<UserSearchQuery, Result<User
         UserSearchRow result = await userRepository.SearchUsersByName(
             query.Name, lastValues, cancellationToken);
 
-        if (result.SearchedUsers == null || result.SearchedUsers.Count < 1)
+        if (result.SearchedUsers == null)
             return Result<UserSearchDto>.Failure(404, $"User with name: {query.Name} not found");
+        else if (result.SearchedUsers.Count < 1)
+            return Result<UserSearchDto>.Failure(404, $"User with name: {query.Name} not found: returned: {result.SearchedUsers.Count}");
 
         UserDto[] users = result.SearchedUsers.Select(u => new UserDto(
             u.UserId, u.Name, "@" + u.Slug, u.Description ?? "",
