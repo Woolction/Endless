@@ -32,7 +32,7 @@ public class UserSearchingHandler : IRequestHandler<UserSearchQuery, Result<User
         UserDto[] users = result.SearchedUsers.Select(u => new UserDto(
             u.UserId, u.Name, "@" + u.Slug, u.Description ?? "",
             u.RegistryData, u.Email, u.Role.ToString(),
-            u.AvatarPhotoUrl, 0, 0,0,0,0,0,0 /*u.CommentsCount,
+            u.AvatarPhotoUrl, u.TotalLikes, 0,0,0,0,0,0 /*u.CommentsCount,
             u.ContentsCount, u.FollowersCount, u.FollowingCount,
             u.OwnedChannelsCount, u.ChannelSubscriptionsCount*/
         )).ToArray();

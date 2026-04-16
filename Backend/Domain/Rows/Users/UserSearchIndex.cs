@@ -11,6 +11,7 @@ public class UserSearchIndex
     public string Email { get; set; } = string.Empty;
     public string? AvatarPhotoUrl { get; set; }
     public string? Description { get; set; }
+    public long TotalLikes;
 
     public DateTime RegistryData;
     public UserRole Role;
@@ -23,6 +24,7 @@ public class UserSearchIndex
         Email = user.Email;
         AvatarPhotoUrl = user.AvatarPhotoUrl;
         Description = user.Description;
+        TotalLikes = user.TotalLikes;
 
         RegistryData = user.RegistryData;
         Role = user.Role;

@@ -1,4 +1,5 @@
 using Domain.Entities;
+using Domain.Rows.Contents;
 using Domain.Rows.Users;
 using Elastic.Clients.Elasticsearch;
 
@@ -28,9 +29,9 @@ public static class ElasticsearchInit
             await client.Indices.CreateAsync("channels", a =>
                 a.Mappings(m =>
                     m.Properties<Channel>(p => p
-                        .Keyword(u => u.Id)
-                        .Text(u => u.Name)
-                        .Text(u => u.Description)
+                        .Keyword(c => c.Id)
+                        .Text(c => c.Name)
+                        .Text(c => c.Description)
             )));
         }
 
@@ -40,10 +41,13 @@ public static class ElasticsearchInit
         {
             await client.Indices.CreateAsync("contents", a =>
                 a.Mappings(m =>
-                    m.Properties<Content>(p => p
-                        .Keyword(u => u.Id)
-                        .Text(u => u.Title)
-                        .Text(u => u.Description)
+                    m.Properties<ContentSearchIndex>(p => p
+                        .Keyword(c => c.ContentId)
+                        .Keyword(c => c.ChannelId)
+                        .Keyword(c => c.CreatorId)
+                        .Text(c => c.Title)
+                        .Text(c => c.Description)
+                        .Date(c => c.CreatedDate)
             )));
         }
     }
