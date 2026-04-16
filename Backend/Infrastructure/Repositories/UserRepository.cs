@@ -16,27 +16,29 @@ public class UserRepository : IUserRepository
 
     public async Task CreateSearchIndex(User user)
     {
-        await client.IndexAsync(user, r =>
+        UserSearchIndex index = new(user);
+
+        await client.IndexAsync(index, r =>
             r.Index("users"));
     }
 
     public async Task<UserSearchRow> SearchUsersByName(string name, FieldValue[]? lastValues, CancellationToken cancellationToken)
     {
-        var search = new SearchRequestDescriptor<User>()
+        var search = new SearchRequestDescriptor<UserSearchIndex>()
             .Indices("users")
             .Size(20)
             .Query(q => q
-                .MultiMatch(m => m
-                    .Fields(f => f.Name)
+                .Match(m => m
+                    .Field(f => f.Name)
                     .Query(name)))
             .Sort(s => s
                 .Score()
-                .Field(f => f.Id, SortOrder.Asc));
+                .Field(f => f.UserId, SortOrder.Asc));
 
         if (lastValues != null)
             search = search.SearchAfter(lastValues);
 
-        var result = await client.SearchAsync<User>(search, cancellationToken);
+        var result = await client.SearchAsync<UserSearchIndex>(search, cancellationToken);
 
         if (result.Hits.Count == 0)
         {

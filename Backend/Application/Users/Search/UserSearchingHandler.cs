@@ -30,9 +30,9 @@ public class UserSearchingHandler : IRequestHandler<UserSearchQuery, Result<User
             return Result<UserSearchDto>.Failure(404, $"User with name: {query.Name} not found");
 
         UserDto[] users = result.SearchedUsers.Select(u => new UserDto(
-            u.Id, u.Name, "@" + u.Slug, u.Description ?? "",
+            u.UserId, u.Name, "@" + u.Slug, u.Description ?? "",
             u.RegistryData, u.Email, u.Role.ToString(),
-            u.AvatarPhotoUrl, u.TotalLikes, 0,0,0,0,0,0 /*u.CommentsCount,
+            u.AvatarPhotoUrl, 0, 0,0,0,0,0,0 /*u.CommentsCount,
             u.ContentsCount, u.FollowersCount, u.FollowingCount,
             u.OwnedChannelsCount, u.ChannelSubscriptionsCount*/
         )).ToArray();

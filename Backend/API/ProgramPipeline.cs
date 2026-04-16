@@ -202,6 +202,8 @@ public static class ProgramPipeline
 
         if (client != null)
         {
+            //await client.Indices.DeleteAsync("_all");
+
             await ElasticsearchInit.CreateIndex(client);
         }
 

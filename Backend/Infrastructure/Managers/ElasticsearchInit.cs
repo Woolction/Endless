@@ -1,4 +1,5 @@
 using Domain.Entities;
+using Domain.Rows.Users;
 using Elastic.Clients.Elasticsearch;
 
 namespace Infrastructure.Managers;
@@ -13,8 +14,8 @@ public static class ElasticsearchInit
         {
             await client.Indices.CreateAsync("users", a =>
                 a.Mappings(m =>
-                    m.Properties<User>(p => p
-                        .Keyword(u => u.Id)
+                    m.Properties<UserSearchIndex>(p => p
+                        .Keyword(u => u.UserId)
                         .Text(u => u.Name)
                         .Text(u => u.Description)
             )));

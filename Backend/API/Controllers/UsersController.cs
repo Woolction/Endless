@@ -90,6 +90,12 @@ public class UsersController : ControllerBase
         return Ok(result.Data);
     }
 
+    [HttpGet("Count/{UserId}")]
+    public async Task<ActionResult<UserDto>> GetUserCounts(Guid UserId)
+    {
+        return null;
+    }
+
     [HttpGet("{UserId}")]
     public async Task<ActionResult<UserDto>> GetUser(Guid UserId)
     {
