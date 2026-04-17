@@ -256,6 +256,11 @@ public class EndlessContext : DbContext, IAppDbContext
         commentBuilder
             .HasIndex(co => co.ContentId);
         commentBuilder
+            .HasOne(co => co.Parent)
+            .WithMany(co => co.Comments)
+            .HasForeignKey(co => co.ParentId)
+            .IsRequired(false);
+        commentBuilder
             .HasIndex(co => co.PublicatedDate);
 
         EntityTypeBuilder<LikedComment> commentLikedBuilder = builder.Entity<LikedComment>();
