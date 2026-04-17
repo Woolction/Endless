@@ -42,10 +42,6 @@ public class EndlessContext : DbContext, IAppDbContext
     {
         base.OnModelCreating(builder);
 
-        // Extension
-        builder.HasPostgresExtension("pg_trgm");
-        builder.HasPostgresExtension("fuzzystrmatch");
-
         // User
         EntityTypeBuilder<User> userBuilder = builder.Entity<User>();
         userBuilder
@@ -56,8 +52,7 @@ public class EndlessContext : DbContext, IAppDbContext
             .IsUnique();
         userBuilder
             .HasIndex(u => u.Name)
-            .HasMethod("gin")
-            .HasOperators("gin_trgm_ops");
+            .IsUnique();
         userBuilder
             .OwnsOne(u => u.RefreshToken);
 
@@ -93,8 +88,7 @@ public class EndlessContext : DbContext, IAppDbContext
         EntityTypeBuilder<Channel> ChannelBuilder = builder.Entity<Channel>();
         ChannelBuilder
             .HasIndex(d => d.Name)
-            .HasMethod("gin")
-            .HasOperators("gin_trgm_ops");
+            .IsUnique();
         ChannelBuilder
             .HasIndex(d => d.Slug)
             .IsUnique();
@@ -145,8 +139,7 @@ public class EndlessContext : DbContext, IAppDbContext
             .HasIndex(c => c.CreatedDate);
         contentBuilder
             .HasIndex(c => c.Title)
-            .HasMethod("gin")
-            .HasOperators("gin_trgm_ops");
+            .IsUnique();
         contentBuilder
             .HasIndex(c => c.RandomKey);
 
@@ -196,8 +189,7 @@ public class EndlessContext : DbContext, IAppDbContext
         EntityTypeBuilder<Genre> genreBuilder = builder.Entity<Genre>();
         genreBuilder
             .HasIndex(g => g.Name)
-            .HasMethod("gin")
-            .HasOperators("gin_trgm_ops");
+            .IsUnique();
         genreBuilder.HasData([
             new Genre { Id = Guid.Parse("018f47ac-8b72-7c2f-b8d1-9f3c2e7a6d11"), Name = "Vlog", Order = 0 },
             new Genre { Id = Guid.Parse("018f47ac-8b72-7c30-a2f4-6b1d9c8e2a55"), Name = "Gaming", Order = 1 },
