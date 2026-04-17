@@ -31,8 +31,8 @@ public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<U
         List<UserGenreVector> vectors = new();
 
         var genres = await context.Genres
-                .Select(genre => genre.Id)
-                .ToArrayAsync(cancellationToken);
+            .Select(genre => genre.Id)
+            .ToArrayAsync(cancellationToken);
 
         for (int i = 0; i < cmd.Names.Length; i++)
         {

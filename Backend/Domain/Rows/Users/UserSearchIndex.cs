@@ -16,6 +16,8 @@ public class UserSearchIndex
     public DateTime RegistryData;
     public UserRole Role;
 
+    public UserSearchIndex() {}
+
     public UserSearchIndex(User user)
     {
         UserId = user.Id;

@@ -18,8 +18,13 @@ public class UserRepository : IUserRepository
     {
         UserSearchIndex index = new(user);
 
-        await client.IndexAsync(index, r =>
-            r.Index("users"));
+        var response = await client.IndexAsync(index, r => r
+            .Index("users"));
+
+        if (!response.IsValidResponse)
+        {
+            throw new Exception(response.DebugInformation);
+        }
     }
 
     public async Task<UserSearchRow> SearchUsersByName(string name, FieldValue[]? lastValues, CancellationToken cancellationToken)
@@ -44,19 +49,17 @@ public class UserRepository : IUserRepository
         {
             return new UserSearchRow()
             {
-                SearchedUsers = null,
+                SearchedUsers = result.Documents.ToList(),
                 LastValues = null
             };
         }
 
         var lastHit = result.Hits.Last();
 
-        UserSearchRow usersRow = new()
+        return new UserSearchRow()
         {
             SearchedUsers = result.Documents.ToList(),
             LastValues = lastHit.Sort?.ToArray()
         };
-
-        return usersRow;
     }
 }

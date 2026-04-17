@@ -26,18 +26,34 @@ public class UserSearchingHandler : IRequestHandler<UserSearchQuery, Result<User
         UserSearchRow result = await userRepository.SearchUsersByName(
             query.Name, lastValues, cancellationToken);
 
-        if (result.SearchedUsers == null)
-            return Result<UserSearchDto>.Failure(404, $"User with name: {query.Name} not found");
-        else if (result.SearchedUsers.Count < 1)
+        if (result.SearchedUsers.Count < 1)
             return Result<UserSearchDto>.Failure(404, $"User with name: {query.Name} not found: returned: {result.SearchedUsers.Count}");
 
         UserDto[] users = result.SearchedUsers.Select(u => new UserDto(
             u.UserId, u.Name, "@" + u.Slug, u.Description ?? "",
             u.RegistryData, u.Email, u.Role.ToString(),
-            u.AvatarPhotoUrl, u.TotalLikes, 0,0,0,0,0,0 /*u.CommentsCount,
+            u.AvatarPhotoUrl, u.TotalLikes, 0, 0, 0, 0, 0, 0 /*u.CommentsCount,
             u.ContentsCount, u.FollowersCount, u.FollowingCount,
             u.OwnedChannelsCount, u.ChannelSubscriptionsCount*/
         )).ToArray();
+
+
+        /*List<object> objects = [];
+
+        if (result.LastValues != null)
+        {
+            Console.WriteLine(result.LastValues.Length);
+
+            for (int i = 0; i < result.LastValues.Length; i++)
+            {
+                var value = result.LastValues[i];
+
+                Console.WriteLine(value);
+                Console.WriteLine(value.GetType());
+
+                objects.Add(value);
+            }
+        }   */ 
 
         SearchDto lastSearch = new()
         {

@@ -134,7 +134,7 @@ public static class ProgramPipeline
         // ElasticSearch
         builder.Services.AddSingleton(sp =>
         {
-            var settings = new ElasticsearchClientSettings(new Uri("http://localhost:9200"))
+            var settings = new ElasticsearchClientSettings(new Uri("http://search:9200"))
                 .DefaultIndex("users");
 
             return new ElasticsearchClient(settings);
@@ -196,15 +196,6 @@ public static class ProgramPipeline
         else
         {
             app.UseHttpsRedirection();
-        }
-
-        ElasticsearchClient? client = app.Services.GetService<ElasticsearchClient>();
-
-        if (client != null)
-        {
-            //await client.Indices.DeleteAsync("_all");
-
-            await ElasticsearchInit.CreateIndex(client);
         }
 
         app.UseMiddleware<ContentSecurityPolicy>();

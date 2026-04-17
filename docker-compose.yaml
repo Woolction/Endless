@@ -7,6 +7,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      search: 
+        condition: service_started
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       
@@ -45,6 +47,14 @@ services:
       - "9200:9200"
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
+  kibana:
+    image: kibana:9.3.3
+    ports:
+        - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://search:9200
+    depends_on:
+      - search
 
   #cache:
    # image: redis
