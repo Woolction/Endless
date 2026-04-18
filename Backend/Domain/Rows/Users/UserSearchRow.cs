@@ -4,6 +4,5 @@ namespace Domain.Rows.Users;
 
 public class UserSearchRow
 {
-    public List<UserSearchIndex> SearchedUsers { get; set; } = new();
-    public FieldValue[]? LastValues { get; set; }
+    public List<UserSearchIndexRow> SearchedUsers { get; set; } = new();
 }

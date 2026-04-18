@@ -4,4 +4,4 @@ using MediatR;
 namespace Application.Users.Search;
 
 public record class UserSearchQuery(
-    string Name, FieldValue[]? LastValues) : IRequest<Result<UserSearchDto>>;
+    string Name, double? LastScore) : IRequest<Result<UserSearchDto>>;

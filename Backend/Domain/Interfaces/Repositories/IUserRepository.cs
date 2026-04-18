@@ -6,6 +6,6 @@ namespace Domain.Interfaces.Repositories;
 
 public interface IUserRepository
 {
-    Task<UserSearchRow> SearchUsersByName(string name, FieldValue[]? lastValues, CancellationToken cancellationToken);
+    Task<UserSearchRow> SearchUsersByName(string name, ICollection<FieldValue> lastValues, CancellationToken cancellationToken);
     Task CreateSearchIndex(User user);
 }

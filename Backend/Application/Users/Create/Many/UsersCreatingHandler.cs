@@ -57,8 +57,6 @@ public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<U
                 });
             }
 
-            await userRepository.CreateSearchIndex(user);
-
             users.Add(user);
         }
 
@@ -68,6 +66,11 @@ public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<U
         try
         {
             await context.SaveChangesAsync();
+
+            for (int i = 0; i < users.Count; i++)
+            {
+                await userRepository.CreateSearchIndex(users[i]);
+            }
 
             return Result<UserDto[]>.Success(201, users.Select(user => new UserDto(
                     user.Id, user.Name, "@" + user.Slug,
