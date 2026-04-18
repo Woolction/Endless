@@ -1,4 +1,5 @@
 using Application.Searchs;
+using Domain.Interfaces.Repositories;
 using Domain.Rows.Channels;
 using Elastic.Clients.Elasticsearch;
 using MediatR;
@@ -7,27 +8,15 @@ namespace Application.Channels.Search.CreateIndex;
 
 public class ChannelCreateIndexHandler : IRequestHandler<ChannelCreateIndexCommand, Result<IndexCreatedDto>>
 {
-    private readonly ElasticsearchClient client;
-    public ChannelCreateIndexHandler(ElasticsearchClient client)
+    private readonly IChannelRepository channelRepository;
+    public ChannelCreateIndexHandler(IChannelRepository channelRepository)
     {
-        this.client = client;
+        this.channelRepository = channelRepository;
     }
 
     public async Task<Result<IndexCreatedDto>> Handle(ChannelCreateIndexCommand cmd, CancellationToken cancellationToken)
     {
-        var hasIndex = await client.Indices.ExistsAsync("channels", cancellationToken);
-
-        if (hasIndex.Exists)
-            await client.Indices.DeleteAsync("channels", cancellationToken);
-
-        var response = await client.Indices.CreateAsync("channels", c => c
-            .Mappings(m => m
-                .Properties<ChannelSearchIndex>(p => p
-                    .Keyword(c => c.ChannelId)
-                    .Text(c => c.Name)
-                    .Text(c => c.Description)
-                    .Date(c => c.CreatedDate)
-        )), cancellationToken);
+        var response = await channelRepository.CreateMapping(cancellationToken);
 
         if (!response.IsValidResponse || !response.IsSuccess())
             return Result<IndexCreatedDto>.Failure(500, response.DebugInformation);

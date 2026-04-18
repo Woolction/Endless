@@ -5,16 +5,19 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Domain.Common;
+using Domain.Interfaces.Repositories;
 
 namespace Application.Channels.Delete;
 
 public class ChannelDeleteHandler : IRequestHandler<ChannelDeleteCommand, Result<Null>>
 {
     private readonly ILogger<ChannelUpdateHandler> logger;
+    private readonly IChannelRepository channelRepository;
     private readonly IAppDbContext context;
 
-    public ChannelDeleteHandler(IAppDbContext context, ILogger<ChannelUpdateHandler> logger)
+    public ChannelDeleteHandler(IAppDbContext context, IChannelRepository channelRepository, ILogger<ChannelUpdateHandler> logger)
     {
+        this.channelRepository = channelRepository;
         this.context = context;
         this.logger = logger;
     }
@@ -52,6 +55,8 @@ public class ChannelDeleteHandler : IRequestHandler<ChannelDeleteCommand, Result
         context.Channels.Remove(Channel);
 
         await context.SaveChangesAsync();
+
+        await channelRepository.DeleteSearchIndex(cmd.ChannelId, cancellationToken);
 
         logger.LogInformation("Channel {ChannelId} deleted", cmd.ChannelId);
 

@@ -14,16 +14,18 @@ public class ChannelSearchIndex
     public long TotalViews { get; set; }
     public long TotalLikes { get; set; }
 
+    public ChannelSearchIndex() {}
+
     public ChannelSearchIndex(Channel channel)
     {
         ChannelId = channel.Id;
-        
+
         Name = channel.Name;
         Slug = channel.Slug;
         Description = channel.Description;
         CreatedDate = channel.CreatedDate;
         AvatarPhotoUrl = channel.AvatarPhotoUrl;
-        
+
         TotalLikes = channel.TotalLikes;
         TotalViews = channel.TotalViews;
     }

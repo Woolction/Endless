@@ -145,8 +145,6 @@ public class UserRepository : IUserRepository
             })
             .ToList();
 
-        var lastHit = result.Hits.Last();
-
         return new UserSearchRow()
         {
             SearchedUsers = searchedUsers

@@ -3,6 +3,7 @@ using Application.Utilities;
 using Domain.Common;
 using Domain.Entities;
 using Domain.Interfaces;
+using Domain.Interfaces.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -11,10 +12,12 @@ namespace Application.Channels.Create.Many;
 
 public class ChannelsCreatingHandler : IRequestHandler<ChannelsCreateCommand, Result<ChannelDto[]>>
 {
+    private readonly IChannelRepository channelRepository;
     private readonly IAppDbContext context;
 
-    public ChannelsCreatingHandler(IAppDbContext context)
+    public ChannelsCreatingHandler(IAppDbContext context, IChannelRepository channelRepository)
     {
+        this.channelRepository = channelRepository;
         this.context = context;
     }
 
@@ -67,6 +70,11 @@ public class ChannelsCreatingHandler : IRequestHandler<ChannelsCreateCommand, Re
         try
         {
             await context.SaveChangesAsync();
+
+            for (int i = 0; i < channels.Count; i++)
+            {
+                await channelRepository.CreateSearchIndex(channels[i], cancellationToken);
+            }
 
             return Result<ChannelDto[]>.Success(201, channels.Select(c =>
                 new ChannelDto(

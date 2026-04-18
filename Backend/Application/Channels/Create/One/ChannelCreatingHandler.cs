@@ -3,6 +3,7 @@ using Application.Utilities;
 using Domain.Common;
 using Domain.Entities;
 using Domain.Interfaces;
+using Domain.Interfaces.Repositories;
 using Domain.Interfaces.Services;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -14,12 +15,14 @@ namespace Application.Channels.Create.One;
 public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Result<ChannelDto>>
 {
     private readonly ILogger<ChannelCreatingHandler> logger;
+    private readonly IChannelRepository channelRepository;
     private readonly IAppDbContext context;
     private readonly IR2Service r2Service;
 
 
-    public ChannelCreatingHandler(IAppDbContext context, ILogger<ChannelCreatingHandler> logger, IR2Service r2Service)
+    public ChannelCreatingHandler(IAppDbContext context, IChannelRepository channelRepository, ILogger<ChannelCreatingHandler> logger, IR2Service r2Service)
     {
+        this.channelRepository = channelRepository;
         this.r2Service = r2Service;
         this.context = context;
         this.logger = logger;
@@ -76,6 +79,8 @@ public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Resu
         try
         {
             await context.SaveChangesAsync();
+
+            await channelRepository.CreateSearchIndex(channel, cancellationToken);
 
             logger.LogInformation("Channel {ChannelId} created with slug {Slug}",
                 channel.Id, slug);
