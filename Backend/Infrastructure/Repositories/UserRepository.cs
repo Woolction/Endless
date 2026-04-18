@@ -90,9 +90,9 @@ public class UserRepository : IUserRepository
         return response;
     }
 
-    public async Task<DeleteResponse> DeleteSearchIndex(Guid UserId, CancellationToken cancellationToken)
+    public async Task<DeleteResponse> DeleteSearchIndex(Guid userId, CancellationToken cancellationToken)
     {
-        DeleteRequest request = new(indexName, UserId);
+        DeleteRequest request = new(indexName, userId);
 
         var response = await client.DeleteAsync(
             request, cancellationToken);
