@@ -11,11 +11,14 @@ namespace Infrastructure.Repositories;
 public class UserRepository : IUserRepository
 {
     private readonly ElasticsearchClient client;
+    private readonly string indexName;
     private readonly string[] value;
 
     public UserRepository(ElasticsearchClient client)
     {
         this.client = client;
+
+        indexName = "users";
 
         value = [
             "name^5",
@@ -26,12 +29,12 @@ public class UserRepository : IUserRepository
 
     public async Task<CreateIndexResponse> CreateMapping(CancellationToken cancellationToken)
     {
-        var hasIndex = await client.Indices.ExistsAsync("users", cancellationToken);
+        var hasIndex = await client.Indices.ExistsAsync(indexName, cancellationToken);
 
         if (hasIndex.Exists)
-            await client.Indices.DeleteAsync("users", cancellationToken);
+            await client.Indices.DeleteAsync(indexName, cancellationToken);
 
-        return await client.Indices.CreateAsync("users", a => a
+        return await client.Indices.CreateAsync(indexName, a => a
             .Settings(s => s
                 .MaxNgramDiff(8)
                 .Analysis(a => a
@@ -71,24 +74,42 @@ public class UserRepository : IUserRepository
                     ))), cancellationToken);
     }
 
-    public async Task CreateSearchIndex(User user, CancellationToken cancellationToken)
+    public async Task<IndexResponse> CreateSearchIndex(User user, CancellationToken cancellationToken)
     {
         UserSearchIndex index = new(user);
 
         var response = await client.IndexAsync(index, r => r
-            .Index("users")
+            .Index(indexName)
             .Id(index.UserId), cancellationToken);
 
         if (!response.IsValidResponse)
         {
             throw new Exception(response.DebugInformation);
         }
+
+        return response;
+    }
+
+    public async Task<DeleteResponse> DeleteSearchIndex(Guid UserId, CancellationToken cancellationToken)
+    {
+        DeleteRequest request = new(indexName, UserId);
+
+        var response = await client.DeleteAsync(
+            request, cancellationToken);
+
+        if (!response.IsValidResponse)
+            throw new Exception(response.DebugInformation);
+
+        if (response.Result == Result.NotFound)
+            throw new Exception("Doucument not found");
+
+        return response;
     }
 
     public async Task<UserSearchRow> SearchUsersByName(string name, ICollection<FieldValue> lastValues, CancellationToken cancellationToken)
     {
         var search = new SearchRequestDescriptor<UserSearchIndex>()
-            .Indices("users")
+            .Indices(indexName)
             .Query(q => q
                 .MultiMatch(m => {
                     m.Query(name)

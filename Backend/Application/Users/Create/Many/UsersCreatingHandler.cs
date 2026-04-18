@@ -4,6 +4,7 @@ using Application.Utilities;
 using Domain.Entities;
 using Domain.Interfaces;
 using Domain.Interfaces.Repositories;
+using Elastic.Clients.Elasticsearch;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -69,7 +70,7 @@ public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<U
 
             for (int i = 0; i < users.Count; i++)
             {
-                await userRepository.CreateSearchIndex(users[i], cancellationToken);
+                var response = await userRepository.CreateSearchIndex(users[i], cancellationToken);
             }
 
             return Result<UserDto[]>.Success(201, users.Select(user => new UserDto(

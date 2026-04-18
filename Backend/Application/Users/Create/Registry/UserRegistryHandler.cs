@@ -72,7 +72,7 @@ public class UserRegistryHandler : IRequestHandler<UserRegistryCommand, Result<R
             logger.LogInformation("User {UserId} registred",
                 user.Id);
 
-            await repository.CreateSearchIndex(user);
+            await repository.CreateSearchIndex(user, cancellationToken);
 
             return Result<RegistryDto>.Success(201, new RegistryDto(user.Id, tokens[0], tokens[1]));
         }
