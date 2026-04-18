@@ -3,6 +3,8 @@ using Elastic.Clients.Elasticsearch;
 using Domain.Rows.Users;
 using Domain.Entities;
 using Elastic.Clients.Elasticsearch.QueryDsl;
+using Elastic.Clients.Elasticsearch.Analysis;
+using Elastic.Clients.Elasticsearch.IndexManagement;
 
 namespace Infrastructure.Repositories;
 
@@ -22,13 +24,60 @@ public class UserRepository : IUserRepository
         ];
     }
 
-    public async Task CreateSearchIndex(User user)
+    public async Task<CreateIndexResponse> CreateMapping(CancellationToken cancellationToken)
+    {
+        var hasIndex = await client.Indices.ExistsAsync("users", cancellationToken);
+
+        if (hasIndex.Exists)
+            await client.Indices.DeleteAsync("users", cancellationToken);
+
+        return await client.Indices.CreateAsync("users", a => a
+            .Settings(s => s
+                .MaxNgramDiff(8)
+                .Analysis(a => a
+                    .Tokenizers(t => t
+                        .EdgeNGram("edge_tokenizer", eg => eg
+                            .MinGram(2)
+                            .MaxGram(10)
+                            .TokenChars(TokenChar.Letter, TokenChar.Digit))
+                        .NGram("ngram_tokenizer", ng => ng
+                            .MinGram(2)
+                            .MaxGram(7)
+                            .TokenChars(TokenChar.Letter, TokenChar.Digit)))
+                    .Analyzers(an => an
+                        .Custom("edge_analyzer", ca => ca
+                            .Tokenizer("edge_tokenizer")
+                            .Filter(["lowercase"]))
+                        .Custom("ngram_analyzer", ca => ca
+                            .Tokenizer("ngram_tokenizer")
+                            .Filter(["lowercase"])))))
+        .Mappings(m => m
+            .Properties<UserSearchIndex>(p => p
+                .Keyword(k => k.UserId)
+                .Keyword(k => k.Slug)
+                .Keyword(k => k.Email)
+                .Text(k => k.Description)
+                .Date(d => d.RegistryData)
+                .IntegerNumber(k => k.Role)
+                .LongNumber(k => k.TotalLikes)
+                .Text("name", t => t
+                    .Analyzer("edge_analyzer")
+                    .SearchAnalyzer("standard")
+                    .Fields(f => f
+                        .Text("edge", t => t.
+                            Analyzer("edge_analyzer"))
+                        .Text("ngram", nt => nt
+                            .Analyzer("ngram_analyzer")))
+                    ))), cancellationToken);
+    }
+
+    public async Task CreateSearchIndex(User user, CancellationToken cancellationToken)
     {
         UserSearchIndex index = new(user);
 
         var response = await client.IndexAsync(index, r => r
             .Index("users")
-            .Id(index.UserId));
+            .Id(index.UserId), cancellationToken);
 
         if (!response.IsValidResponse)
         {
