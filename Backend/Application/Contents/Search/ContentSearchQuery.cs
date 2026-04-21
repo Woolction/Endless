@@ -4,4 +4,4 @@ using MediatR;
 namespace Application.Contents.Search;
 
 public record class ContentSearchQuery(
-    string Name, SearchDto? LastSearch) : IRequest<Result<ContentSearchDto>>;
+    string Name, double? LastScore) : IRequest<Result<SearchedContentDto[]>>;

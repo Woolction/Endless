@@ -93,9 +93,9 @@ public class ChannelController : ControllerBase
     }
 
     [HttpGet("search")]
-    public async Task<ActionResult<ChannelSearchDto>> GetChannelsByName([FromQuery] ChannelSearchQuery query)
+    public async Task<ActionResult<SearchedChannelDto[]>> GetChannelsByName([FromQuery] ChannelSearchQuery query)
     {
-        Result<ChannelSearchDto> result = await mediator.Send(query);
+        Result<SearchedChannelDto[]> result = await mediator.Send(query);
 
         if (!result.IsSuccess || result.Data == null)
         {

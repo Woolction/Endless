@@ -71,12 +71,12 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("search")]
-    public async Task<ActionResult<UserSearchDto>> SearchUsersByName([FromQuery] UserSearchQuery query)
+    public async Task<ActionResult<SearchedUserDto[]>> SearchUsersByName([FromQuery] UserSearchQuery query)
     {
         if (string.IsNullOrEmpty(query.Name))
             return BadRequest("The name is empty");
 
-        Result<UserSearchDto> result = await mediator.Send(query);
+        Result<SearchedUserDto[]> result = await mediator.Send(query);
 
         if (!result.IsSuccess || result.Data == null)
         {

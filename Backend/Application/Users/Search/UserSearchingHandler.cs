@@ -8,7 +8,7 @@ using Elastic.Clients.Elasticsearch;
 
 namespace Application.Users.Search;
 
-public class UserSearchingHandler : IRequestHandler<UserSearchQuery, Result<UserSearchDto>>
+public class UserSearchingHandler : IRequestHandler<UserSearchQuery, Result<SearchedUserDto[]>>
 {
     private readonly ILogger<UserSearchingHandler> logger;
     private readonly IUserRepository userRepository;
@@ -19,7 +19,7 @@ public class UserSearchingHandler : IRequestHandler<UserSearchQuery, Result<User
         this.logger = logger;
     }
 
-    public async Task<Result<UserSearchDto>> Handle(UserSearchQuery query, CancellationToken cancellationToken)
+    public async Task<Result<SearchedUserDto[]>> Handle(UserSearchQuery query, CancellationToken cancellationToken)
     {
         ICollection<FieldValue> lastValue = [];
 
@@ -31,10 +31,10 @@ public class UserSearchingHandler : IRequestHandler<UserSearchQuery, Result<User
             query.Name, lastValue, cancellationToken);
 
         if (result.SearchedUsers.Count < 1)
-            return Result<UserSearchDto>.Failure(404, $"User with name: {query.Name} not found: returned: {result.SearchedUsers.Count}");
+            return Result<SearchedUserDto[]>.Failure(404, $"User with name: {query.Name} not found: returned: {result.SearchedUsers.Count}");
 
-        SearchedUserDto[] users = result.SearchedUsers.Select(u => new SearchedUserDto(new UserDto(
-            u.SearchedUser.UserId, u.SearchedUser.Name, "@" + u.SearchedUser.Slug, u.SearchedUser.Description ?? "",
+        SearchedUserDto[] userDtos = result.SearchedUsers.Select(u => new SearchedUserDto(new UserDto(
+            u.SearchedUser.UserId, u.SearchedUser.Name, "@" + u.SearchedUser.Slug, u.SearchedUser.Description,
             u.SearchedUser.RegistryData, u.SearchedUser.Email, u.SearchedUser.Role.ToString(),
             u.SearchedUser.AvatarPhotoUrl, u.SearchedUser.TotalLikes, 0, 0, 0, 0, 0, 0 
             /*u.CommentsCount, u.ContentsCount, u.FollowersCount, u.FollowingCount,
@@ -42,8 +42,8 @@ public class UserSearchingHandler : IRequestHandler<UserSearchQuery, Result<User
         ), u.Score)).ToArray();
 
         logger.LogInformation("Search returned users: {Count} results for {Query}",
-            users.Length, query.Name);
+            userDtos.Length, query.Name);
 
-        return Result<UserSearchDto>.Success(200, new UserSearchDto(users));
+        return Result<SearchedUserDto[]>.Success(200, userDtos);
     }
 }

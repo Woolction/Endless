@@ -4,10 +4,11 @@ using Domain.Interfaces.Repositories;
 using MediatR;
 using Domain.Rows.Channels;
 using Microsoft.Extensions.Logging;
+using Elastic.Clients.Elasticsearch;
 
 namespace Application.Channels.Search;
 
-public class ChannelSearchingHandler : IRequestHandler<ChannelSearchQuery, Result<ChannelSearchDto>>
+public class ChannelSearchingHandler : IRequestHandler<ChannelSearchQuery, Result<SearchedChannelDto[]>>
 {
     private readonly ILogger<ChannelSearchingHandler> logger;
     private readonly IChannelRepository channelRepository;
@@ -18,35 +19,28 @@ public class ChannelSearchingHandler : IRequestHandler<ChannelSearchQuery, Resul
         this.logger = logger;
     }
 
-    public async Task<Result<ChannelSearchDto>> Handle(ChannelSearchQuery query, CancellationToken cancellationToken)
+    public async Task<Result<SearchedChannelDto[]>> Handle(ChannelSearchQuery query, CancellationToken cancellationToken)
     {
-        bool hasLastSearch = query.LastSearch != null;
+        ICollection<FieldValue> lastValue = [];
 
-        SearchDto searchDto = hasLastSearch == true ? query.LastSearch! : new SearchDto();
+        if (query.LastScore != null)
+            lastValue.Add(FieldValue.Double(
+                query.LastScore.Value));
 
-        IEnumerable<ChannelSearchRow> result = await channelRepository.SearchChannelsByName(query.Name, hasLastSearch, searchDto.LastScore, searchDto.LastId, cancellationToken);
+        ChannelSearchRow result = await channelRepository.SearchChannelsByName(query.Name, lastValue, cancellationToken);
 
-        ChannelDto[] channelDtos = result.Select(c => new ChannelDto(
-            c.Id, c.Name, c.Slug, c.Description, c.CreatedDate,
-            c.AvatarPhotoUrl, c.SubscribersCount, c.ContentsCount,
-            c.OwnersCount, c.TotalLikes, c.TotalViews
-        )).ToArray();
+        SearchedChannelDto[] channelDtos = result.SearchedChannels.Select(c => new SearchedChannelDto(new ChannelDto(
+            c.SearchedChannel.ChannelId, c.SearchedChannel.Name, c.SearchedChannel.Slug,
+            c.SearchedChannel.Description, c.SearchedChannel.CreatedDate,
+            c.SearchedChannel.AvatarPhotoUrl, 0, 0, 0, c.SearchedChannel.TotalLikes,
+            c.SearchedChannel.TotalViews), c.Score)).ToArray();
 
         if (channelDtos.Length < 1)
-            return Result<ChannelSearchDto>.Failure(404, $"Channel with name: {query.Name} not found");
-
-        var last = result.Last();
-
-        SearchDto lastSearch = new()
-        {
-            LastScore = last.Score,
-            LastId = last.Id
-        };
+            return Result<SearchedChannelDto[]>.Failure(404, $"Channel with name: {query.Name} not found");
 
         logger.LogInformation("Search returned Channels {Count} results for {Query}",
            channelDtos.Length, query.Name);
 
-        return Result<ChannelSearchDto>.Success(
-            200, new ChannelSearchDto(channelDtos, lastSearch));
+        return Result<SearchedChannelDto[]>.Success(200, channelDtos);
     }
 }

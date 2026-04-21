@@ -68,7 +68,7 @@ public class ContentRepository : IContentRepository
                         .SynonymGraph("synonym_graph", sg => sg
                             .Synonyms(synonymus)))))
             .Mappings(m => m
-                .Properties<ContentSearchRow>(p => p
+                .Properties<ContentSearchIndex>(p => p
                     .Keyword(k => k.ContentId)
                     .Keyword(k => k.CreatorId)
                     .Keyword(k => k.ChannelId)
@@ -77,10 +77,6 @@ public class ContentRepository : IContentRepository
                     .Keyword(l => l.Slug)
                     .Date(d => d.CreatedDate)
                     .LongNumber(l => l.ViewsCount)
-                    .LongNumber(l => l.LikesCount)
-                    .LongNumber(l => l.SavesCount)
-                    .LongNumber(l => l.CommentsCount)
-                    .LongNumber(l => l.DisLikersCount)
                     .IntegerNumber(i => i.ContentType)
                     .IntegerNumber(i => i.DurationSeconds)
                     .SemanticText(st => st.Title)
