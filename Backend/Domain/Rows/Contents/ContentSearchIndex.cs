@@ -24,6 +24,8 @@ public class ContentSearchIndex
 
     public long ViewsCount { get; set; }
 
+    public ContentSearchIndex() {}
+
     public ContentSearchIndex(Content content)
     {
         ContentId = content.Id;

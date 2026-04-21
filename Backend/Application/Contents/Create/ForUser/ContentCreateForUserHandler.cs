@@ -1,8 +1,10 @@
 using Application.Contents.Dtos;
 using Domain.Entities;
 using Domain.Interfaces;
+using Domain.Interfaces.Repositories;
 using Domain.Interfaces.Services;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -12,14 +14,16 @@ public class ContentCreateForUserHandler : IRequestHandler<ContentCreateForUserC
 {
     private readonly IAppDbContext context;
 
+    private readonly IContentRepository contentRepository;
     private readonly ILogger<ContentCreateForUserHandler> logger;
     private readonly IFfmpegService ffmpegService;
     private readonly IR2Service r2Service;
 
-    public ContentCreateForUserHandler(IAppDbContext context, IFfmpegService ffmpegService, IR2Service r2Service, ILogger<ContentCreateForUserHandler> logger)
+    public ContentCreateForUserHandler(IAppDbContext context, IContentRepository contentRepository, IFfmpegService ffmpegService, IR2Service r2Service, ILogger<ContentCreateForUserHandler> logger)
     {
         this.context = context;
 
+        this.contentRepository = contentRepository;
         this.ffmpegService = ffmpegService;
         this.r2Service = r2Service;
         this.logger = logger;
@@ -27,7 +31,8 @@ public class ContentCreateForUserHandler : IRequestHandler<ContentCreateForUserC
 
     public async Task<Result<ContentDto>> Handle(ContentCreateForUserCommand cmd, CancellationToken cancellationToken)
     {
-        User? user = await context.Users.FindAsync(cmd.UserId);
+        User? user = await context.Users.FindAsync(
+            cmd.UserId, cancellationToken);
 
         if (user == null)
             return Result<ContentDto>.Failure(404, "User not found");
@@ -88,10 +93,12 @@ public class ContentCreateForUserHandler : IRequestHandler<ContentCreateForUserC
                 GenreId = genre.Id
             })
             .AsNoTracking()
-            .ToListAsync()
+            .ToArrayAsync(cancellationToken)
         );
 
         await context.SaveChangesAsync();
+
+        await contentRepository.CreateSearchIndex(content, cancellationToken);
 
         logger.LogInformation("content {ContentId} created has user {UserId}",
             content.Id, cmd.UserId);

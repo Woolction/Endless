@@ -32,7 +32,8 @@ public class UserDeleteHandler : IRequestHandler<UserDeleteCommand, Result<Null>
 
         await context.SaveChangesAsync();
 
-        await userRepository.DeleteSearchIndex(cmd.UserId, cancellationToken);
+        await userRepository.DeleteSearchIndex(
+            cmd.UserId, cancellationToken);
 
         logger.LogInformation("User {UserId} deleted", cmd.UserId);
 

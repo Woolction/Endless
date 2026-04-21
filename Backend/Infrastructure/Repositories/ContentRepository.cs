@@ -92,14 +92,36 @@ public class ContentRepository : IContentRepository
             cancellationToken);
     }
 
-    public Task<IndexResponse> CreateSearchIndex(Content content, CancellationToken cancellationToken)
+    public async Task<IndexResponse> CreateSearchIndex(Content content, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        ContentSearchIndex index = new(content);
+
+        var response = await client.IndexAsync(index, c => c
+            .Index(indexName)
+            .Id(index.ContentId), cancellationToken);
+
+        if (!response.IsValidResponse)
+        {
+            throw new Exception(response.DebugInformation);
+        }
+
+        return response;
     }
 
-    public Task<DeleteResponse> DeleteSearchIndex(Guid contentId, CancellationToken cancellationToken)
+    public async Task<DeleteResponse> DeleteSearchIndex(Guid contentId, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        DeleteRequest request = new(indexName, contentId);
+
+        var response = await client.DeleteAsync(
+            request, cancellationToken);
+
+        if (!response.IsValidResponse)
+            throw new Exception(response.DebugInformation);
+
+        if (response.Result == Result.NotFound)
+            throw new Exception("Doucument not found");
+
+        return response;
     }
 
     public Task<ContentSearchRow> SearchContentsByName(string name, ICollection<FieldValue> lastValues, CancellationToken cancellationToken)

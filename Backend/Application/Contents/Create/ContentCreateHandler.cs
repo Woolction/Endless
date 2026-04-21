@@ -2,6 +2,7 @@ using Application.Contents.Dtos;
 using Domain.Common;
 using Domain.Entities;
 using Domain.Interfaces;
+using Domain.Interfaces.Repositories;
 using Domain.Interfaces.Services;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -14,14 +15,16 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
 {
     private readonly IAppDbContext context;
 
+    private readonly IContentRepository contentRepository;
     private readonly ILogger<ContentCreateHandler> logger;
     private readonly IFfmpegService ffmpegService;
     private readonly IR2Service r2Service;
 
-    public ContentCreateHandler(IAppDbContext context, IFfmpegService ffmpegService, IR2Service r2Service, ILogger<ContentCreateHandler> logger)
+    public ContentCreateHandler(IAppDbContext context, IContentRepository contentRepository, IFfmpegService ffmpegService, IR2Service r2Service, ILogger<ContentCreateHandler> logger)
     {
         this.context = context;
-        
+
+        this.contentRepository = contentRepository;
         this.ffmpegService = ffmpegService;
         this.r2Service = r2Service;
         this.logger = logger;
@@ -110,6 +113,8 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
         );
 
         await context.SaveChangesAsync();
+
+        await contentRepository.CreateSearchIndex(content, cancellationToken);
 
         logger.LogInformation("Content {ContentId} created for user {UserId}",
             content.Id, cmd.UserId);
