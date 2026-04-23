@@ -1,72 +1,153 @@
 using Domain.Interfaces.Repositories;
-using Infrastructure.Connector;
-using System.Data;
-using Dapper;
+using Elastic.Clients.Elasticsearch;
 using Domain.Rows.Users;
+using Domain.Entities;
+using Elastic.Clients.Elasticsearch.QueryDsl;
+using Elastic.Clients.Elasticsearch.Analysis;
+using Elastic.Clients.Elasticsearch.IndexManagement;
 
 namespace Infrastructure.Repositories;
 
 public class UserRepository : IUserRepository
 {
-    private readonly DbConnectorFactory connector;
+    private readonly ElasticsearchClient client;
+    private readonly string indexName;
+    private readonly string[] value;
 
-    public UserRepository(DbConnectorFactory connector)
+    public UserRepository(ElasticsearchClient client)
     {
-        this.connector = connector;
+        this.client = client;
+
+        indexName = "users";
+
+        value = [
+            "name^5",
+            "name.edge^3",
+            "name.ngram^0.3"
+        ];
     }
 
-    public async Task<IEnumerable<UserSearchRow>> SearchUsersByName(string name, bool hasLastSearch, double lastScore, Guid lastId, CancellationToken cancellationToken)
+    public async Task<CreateIndexResponse> CreateMapping(CancellationToken cancellationToken)
     {
-        using IDbConnection db = connector.CreateConnection();
+        var hasIndex = await client.Indices.ExistsAsync(indexName, cancellationToken);
 
-        // u.""Name"" % @name = TRUE for speed
+        if (hasIndex.Exists)
+            await client.Indices.DeleteAsync(indexName, cancellationToken);
 
-        var sql = @"
-        WITH ranked AS (
-            WITH filtered AS (
-                SELECT * FROM ""Users"" u
-                WHERE (u.""Name"" ILike @pattern) = TRUE
-                LIMIT 100
-            )
-            SELECT
-                u.""Id"", u.""Name"", u.""Slug"", 
-                u.""Description"", u.""RegistryData"", 
-                u.""Email"", u.""Role"", u.""AvatarPhotoUrl"",
-                
-                (SELECT COUNT(*) FROM ""Comments"" c WHERE c.""CommentatorId"" = u.""Id"") AS CommentsCount,
-                (SELECT COUNT(*) FROM ""Contents"" c WHERE c.""CreatorId"" = u.""Id"") AS ContentsCount,
-                (SELECT COUNT(*) FROM ""UserFollowings"" f WHERE f.""FollowerId"" = u.""Id"") AS FollowersCount,
-                (SELECT COUNT(*) FROM ""UserFollowings"" f WHERE f.""FollowedUserId"" = u.""Id"") AS FollowingCount,
-                (SELECT COUNT(*) FROM ""ChannelOwners"" c WHERE c.""OwnerId"" = u.""Id"") AS OwnedChannelsCount,
-                (SELECT COUNT(*) FROM ""ChannelSubscriptions"" s WHERE s.""SubscriberId"" = u.""Id"") AS ChannelSubscriptionsCount,
-        
-                similarity(u.""Name"", @name) * 0.75 +
-                (1.0 / (levenshtein(u.""Name"", @name) + 1)) * 0.25 AS ""Score""
-            FROM filtered u
-            
-        )
-        SELECT * FROM ranked
-        WHERE(
-            (@hasLastSearch = FALSE) OR
-            (""Score"", ""Id"") < (@lastScore, @lastId)
-        )
-        ORDER BY ""Score"" DESC, ""Id"" ASC
-        LIMIT 20;
-        ";
+        return await client.Indices.CreateAsync(indexName, a => a
+            .Settings(s => s
+                .MaxNgramDiff(8)
+                .Analysis(a => a
+                    .Tokenizers(t => t
+                        .EdgeNGram("edge_tokenizer", eg => eg
+                            .MinGram(2)
+                            .MaxGram(10)
+                            .TokenChars(TokenChar.Letter, TokenChar.Digit))
+                        .NGram("ngram_tokenizer", ng => ng
+                            .MinGram(2)
+                            .MaxGram(7)
+                            .TokenChars(TokenChar.Letter, TokenChar.Digit)))
+                    .Analyzers(an => an
+                        .Custom("edge_analyzer", ca => ca
+                            .Tokenizer("edge_tokenizer")
+                            .Filter(["lowercase"]))
+                        .Custom("ngram_analyzer", ca => ca
+                            .Tokenizer("ngram_tokenizer")
+                            .Filter(["lowercase"])))))
+        .Mappings(m => m
+            .Properties<UserSearchIndex>(p => p
+                .Keyword(k => k.UserId)
+                .Keyword(k => k.Slug)
+                .Keyword(k => k.Email)
+                .Text(k => k.Description)
+                .Date(d => d.RegistryData)
+                .IntegerNumber(k => k.Role)
+                .LongNumber(k => k.TotalLikes)
+                .Text("name", t => t
+                    .Analyzer("edge_analyzer")
+                    .SearchAnalyzer("standard")
+                    .Fields(f => f
+                        .Text("edge", t => t.
+                            Analyzer("edge_analyzer"))
+                        .Text("ngram", nt => nt
+                            .Analyzer("ngram_analyzer")))
+                    ))), cancellationToken);
+    }
 
-        CommandDefinition command = new(
-            sql, new
-            {
-                name,
-                pattern = $"%{name}%",
-                hasLastSearch,
-                lastScore,
-                lastId
-            },
-            cancellationToken: cancellationToken);
+    public async Task<IndexResponse> CreateSearchIndex(User user, CancellationToken cancellationToken)
+    {
+        UserSearchIndex index = new(user);
 
-        IEnumerable<UserSearchRow> result = await db.QueryAsync<UserSearchRow>(command);
+        var response = await client.IndexAsync(index, r => r
+            .Index(indexName)
+            .Id(index.UserId), cancellationToken);
 
-        return result;
+        if (!response.IsValidResponse)
+        {
+            throw new Exception(response.DebugInformation);
+        }
+
+        return response;
+    }
+
+    public async Task<DeleteResponse> DeleteSearchIndex(Guid userId, CancellationToken cancellationToken)
+    {
+        DeleteRequest request = new(indexName, userId);
+
+        var response = await client.DeleteAsync(
+            request, cancellationToken);
+
+        if (!response.IsValidResponse)
+            throw new Exception(response.DebugInformation);
+
+        if (response.Result == Result.NotFound)
+            throw new Exception("Doucument not found");
+
+        return response;
+    }
+
+    public async Task<UserSearchRow> SearchUsersByName(string name, ICollection<FieldValue> lastValues, CancellationToken cancellationToken)
+    {
+        var search = new SearchRequestDescriptor<UserSearchIndex>()
+            .Indices(indexName)
+            .Query(q => q
+                .MultiMatch(m => {
+                    m.Query(name)
+                    .Fields(value)
+                    .MinimumShouldMatch(1)
+                    .Type(TextQueryType.BestFields);
+                    
+                    if (name.Length >= 3)
+                        m.Fuzziness("AUTO");
+                    }))
+            .Size(20)
+            .Sort(s => s
+                .Score(s => s.Order(SortOrder.Desc)))
+            .TrackScores(true);
+
+        if (lastValues.Count > 0)
+            search = search.SearchAfter(lastValues);
+
+        var result = await client.SearchAsync<UserSearchIndex>(search, cancellationToken);
+
+        if (result.Hits.Count == 0)
+            return new UserSearchRow();
+
+        List<UserSearchIndexRow> searchedUsers = result.Hits
+            .Select(h => {
+                Console.WriteLine($"User: {h.Id} - {h.Score}");
+
+                return new UserSearchIndexRow()
+                {
+                    SearchedUser = h.Source ?? new(),
+                    Score = h.Score ?? 0
+                };
+            })
+            .ToList();
+
+        return new UserSearchRow()
+        {
+            SearchedUsers = searchedUsers
+        };
     }
 }

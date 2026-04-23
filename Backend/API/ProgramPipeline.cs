@@ -15,17 +15,10 @@ using Domain.Common;
 using Domain.Entities;
 using Scalar.AspNetCore;
 using System.Text;
-using Application.Channels.Create.Many;
-using Application.Channels;
-using Application.Authentications.Login;
-using Application.Authentications.Update;
 using Domain.Interfaces;
-using Application.Contents.Search;
-using Application.Channels.Search;
-using Application.Users.Create.Many;
-using Application.Users.Search;
-using Application.Users.Create.Registry;
+using Elastic.Clients.Elasticsearch;
 using Application;
+using Infrastructure.Managers;
 
 namespace API;
 
@@ -138,8 +131,16 @@ public static class ProgramPipeline
         builder.Services.AddScoped<IAppDbContext>(provider =>
             provider.GetRequiredService<EndlessContext>());
 
-        // MediatR
+        // ElasticSearch
+        builder.Services.AddSingleton(sp =>
+        {
+            var settings = new ElasticsearchClientSettings(new Uri("http://search:9200"))
+                .DefaultIndex("users");
 
+            return new ElasticsearchClient(settings);
+        });
+
+        // MediatR
         builder.Services.AddMediatR(cf =>
             cf.RegisterServicesFromAssembly(typeof(AppMaker).Assembly));
 
@@ -148,8 +149,6 @@ public static class ProgramPipeline
         //      Scoped
         builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
         builder.Services.AddScoped<IAuthService, AuthService>();
-
-        builder.Services.AddScoped<ContentSearchingHandler>();
 
         // Repositories
         builder.Services.AddScoped<IUserVectorsRepository, UserVectorsRepository>();
@@ -170,7 +169,7 @@ public static class ProgramPipeline
         //      Transient
     }
 
-    public static void MiddlewareRegistry(this WebApplication app)
+    public static async Task MiddlewareRegistry(this WebApplication app)
     {
         // Static Files
         var provider = new FileExtensionContentTypeProvider();
@@ -187,10 +186,17 @@ public static class ProgramPipeline
         {
             app.MapOpenApi();
             app.MapScalarApiReference();
-        }
 
-        if (!app.Environment.IsDevelopment())
+            using (var scope = app.Services.CreateScope())
+            {
+                EndlessContext context = scope.ServiceProvider.GetRequiredService<EndlessContext>();
+                context.Database.Migrate();
+            }
+        }
+        else
+        {
             app.UseHttpsRedirection();
+        }
 
         app.UseMiddleware<ContentSecurityPolicy>();
 

@@ -1,3 +1,5 @@
+using Elastic.Clients.Elasticsearch;
+
 namespace Application.Searchs;
 
 public class SearchDto

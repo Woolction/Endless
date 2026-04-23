@@ -4,5 +4,5 @@ using MediatR;
 
 namespace Application.Channels.Search;
 
-public record class ChannelSearchDto(
-    ChannelDto[] ChannelsDto, SearchDto? Similariry);
+public record class SearchedChannelDto(
+    ChannelDto ChannelsDto, double Score);

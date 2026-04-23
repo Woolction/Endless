@@ -1,8 +1,10 @@
 using Application.Contents.Dtos;
 using Domain.Entities;
 using Domain.Interfaces;
+using Domain.Interfaces.Repositories;
 using Domain.Interfaces.Services;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -12,14 +14,16 @@ public class ContentCreateForUserHandler : IRequestHandler<ContentCreateForUserC
 {
     private readonly IAppDbContext context;
 
+    private readonly IContentRepository contentRepository;
     private readonly ILogger<ContentCreateForUserHandler> logger;
     private readonly IFfmpegService ffmpegService;
     private readonly IR2Service r2Service;
 
-    public ContentCreateForUserHandler(IAppDbContext context, IFfmpegService ffmpegService, IR2Service r2Service, ILogger<ContentCreateForUserHandler> logger)
+    public ContentCreateForUserHandler(IAppDbContext context, IContentRepository contentRepository, IFfmpegService ffmpegService, IR2Service r2Service, ILogger<ContentCreateForUserHandler> logger)
     {
         this.context = context;
 
+        this.contentRepository = contentRepository;
         this.ffmpegService = ffmpegService;
         this.r2Service = r2Service;
         this.logger = logger;
@@ -27,7 +31,8 @@ public class ContentCreateForUserHandler : IRequestHandler<ContentCreateForUserC
 
     public async Task<Result<ContentDto>> Handle(ContentCreateForUserCommand cmd, CancellationToken cancellationToken)
     {
-        User? user = await context.Users.FindAsync(cmd.UserId);
+        User? user = await context.Users.FindAsync(
+            cmd.UserId, cancellationToken);
 
         if (user == null)
             return Result<ContentDto>.Failure(404, "User not found");
@@ -63,23 +68,15 @@ public class ContentCreateForUserHandler : IRequestHandler<ContentCreateForUserC
             ContentType = cmd.ContentType
         };
 
-        int duration = 0;
+        int duration = await GetVideoDuration(videoPath);
 
-        if (videoPath != null)
+        VideoMetaData metaData = new()
         {
-            duration = await ffmpegService.GetVideoDuration(videoPath);
+            Content = content,
+            DurationSeconds = duration
+        };
 
-            VideoMetaData metaData = new()
-            {
-                Content = content,
-                DurationSeconds = duration
-            };
-
-            File.Delete(videoPath);
-
-            context.VideoMetas.Add(metaData);
-        }
-
+        context.VideoMetas.Add(metaData);
         context.Contents.Add(content);
         context.ContentVectors.AddRange(await context.Genres
             .Select(genre => new ContentGenreVector()
@@ -88,10 +85,12 @@ public class ContentCreateForUserHandler : IRequestHandler<ContentCreateForUserC
                 GenreId = genre.Id
             })
             .AsNoTracking()
-            .ToListAsync()
+            .ToArrayAsync(cancellationToken)
         );
 
         await context.SaveChangesAsync();
+
+        await contentRepository.CreateSearchIndex(content, metaData, cancellationToken);
 
         logger.LogInformation("content {ContentId} created has user {UserId}",
             content.Id, cmd.UserId);
@@ -101,5 +100,19 @@ public class ContentCreateForUserHandler : IRequestHandler<ContentCreateForUserC
             content.Title, content.Slug, content.Description,
             content.CreatedDate, content.ContentType.ToString(), duration,
             content.ContentUrl, content.PrewievPhotoUrl, 0, 0, 0, 0, 0));
+    }
+
+    private async Task<int> GetVideoDuration(string? videoPath)
+    {
+        if (videoPath != null)
+        {
+            int duration = await ffmpegService.GetVideoDuration(videoPath);
+
+            File.Delete(videoPath);
+
+            return duration;
+        }
+
+        return 0;
     }
 }

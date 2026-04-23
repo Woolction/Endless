@@ -2,6 +2,7 @@ using Application.Contents.Dtos;
 using Domain.Common;
 using Domain.Entities;
 using Domain.Interfaces;
+using Domain.Interfaces.Repositories;
 using Domain.Interfaces.Services;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -14,14 +15,16 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
 {
     private readonly IAppDbContext context;
 
+    private readonly IContentRepository contentRepository;
     private readonly ILogger<ContentCreateHandler> logger;
     private readonly IFfmpegService ffmpegService;
     private readonly IR2Service r2Service;
 
-    public ContentCreateHandler(IAppDbContext context, IFfmpegService ffmpegService, IR2Service r2Service, ILogger<ContentCreateHandler> logger)
+    public ContentCreateHandler(IAppDbContext context, IContentRepository contentRepository, IFfmpegService ffmpegService, IR2Service r2Service, ILogger<ContentCreateHandler> logger)
     {
         this.context = context;
-        
+
+        this.contentRepository = contentRepository;
         this.ffmpegService = ffmpegService;
         this.r2Service = r2Service;
         this.logger = logger;
@@ -81,22 +84,15 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
             ContentType = cmd.ContentType
         };
 
-        int duration = 0;
+        int duration = await GetVideoDuration(videoPath);
 
-        if (videoPath != null)
+        VideoMetaData metaData = new()
         {
-            duration = await ffmpegService.GetVideoDuration(videoPath);
-            
-            VideoMetaData metaData = new()
-            {
-                Content = content,
-                DurationSeconds = duration
-            };
+            Content = content,
+            DurationSeconds = duration
+        };
 
-            File.Delete(videoPath);
-
-            context.VideoMetas.Add(metaData);
-        }
+        context.VideoMetas.Add(metaData);
 
         context.Contents.Add(content);
         context.ContentVectors.AddRange(await context.Genres
@@ -111,6 +107,8 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
 
         await context.SaveChangesAsync();
 
+        await contentRepository.CreateSearchIndex(content, metaData, cancellationToken);
+
         logger.LogInformation("Content {ContentId} created for user {UserId}",
             content.Id, cmd.UserId);
 
@@ -119,5 +117,19 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
             content.Title, content.Slug, content.Description,
             content.CreatedDate, content.ContentType.ToString(), duration,
             content.ContentUrl, content.PrewievPhotoUrl, 0, 0, 0, 0, 0));
+    }
+    
+    private async Task<int> GetVideoDuration(string? videoPath)
+    {
+        if (videoPath != null)
+        {
+            int duration = await ffmpegService.GetVideoDuration(videoPath);
+
+            File.Delete(videoPath);
+
+            return duration;
+        }
+
+        return 0;
     }
 }

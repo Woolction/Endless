@@ -1,25 +1,19 @@
-using Application.Authentications.Login;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.EntityFrameworkCore;
-using Application.Searchs;
+using Application.Users.Create.Registry;
 using Application.Users.Create.Many;
-using Domain.Interfaces.Services;
-using Microsoft.AspNetCore.Mvc;
-using Infrastructure.Context;
-using Application.Utilities;
-using Application.Channels;
-using Application.Users.Dtos;
-using Application;
-using Npgsql;
-using Domain.Common;
-using Domain.Entities;
 using Application.Users.Search;
 using Application.Users.Update;
-using Application.Users.Create.Registry;
-using MediatR;
 using Application.Users.Choose;
 using Application.Users.Delete;
+using Microsoft.AspNetCore.Mvc;
+using Application.Users.Dtos;
+using Application.Utilities;
+using Domain.Common;
+using Application;
+using MediatR;
+using Application.Authentications.Dtos;
+using Application.Authentications.Update;
 
 namespace API.Controllers;
 
@@ -27,23 +21,15 @@ namespace API.Controllers;
 [Route("api/[controller]")]
 public class UsersController : ControllerBase
 {
-    private readonly EndlessContext context;
     private readonly IMediator mediator;
 
-    private readonly ILogger<UsersController> logger;
-    private readonly IR2Service r2Service;
-
-    public UsersController(EndlessContext context, IMediator mediator, IR2Service r2Service, ILogger<UsersController> logger)
+    public UsersController(IMediator mediator)
     {
-        this.context = context;
         this.mediator = mediator;
-
-        this.r2Service = r2Service;
-        this.logger = logger;
     }
 
     [HttpPost]
-    [EnableRateLimiting("RegistryLimit")]
+    //[EnableRateLimiting("RegistryLimit")]
     public async Task<ActionResult<RegistryDto>> CreateUser(UserRegistryCommand cmd)
     {
         Result<RegistryDto> result = await mediator.Send(cmd);
@@ -60,9 +46,6 @@ public class UsersController : ControllerBase
 
         this.CraeteTokensInCookies(result.Data!.Token, result.Data.RefreshToken);
 
-        logger.LogInformation("User {UserId} registred",
-            result.Data.NewUserId);
-
         return Created($"api/users/{result.Data.NewUserId}", result.Data);
     }
 
@@ -70,8 +53,8 @@ public class UsersController : ControllerBase
     [Authorize(Policy = nameof(UserRole.Admin))]
     public async Task<ActionResult<UserDto[]>> CreateUsers(UsersCreateCommand cmd)
     {
-        if (cmd.Count < 1)
-            return BadRequest($"Count < 1: {cmd.Count}");
+        if (cmd.Names.Length < 1)
+            return BadRequest($"you must write at least one name: {cmd.Names.Length}");
 
         Result<UserDto[]> result = await mediator.Send(cmd);
 
@@ -88,12 +71,12 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("search")]
-    public async Task<ActionResult<UserSearchDto>> SearchUsersByName([FromQuery] UserSearchQuery query)
+    public async Task<ActionResult<SearchedUserDto[]>> SearchUsersByName([FromQuery] UserSearchQuery query)
     {
         if (string.IsNullOrEmpty(query.Name))
             return BadRequest("The name is empty");
 
-        Result<UserSearchDto> result = await mediator.Send(query);
+        Result<SearchedUserDto[]> result = await mediator.Send(query);
 
         if (!result.IsSuccess || result.Data == null)
         {
@@ -104,10 +87,13 @@ public class UsersController : ControllerBase
             };
         }
 
-        logger.LogInformation("Search returned users: {Count} results for {Query}",
-            result.Data.UserDtos.Length, query.Name);
-
         return Ok(result.Data);
+    }
+
+    [HttpGet("Count/{UserId}")]
+    public async Task<ActionResult<UserDto>> GetUserCounts(Guid UserId)
+    {
+        return null;
     }
 
     [HttpGet("{UserId}")]
@@ -173,6 +159,29 @@ public class UsersController : ControllerBase
             };
         }
 
+        string? refreshToken = Request.Cookies["RefreshToken"];
+
+        if (string.IsNullOrEmpty(refreshToken))
+            return BadRequest("There is no refresh token");
+
+        Result<AuthDto> authResult = await mediator.Send(new RefreshTokenCommand(refreshToken));
+
+        if (!authResult.IsSuccess || authResult.Data == null)
+        {
+            if (authResult.Data is null || authResult.Data.Token is null || authResult.Data.RefreshToken is null)
+                return BadRequest("Invalid refresh token");
+
+            return authResult.StatusCode switch
+            {
+                400 => BadRequest(authResult.Error),
+                404 => NotFound(authResult.Error),
+                500 => StatusCode(authResult.StatusCode, authResult.Error),
+                _ => StatusCode(500, "Unknown error")
+            };
+        }
+
+        this.CraeteTokensInCookies(authResult.Data.Token, authResult.Data.RefreshToken);
+
         return Ok(result.Data);
     }
 
@@ -180,8 +189,6 @@ public class UsersController : ControllerBase
     [HttpDelete("current")]
     public async Task<IActionResult> DeleteCurrentUser()
     {
-        Guid currentUserId = this.GetIDFromClaim();
-
         Result<Null> result = await mediator.Send(new UserDeleteCommand(
             this.GetIDFromClaim()));
 

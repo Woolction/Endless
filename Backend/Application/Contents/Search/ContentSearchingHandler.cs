@@ -1,13 +1,13 @@
-using Application.Searchs;
-using Application.Contents.Dtos;
 using Domain.Interfaces.Repositories;
-using MediatR;
+using Elastic.Clients.Elasticsearch;
 using Microsoft.Extensions.Logging;
+using Application.Contents.Dtos;
 using Domain.Rows.Contents;
+using MediatR;
 
 namespace Application.Contents.Search;
 
-public class ContentSearchingHandler : IRequestHandler<ContentSearchQuery, Result<ContentSearchDto>>
+public class ContentSearchingHandler : IRequestHandler<ContentSearchQuery, Result<SearchedContentDto[]>>
 {
     private readonly IContentRepository contentRepository;
     private readonly ILogger<ContentSearchingHandler> logger;
@@ -18,29 +18,31 @@ public class ContentSearchingHandler : IRequestHandler<ContentSearchQuery, Resul
         this.logger = logger;
     }
 
-    public async Task<Result<ContentSearchDto>> Handle(ContentSearchQuery query, CancellationToken cancellationToken)
+    public async Task<Result<SearchedContentDto[]>> Handle(ContentSearchQuery query, CancellationToken cancellationToken)
     {
-        bool hasLastSearch = query.LastSearch != null;
+        ICollection<FieldValue> lastValue = [];
 
-        SearchDto searchDto = hasLastSearch == true ? query.LastSearch! : new SearchDto();
+        if (query.LastScore != null)
+            lastValue.Add(FieldValue.Double(
+                query.LastScore.Value));
 
-        ContentSearchRow[] result = await contentRepository.SearchContentsByName(query.Name, hasLastSearch, searchDto.LastScore);
+        ContentSearchRow result = await contentRepository.SearchContentsByName(query.Name, lastValue, cancellationToken);
 
-        ContentDto[] contentDtos = result.Select(c => new ContentDto(
-            c.ContentId, c.ChannelId, c.CreatorId, c.Title, c.Slug, c.Description,
-            c.CreatedDate, c.ContentType, 0, c.ContentUrl, c.PrewievPhotoUrl,
-            c.SavesCount, c.LikesCount, c.CommentsCount, c.DisLikersCount, c.ViewsCount
-        )).ToArray();
+        SearchedContentDto[] contentDtos = result.SearchedContents
+            .Select(c => new SearchedContentDto(new ContentDto(
+                c.SearchedContent.ContentId, c.SearchedContent.ChannelId, c.SearchedContent.CreatorId,
+                c.SearchedContent.Title, c.SearchedContent.Slug, c.SearchedContent.Description,
+                c.SearchedContent.CreatedDate, c.SearchedContent.ContentType.ToString(),
+                c.SearchedContent.DurationSeconds, c.SearchedContent.ContentUrl, c.SearchedContent.PrewievPhotoUrl,
+                0, 0, 0, 0, c.SearchedContent.ViewsCount), c.Score)).ToArray();
 
         if (contentDtos.Length < 1)
-            return Result<ContentSearchDto>.Failure(404, $"Content with name: {query.Name} not found");
-
-        var last = result.Last();
+            return Result<SearchedContentDto[]>.Failure(404, $"Content with name: {query.Name} not found");
 
         logger.LogInformation("Search returned Contents {Count} results for {Query}",
            contentDtos.Length, query.Name);
 
-        return Result<ContentSearchDto>.Success(
-            200, new ContentSearchDto(contentDtos, new SearchDto() { LastScore = last.Score }));
+        return Result<SearchedContentDto[]>.Success(
+            200, contentDtos);
     }
 }

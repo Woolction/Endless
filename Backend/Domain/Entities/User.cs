@@ -22,6 +22,8 @@ public class User
 
     public long TotalLikes { get; set; }
 
+    public bool IsWound { get; set; }
+
     public List<DisLikedContent> DisLikedContents { get; set; } = new List<DisLikedContent>();
     public List<SavedContent> SavedContents { get; set; } = new List<SavedContent>();
     public List<LikedContent> LikedContents { get; set; } = new List<LikedContent>();

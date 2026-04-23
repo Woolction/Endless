@@ -4,6 +4,6 @@ using MediatR;
 namespace Application.Users.Create.Many;
 
 public record class UsersCreateCommand(
-    int Count,
+    string[] Names,
     string Password = "123"
     ) : IRequest<Result<UserDto[]>>;

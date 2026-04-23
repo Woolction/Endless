@@ -3,15 +3,18 @@ using Domain.Interfaces;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
+using Domain.Interfaces.Repositories;
 
 namespace Application.Contents.Delete;
 
 public class ContentDeleteHandler : IRequestHandler<ContentDeleteCommand, Result<Null>>
 {
     private readonly ILogger<ContentDeleteHandler> logger;
+    private readonly IContentRepository contentRepository;
     private readonly IAppDbContext context;
-    public ContentDeleteHandler(IAppDbContext context, ILogger<ContentDeleteHandler> logger)
+    public ContentDeleteHandler(IAppDbContext context, IContentRepository contentRepository, ILogger<ContentDeleteHandler> logger)
     {
+        this.contentRepository = contentRepository;
         this.context = context;
         this.logger = logger;
     }
@@ -40,6 +43,9 @@ public class ContentDeleteHandler : IRequestHandler<ContentDeleteCommand, Result
         context.Contents.Remove(content);
 
         await context.SaveChangesAsync();
+
+        await contentRepository.DeleteSearchIndex(
+            cmd.ContentId, cancellationToken);
 
         logger.LogWarning("Deleted content {ContentId} for user {UserId}",
             cmd.ContentId, cmd.UserId);

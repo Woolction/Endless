@@ -20,8 +20,6 @@ namespace Infrastructure.Context.Migrations
                 .HasAnnotation("ProductVersion", "10.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "fuzzystrmatch");
-            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "pg_trgm");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Domain.Entities.Channel", b =>
@@ -39,6 +37,9 @@ namespace Infrastructure.Context.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
+                    b.Property<bool>("IsWound")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -55,10 +56,8 @@ namespace Infrastructure.Context.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name");
-
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Name"), "gin");
-                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Name"), new[] { "gin_trgm_ops" });
+                    b.HasIndex("Name")
+                        .IsUnique();
 
                     b.HasIndex("Slug")
                         .IsUnique();
@@ -120,6 +119,9 @@ namespace Infrastructure.Context.Migrations
                     b.Property<Guid>("ContentId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("PublicatedDate")
                         .HasColumnType("timestamp with time zone");
 
@@ -134,6 +136,8 @@ namespace Infrastructure.Context.Migrations
                     b.HasIndex("CommentatorId");
 
                     b.HasIndex("ContentId");
+
+                    b.HasIndex("ParentId");
 
                     b.HasIndex("PublicatedDate");
 
@@ -164,6 +168,9 @@ namespace Infrastructure.Context.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
+                    b.Property<bool>("IsWound")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("PrewievPhotoUrl")
                         .HasColumnType("text");
 
@@ -193,10 +200,8 @@ namespace Infrastructure.Context.Migrations
                     b.HasIndex("Slug")
                         .IsUnique();
 
-                    b.HasIndex("Title");
-
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Title"), "gin");
-                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Title"), new[] { "gin_trgm_ops" });
+                    b.HasIndex("Title")
+                        .IsUnique();
 
                     b.ToTable("Contents");
                 });
@@ -276,10 +281,8 @@ namespace Infrastructure.Context.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name");
-
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Name"), "gin");
-                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Name"), new[] { "gin_trgm_ops" });
+                    b.HasIndex("Name")
+                        .IsUnique();
 
                     b.ToTable("Genres");
 
@@ -416,6 +419,9 @@ namespace Infrastructure.Context.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("IsWound")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -445,10 +451,8 @@ namespace Infrastructure.Context.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.HasIndex("Name");
-
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Name"), "gin");
-                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Name"), new[] { "gin_trgm_ops" });
+                    b.HasIndex("Name")
+                        .IsUnique();
 
                     b.HasIndex("Slug")
                         .IsUnique();
@@ -590,9 +594,15 @@ namespace Infrastructure.Context.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Domain.Entities.Comment", "Parent")
+                        .WithMany("Comments")
+                        .HasForeignKey("ParentId");
+
                     b.Navigation("Commentator");
 
                     b.Navigation("Content");
+
+                    b.Navigation("Parent");
                 });
 
             modelBuilder.Entity("Domain.Entities.Content", b =>
@@ -830,6 +840,8 @@ namespace Infrastructure.Context.Migrations
 
             modelBuilder.Entity("Domain.Entities.Comment", b =>
                 {
+                    b.Navigation("Comments");
+
                     b.Navigation("DisLikers");
 
                     b.Navigation("Likers");

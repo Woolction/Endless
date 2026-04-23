@@ -3,6 +3,8 @@ using Application.Users.Dtos;
 using Application.Utilities;
 using Domain.Entities;
 using Domain.Interfaces;
+using Domain.Interfaces.Repositories;
+using Elastic.Clients.Elasticsearch;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -14,11 +16,13 @@ namespace Application.Users.Create.Many;
 public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<UserDto[]>>
 {
     private readonly IPasswordHasher<User> passwordHasher;
+    private readonly IUserRepository userRepository;
     private readonly IAppDbContext context;
 
-    public UsersCreatingHandler(IAppDbContext context, IPasswordHasher<User> passwordHasher)
+    public UsersCreatingHandler(IAppDbContext context, IUserRepository userRepository, IPasswordHasher<User> passwordHasher)
     {
         this.passwordHasher = passwordHasher;
+        this.userRepository = userRepository;
         this.context = context;
     }
 
@@ -28,24 +32,22 @@ public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<U
         List<UserGenreVector> vectors = new();
 
         var genres = await context.Genres
-                .Select(genre => genre.Id)
-                .ToArrayAsync(cancellationToken);
+            .Select(genre => genre.Id)
+            .ToArrayAsync(cancellationToken);
 
-        for (int i = 0; i < cmd.Count; i++)
+        for (int i = 0; i < cmd.Names.Length; i++)
         {
-            string IdForName = Guid.CreateVersion7().ToString();
+            User user = new()
+            {
+                RegistryData = DateTime.UtcNow,
+                IsWound = true
+            };
 
-            User user = new();
-
-            user.SetName(IdForName);
-            user.SetSlug(IdForName.GenerateSlug());
-            user.SetEmail(IdForName + "@gmail.com");
-            user.RegistryData = DateTime.UtcNow;
-            //user.SetPassword(passwordHasher.HashPassword(user, cmd.Password));
-
+            user.SetName(cmd.Names[i]);
+            user.SetSlug(cmd.Names[i].GenerateSlug());
+            user.SetEmail(cmd.Names[i] + "@gmail.com");
             user.SetPassword($"{cmd.Password}");
-
-            users.Add(user);
+            //user.SetPassword(passwordHasher.HashPassword(user, cmd.Password));
 
             for (int j = 0; j < genres.Length; j++)
             {
@@ -55,6 +57,8 @@ public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<U
                     GenreId = genres[j]
                 });
             }
+
+            users.Add(user);
         }
 
         context.Users.AddRange(users);
@@ -63,6 +67,11 @@ public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<U
         try
         {
             await context.SaveChangesAsync();
+
+            for (int i = 0; i < users.Count; i++)
+            {
+                var response = await userRepository.CreateSearchIndex(users[i], cancellationToken);
+            }
 
             return Result<UserDto[]>.Success(201, users.Select(user => new UserDto(
                     user.Id, user.Name, "@" + user.Slug,
