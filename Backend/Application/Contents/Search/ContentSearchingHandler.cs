@@ -1,10 +1,9 @@
-using Application.Searchs;
-using Application.Contents.Dtos;
 using Domain.Interfaces.Repositories;
-using MediatR;
-using Microsoft.Extensions.Logging;
-using Domain.Rows.Contents;
 using Elastic.Clients.Elasticsearch;
+using Microsoft.Extensions.Logging;
+using Application.Contents.Dtos;
+using Domain.Rows.Contents;
+using MediatR;
 
 namespace Application.Contents.Search;
 
@@ -29,11 +28,13 @@ public class ContentSearchingHandler : IRequestHandler<ContentSearchQuery, Resul
 
         ContentSearchRow result = await contentRepository.SearchContentsByName(query.Name, lastValue, cancellationToken);
 
-        SearchedContentDto[] contentDtos = result.SearchedContents.Select(c => new SearchedContentDto(new ContentDto(
-            c.SearchedIndex.ContentId, c.SearchedIndex.ChannelId, c.SearchedIndex.CreatorId, c.SearchedIndex.Title,
-            c.SearchedIndex.Slug, c.SearchedIndex.Description, c.SearchedIndex.CreatedDate, c.SearchedIndex.ContentType.ToString(),
-            c.SearchedIndex.DurationSeconds, c.SearchedIndex.ContentUrl, c.SearchedIndex.PrewievPhotoUrl,
-            0, 0, 0, 0, c.SearchedIndex.ViewsCount), c.Score)).ToArray();
+        SearchedContentDto[] contentDtos = result.SearchedContents
+            .Select(c => new SearchedContentDto(new ContentDto(
+                c.SearchedContent.ContentId, c.SearchedContent.ChannelId, c.SearchedContent.CreatorId,
+                c.SearchedContent.Title, c.SearchedContent.Slug, c.SearchedContent.Description,
+                c.SearchedContent.CreatedDate, c.SearchedContent.ContentType.ToString(),
+                c.SearchedContent.DurationSeconds, c.SearchedContent.ContentUrl, c.SearchedContent.PrewievPhotoUrl,
+                0, 0, 0, 0, c.SearchedContent.ViewsCount), c.Score)).ToArray();
 
         if (contentDtos.Length < 1)
             return Result<SearchedContentDto[]>.Failure(404, $"Content with name: {query.Name} not found");

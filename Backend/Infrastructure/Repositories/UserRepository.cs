@@ -135,7 +135,7 @@ public class UserRepository : IUserRepository
 
         List<UserSearchIndexRow> searchedUsers = result.Hits
             .Select(h => {
-                Console.WriteLine($"{h.Id} - {h.Score}");
+                Console.WriteLine($"User: {h.Id} - {h.Score}");
 
                 return new UserSearchIndexRow()
                 {

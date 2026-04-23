@@ -84,22 +84,15 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
             ContentType = cmd.ContentType
         };
 
-        int duration = 0;
+        int duration = await GetVideoDuration(videoPath);
 
-        if (videoPath != null)
+        VideoMetaData metaData = new()
         {
-            duration = await ffmpegService.GetVideoDuration(videoPath);
-            
-            VideoMetaData metaData = new()
-            {
-                Content = content,
-                DurationSeconds = duration
-            };
+            Content = content,
+            DurationSeconds = duration
+        };
 
-            File.Delete(videoPath);
-
-            context.VideoMetas.Add(metaData);
-        }
+        context.VideoMetas.Add(metaData);
 
         context.Contents.Add(content);
         context.ContentVectors.AddRange(await context.Genres
@@ -114,7 +107,7 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
 
         await context.SaveChangesAsync();
 
-        await contentRepository.CreateSearchIndex(content, cancellationToken);
+        await contentRepository.CreateSearchIndex(content, metaData, cancellationToken);
 
         logger.LogInformation("Content {ContentId} created for user {UserId}",
             content.Id, cmd.UserId);
@@ -124,5 +117,19 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
             content.Title, content.Slug, content.Description,
             content.CreatedDate, content.ContentType.ToString(), duration,
             content.ContentUrl, content.PrewievPhotoUrl, 0, 0, 0, 0, 0));
+    }
+    
+    private async Task<int> GetVideoDuration(string? videoPath)
+    {
+        if (videoPath != null)
+        {
+            int duration = await ffmpegService.GetVideoDuration(videoPath);
+
+            File.Delete(videoPath);
+
+            return duration;
+        }
+
+        return 0;
     }
 }

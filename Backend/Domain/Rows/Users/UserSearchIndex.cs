@@ -14,7 +14,7 @@ public class UserSearchIndex
     public long TotalLikes;
 
     public DateTime RegistryData;
-    public UserRole Role;
+    public int Role;
 
     public UserSearchIndex() {}
 
@@ -29,6 +29,6 @@ public class UserSearchIndex
         TotalLikes = user.TotalLikes;
 
         RegistryData = user.RegistryData;
-        Role = user.Role;
+        Role = (int)user.Role;
     }
 }

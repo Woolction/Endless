@@ -9,6 +9,6 @@ public interface IContentRepository
 {
     Task<ContentSearchRow> SearchContentsByName(string name, ICollection<FieldValue> lastValues, CancellationToken cancellationToken);
     Task<DeleteResponse> DeleteSearchIndex(Guid contentId, CancellationToken cancellationToken);
-    Task<IndexResponse> CreateSearchIndex(Content content, CancellationToken cancellationToken);
+    Task<IndexResponse> CreateSearchIndex(Content content, VideoMetaData videoMeta, CancellationToken cancellationToken);
     Task<CreateIndexResponse> CreateMapping(CancellationToken cancellationToken);
 }

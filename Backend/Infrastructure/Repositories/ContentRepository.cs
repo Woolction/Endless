@@ -1,18 +1,21 @@
 using Elastic.Clients.Elasticsearch.IndexManagement;
+using Elastic.Clients.Elasticsearch.Analysis;
+using Elastic.Clients.Elasticsearch.QueryDsl;
 using Domain.Interfaces.Repositories;
 using Elastic.Clients.Elasticsearch;
 using Domain.Rows.Contents;
 using Domain.Entities;
-using Npgsql.Internal;
-using Elastic.Clients.Elasticsearch.Analysis;
 
 namespace Infrastructure.Repositories;
 
 public class ContentRepository : IContentRepository
 {
     private readonly ElasticsearchClient client;
+    
     private readonly string indexName;
+
     private readonly string[] synonymus;
+    private readonly string[] value;
 
     public ContentRepository(ElasticsearchClient client)
     {
@@ -21,6 +24,10 @@ public class ContentRepository : IContentRepository
         indexName = "contents";
 
         synonymus = [];
+
+        value = [
+            "title^4",
+            "description^1.5"];
     }
 
     public async Task<CreateIndexResponse> CreateMapping(CancellationToken cancellationToken)
@@ -39,18 +46,17 @@ public class ContentRepository : IContentRepository
                             .Filter([
                                 "lowercase",
                                 "asciifolding",
-                                "possessive_stemmer",
-                                "stop",
+                                "possessive_stemmer", 
                                 "stemmer",
-                                "shingle"]))
+                                "stop"])) //, "shingle"
                         .Custom("smart_search", c => c
                             .Tokenizer("standard")
                             .Filter([
                                 "lowercase",
                                 "asciifolding",
                                 "possessive_stemmer",
-                                "stop",
                                 "stemmer",
+                                "stop",
                                 "synonym_graph"])))
                     .TokenFilters(t => t
                         .Lowercase("lowercase")
@@ -81,16 +87,17 @@ public class ContentRepository : IContentRepository
                     .IntegerNumber(i => i.DurationSeconds)
                     .SemanticText(st => st.Title)
                     .Text("description", t => t
-                        .Analyzer("smart_analyzer"))
+                        .Analyzer("smart_analyzer")
+                        .SearchAnalyzer("smart_search"))
                     .Text("title", t => t
                         .Analyzer("smart_analyzer")
                         .SearchAnalyzer("smart_search")))),
             cancellationToken);
     }
 
-    public async Task<IndexResponse> CreateSearchIndex(Content content, CancellationToken cancellationToken)
+    public async Task<IndexResponse> CreateSearchIndex(Content content, VideoMetaData videoMeta, CancellationToken cancellationToken)
     {
-        ContentSearchIndex index = new(content);
+        ContentSearchIndex index = new(content, videoMeta);
 
         var response = await client.IndexAsync(index, c => c
             .Index(indexName)
@@ -120,8 +127,66 @@ public class ContentRepository : IContentRepository
         return response;
     }
 
-    public Task<ContentSearchRow> SearchContentsByName(string name, ICollection<FieldValue> lastValues, CancellationToken cancellationToken)
+    public async Task<ContentSearchRow> SearchContentsByName(string name, ICollection<FieldValue> lastValues, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        var request = new SearchRequestDescriptor<ContentSearchIndex>()
+            .Indices(indexName)
+            .Query(q => q
+                .FunctionScore(f => f
+                    .Query(q => q
+                        .Bool(b => b
+                            .Should(
+                                s => s.Match(t => t
+                                    .Field(f => f.Title)
+                                    .Query(name)
+                                    .Boost(5)),
+                                s => s.MultiMatch(m => m
+                                    .Type(TextQueryType.BestFields)
+                                    .MinimumShouldMatch("60%")
+                                    .Fuzziness("AUTO")
+                                    .Fields(value)
+                                    .Query(name)),
+                                s => s.MatchPhrase(m => m
+                                    .Field(f => f.Title)
+                                    .Query(name)
+                                    .Boost(3)
+                                    .Slop(2)))))
+                    .Functions(f => f
+                        .FieldValueFactor(fv => fv
+                            .Modifier(FieldValueFactorModifier.Log1p)
+                            .Field(f => f.ViewsCount)
+                            .Factor(0.1)))
+                    .BoostMode(FunctionBoostMode.Sum)
+                    .MaxBoost(3)))
+            .Size(20)
+            .Sort(s => s
+                .Score(s => s.Order(SortOrder.Desc)))
+            .TrackScores(true);
+
+        if (lastValues.Count > 0)
+            request = request.SearchAfter(lastValues);
+
+        var result = await client.SearchAsync<ContentSearchIndex>(request, cancellationToken);
+
+        if (result.Hits.Count == 0)
+            return new ContentSearchRow();
+
+        List<ContentSearchIndexRow> searchedContents = result.Hits
+            .Select(h =>
+            {
+                Console.WriteLine($"Content: {h.Id} - {h.Score}");
+
+                return new ContentSearchIndexRow()
+                {
+                    SearchedContent = h.Source ?? new(),
+                    Score = h.Score ?? 0
+                };
+            })
+            .ToList();
+
+        return new ContentSearchRow()
+        {
+            SearchedContents = searchedContents
+        };
     }
 }

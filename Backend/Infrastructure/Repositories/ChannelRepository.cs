@@ -138,7 +138,7 @@ public class ChannelRepository : IChannelRepository
         List<ChannelSearchIndexRow> searchedChannels = result.Hits
             .Select(h =>
             {
-                Console.WriteLine($"{h.Id} - {h.Score}");
+                Console.WriteLine($"Channel {h.Id} - {h.Score}");
 
                 return new ChannelSearchIndexRow()
                 {

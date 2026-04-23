@@ -1,4 +1,3 @@
-using Domain.Common;
 using Domain.Entities;
 
 namespace Domain.Rows.Contents;
@@ -13,7 +12,7 @@ public class ContentSearchIndex
     public Guid Slug { get; set; }
     public string? Description { get; set; }
     public DateTime CreatedDate { get; set; }
-    public ContentType ContentType { get; set; }
+    public int ContentType { get; set; }
 
     public int DurationSeconds { get; set; }
     public float AverageWatchRatio { get; set; }
@@ -26,7 +25,7 @@ public class ContentSearchIndex
 
     public ContentSearchIndex() {}
 
-    public ContentSearchIndex(Content content)
+    public ContentSearchIndex(Content content, VideoMetaData videoMeta)
     {
         ContentId = content.Id;
         ChannelId = content.ChannelId;
@@ -36,18 +35,13 @@ public class ContentSearchIndex
         Slug = content.Slug;
         Description = content.Description;
         CreatedDate = content.CreatedDate;
-        ContentType = content.ContentType;
+        ContentType = (int)content.ContentType;
 
-        if (ContentType == ContentType.Video)
+        if (content.ContentType == Common.ContentType.Video)
         {
-            VideoMetaData? videoMeta = content.VideoMeta;
-
-            if (videoMeta != null)
-            {
-                DurationSeconds = videoMeta.DurationSeconds;
-                AverageWatchRatio = videoMeta.AverageWatchRatio;
-                AverageWatchTimeSeconds = videoMeta.AverageWatchTimeSeconds;
-            }
+            DurationSeconds = videoMeta.DurationSeconds;
+            AverageWatchRatio = videoMeta.AverageWatchRatio;
+            AverageWatchTimeSeconds = videoMeta.AverageWatchTimeSeconds;
         }
 
         ContentUrl = content.ContentUrl;

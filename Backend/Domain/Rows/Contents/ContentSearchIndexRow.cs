@@ -2,6 +2,6 @@ namespace Domain.Rows.Contents;
 
 public class ContentSearchIndexRow
 {
-    public ContentSearchIndex SearchedIndex = new();
+    public ContentSearchIndex SearchedContent = new();
     public double Score;
 }

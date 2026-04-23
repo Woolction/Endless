@@ -173,9 +173,9 @@ public class ContentController : ControllerBase
     }
 
     [HttpGet("Search")]
-    public async Task<ActionResult<ContentSearchDto>> GetContentByName([FromQuery] ContentSearchQuery query)
+    public async Task<ActionResult<SearchedContentDto[]>> GetContentByName([FromQuery] ContentSearchQuery query)
     {
-        Result<ContentSearchDto> result = await mediator.Send(query);
+        Result<SearchedContentDto[]> result = await mediator.Send(query);
 
         if (!result.IsSuccess || result.Data == null)
         {
