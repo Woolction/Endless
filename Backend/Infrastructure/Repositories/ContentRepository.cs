@@ -4,6 +4,7 @@ using Elastic.Clients.Elasticsearch.QueryDsl;
 using Domain.Interfaces.Repositories;
 using Elastic.Clients.Elasticsearch;
 using Domain.Rows.Contents;
+using Elastic.Transport;
 using Domain.Entities;
 
 namespace Infrastructure.Repositories;
@@ -26,8 +27,8 @@ public class ContentRepository : IContentRepository
         synonymus = [];
 
         value = [
-            "title^4",
-            "description^1.5"];
+            "title^3",
+            "description^2"];
     }
 
     public async Task<CreateIndexResponse> CreateMapping(CancellationToken cancellationToken)
@@ -37,7 +38,7 @@ public class ContentRepository : IContentRepository
         if (hasIndex.Exists)
             await client.Indices.DeleteAsync(indexName, cancellationToken);
 
-        return await client.Indices.CreateAsync(indexName, c => c
+        var response = await client.Indices.CreateAsync(indexName, c => c
             .Settings(s => s
                 .Analysis(a => a
                     .Analyzers(a => a
@@ -46,7 +47,7 @@ public class ContentRepository : IContentRepository
                             .Filter([
                                 "lowercase",
                                 "asciifolding",
-                                "possessive_stemmer", 
+                                "possessive_stemmer",
                                 "stemmer",
                                 "stop"])) //, "shingle"
                         .Custom("smart_search", c => c
@@ -85,7 +86,6 @@ public class ContentRepository : IContentRepository
                     .LongNumber(l => l.ViewsCount)
                     .IntegerNumber(i => i.ContentType)
                     .IntegerNumber(i => i.DurationSeconds)
-                    .SemanticText(st => st.Title)
                     .Text("description", t => t
                         .Analyzer("smart_analyzer")
                         .SearchAnalyzer("smart_search"))
@@ -93,6 +93,8 @@ public class ContentRepository : IContentRepository
                         .Analyzer("smart_analyzer")
                         .SearchAnalyzer("smart_search")))),
             cancellationToken);
+
+        return response;
     }
 
     public async Task<IndexResponse> CreateSearchIndex(Content content, VideoMetaData videoMeta, CancellationToken cancellationToken)
@@ -138,11 +140,12 @@ public class ContentRepository : IContentRepository
                             .Should(
                                 s => s.Match(t => t
                                     .Field(f => f.Title)
+                                    .Fuzziness("AUTO")
                                     .Query(name)
                                     .Boost(5)),
                                 s => s.MultiMatch(m => m
                                     .Type(TextQueryType.BestFields)
-                                    .MinimumShouldMatch("60%")
+                                    .MinimumShouldMatch(1)
                                     .Fuzziness("AUTO")
                                     .Fields(value)
                                     .Query(name)),
