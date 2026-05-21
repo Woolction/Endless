@@ -90,7 +90,7 @@ public class ContentUpdateHandler : IRequestHandler<ContentUpdateCommand, Result
         await context.SaveChangesAsync();
 
         var message = new VideoUploadMessage(
-        request.ContentId, videoPath, photoPath);
+            request.ContentId, content.c.Slug, videoPath, photoPath);
 
         await publisher.PublishAsync(message, cancellationToken);
 
