@@ -68,9 +68,9 @@ public class VideoUploadingConsumer : IConsumer
 
                 if (message.PhotoPath != null)
                 {
-                    logger.LogInformation("get photo from video and average color for");
+                    logger.LogInformation("save photo");
 
-                    photoUrl = r2Service.SaveImage(message.PhotoPath);
+                    photoUrl = r2Service.SaveImage(message.PhotoPath, message.Slug);
                 }
 
                 if (message.VideoPath != null)
@@ -86,12 +86,12 @@ public class VideoUploadingConsumer : IConsumer
                         logger.LogInformation("get photo from video");
 
                         photoUrl = await ffmpegService.GetPhotoFromVideo(
-                            message.VideoPath, timeSeconds: timeSeconds, token: token);
+                            message.VideoPath, message.Slug, timeSeconds: timeSeconds, token: token);
                     }
 
                     logger.LogInformation("uploading video");
 
-                    videoUrl = await ffmpegService.UploadGeneratedVideos(message.VideoPath, token);
+                    videoUrl = await ffmpegService.UploadGeneratedVideos(message.VideoPath, message.Slug, token);
                 }
 
                 logger.LogInformation("save changes and create index");
@@ -105,12 +105,10 @@ public class VideoUploadingConsumer : IConsumer
                     .FirstAsync(c => c.Id == message.ContentId);
 
                 // set photo 
-                content.VideoMeta.PhotoUrl = photoUrl;
                 await content.VideoMeta.SetAverageColor(photoUrl, token);
 
                 // set video
-                content.VideoMeta.VideoUrl = videoUrl;
-                content.VideoMeta.DurationSeconds = (int)duration;
+                content.VideoMeta.SetVideo(videoUrl, (int)duration);
 
                 await context.SaveChangesAsync();
 

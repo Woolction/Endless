@@ -81,19 +81,17 @@ public class R2Service : IR2Service
         return $"/storage/{keyPrefix}/master.m3u8";
     }
 
-    public string SaveImage(string file, string ext = ".jpeg")
+    public string SaveImage(string file, string fileName, string ext = ".jpeg")
     {
-        string id = Guid.NewGuid().ToString();
-
         string folder = Path.Combine("/storage", "images");
 
         Directory.CreateDirectory(folder);
 
-        string path = Path.Combine(folder, id + ext);
+        string path = Path.Combine(folder, fileName + ext);
 
         File.Move(file, path);
 
-        return $"/storage/images/{id}{ext}";
+        return $"/storage/images/{fileName}{ext}";
     }
 
 }
