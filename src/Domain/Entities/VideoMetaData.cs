@@ -22,10 +22,18 @@ public class VideoMetaData
     public int G { get; set; }
     public int B { get; set; }
 
-    public async Task SetAverageColor(string photoPath, CancellationToken token = default)
+    public void SetVideo(string videoUrl, int durationSeconds)
     {
+        VideoUrl = videoUrl;
+        DurationSeconds = durationSeconds;
+    }
+
+    public async Task SetAverageColor(string photoUrl, CancellationToken token = default)
+    {
+        PhotoUrl = photoUrl;
+        
         using Image<Rgba32> image =
-            await Image.LoadAsync<Rgba32>(photoPath, token);
+            await Image.LoadAsync<Rgba32>(photoUrl, token);
 
         image.Mutate(x => x.Resize(64, 64));
 
@@ -55,13 +63,13 @@ public class VideoMetaData
         G = (int)(g / count);
         B = (int)(b / count);
 
-        Console.WriteLine($"rgb({R} {G} {B}) for {Path.GetFileNameWithoutExtension(photoPath)} and ContentId: {ContentId}");
+        Console.WriteLine($"rgb({R} {G} {B}) for {Path.GetFileNameWithoutExtension(photoUrl)} and ContentId: {ContentId}");
     }
 
-    public async Task<(int R, int G, int B)> GetAverageColor(string photoPath, CancellationToken token = default)
+    public async Task<(int R, int G, int B)> GetAverageColor(string photoUrl, CancellationToken token = default)
     {
         using Image<Rgba32> image =
-            await Image.LoadAsync<Rgba32>(photoPath, token);
+            await Image.LoadAsync<Rgba32>(photoUrl, token);
 
         image.Mutate(x => x.Resize(64, 64));
 
