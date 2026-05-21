@@ -177,17 +177,18 @@ public static class ProgramPipeline
 
         // Repositories
         builder.Services.AddScoped<IUserVectorsRepository, UserVectorsRepository>();
-        builder.Services.AddScoped<IUserRepository, UserRepository>();
         builder.Services.AddScoped<IChannelRepository, ChannelRepository>();
         builder.Services.AddScoped<IContentRepository, ContentRepository>();
         builder.Services.AddScoped<IGenreRepository, GenreRepository>();
+        builder.Services.AddScoped<IUserRepository, UserRepository>();
 
         //      Singleton
-        builder.Services.AddSingleton<IInteractionService, InteractionService>();
         builder.Services.AddSingleton<IRecommendationService, RecommendationService>();
+        builder.Services.AddSingleton<IInteractionService, InteractionService>();
 
-        builder.Services.AddSingleton<IR2Service, R2Service>();
+        builder.Services.AddSingleton<IRandomService, RandomService>();
         builder.Services.AddSingleton<IFfmpegService, FfmpegService>();
+        builder.Services.AddSingleton<IR2Service, R2Service>();
 
         builder.Services.AddSingleton<ContentUploadPublisher>();
 
