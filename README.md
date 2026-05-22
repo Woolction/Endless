@@ -66,13 +66,13 @@ from =>
 to =>
   <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
 ```
-#### 4. Start Docker compose:
+#### 4. Start docker compose:
 ```bash
 docker compose up --build
 ```
 #### 5. Open API
 ```
-- api docs: http://localhost:5000/scalar/v1
+- open api: http://localhost:5000/scalar/v1
 
 - main: http://localhost:5000
 - upload video: http://localhost:5000/upload.html
