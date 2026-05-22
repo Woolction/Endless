@@ -49,7 +49,7 @@ public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Resu
             string photoPath = await r2Service.SaveFormFileAsync(
                 cmd.AvatarPhoto, "Images", ".jpeg", cancellationToken);
 
-            string photoUrl = r2Service.SaveImage(photoPath);
+            string photoUrl = r2Service.SaveImage(photoPath, slug);
 
             channel.AvatarPhotoUrl = photoUrl;
 

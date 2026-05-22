@@ -7,6 +7,7 @@ using Domain.Common.Interfaces.Db;
 using System.Security.Claims;
 using Domain.Entities;
 using System.Text;
+using Elastic.Clients.Elasticsearch.Snapshot;
 
 namespace Infrastructure.Services;
 
@@ -15,13 +16,15 @@ public class AuthService : IAuthService
     private readonly IAppDbContext context;
 
     private readonly IConfiguration jwtSettings;
+    private readonly IRandomService randomService;
     private readonly SymmetricSecurityKey securetyKey;
 
     private const int refreshTokenExpires = 30;
 
-    public AuthService(IAppDbContext context, IConfiguration configuration)
+    public AuthService(IAppDbContext context, IConfiguration configuration, IRandomService randomService)
     {
         this.context = context;
+        this.randomService = randomService;
 
         //jwt configuration and get security key
         jwtSettings = configuration.GetSection("JwtSettings");
@@ -55,11 +58,7 @@ public class AuthService : IAuthService
     private async Task<string> GenerateRefreshToken(User user)
     {
         //generate refresh token
-        byte[] randomNumber = new byte[32];
-        using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(randomNumber);
-
-        string token = Convert.ToBase64String(randomNumber);
+        string token = randomService.GenerateToken(32);
 
         //update the user token 
         user.RefreshToken = new()

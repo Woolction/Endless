@@ -17,7 +17,7 @@ public class FfmpegService : IFfmpegService
         this.logger = logger;
     }
 
-    public async Task<string> UploadGeneratedVideos(string videoPath, CancellationToken token = default)
+    public async Task<string> UploadGeneratedVideos(string videoPath, string videoName, CancellationToken token = default)
     {
         string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
 
@@ -25,7 +25,7 @@ public class FfmpegService : IFfmpegService
         {
             await GenerateHlsVariants(videoPath, tempDir, token);
 
-            string folderKey = $"videos/{Guid.NewGuid()}";
+            string folderKey = $"videos/{videoName}";
 
             string url = r2Service.SaveVideo(tempDir, folderKey);
 
@@ -181,11 +181,11 @@ public class FfmpegService : IFfmpegService
         return Math.Round(seconds);
     }
 
-    public async Task<string> GetPhotoFromVideo(string videoPath, string outputPath = "/storage/images/previewPhoto.jpeg", double timeSeconds = 5, CancellationToken token = default)
+    public async Task<string> GetPhotoFromVideo(string videoPath, string photoName, string outputPath = "/storage/images/previewPhoto.jpeg", double timeSeconds = 5, CancellationToken token = default)
     {
         string finalOutput = Path.Combine(
             Path.GetDirectoryName(outputPath)!,
-            $"{Guid.NewGuid()}{Path.GetExtension(outputPath)}");
+            $"{photoName}{Path.GetExtension(outputPath)}");
 
         await RunProcess(
             $"-ss {timeSeconds} -i \"{videoPath}\" -frames:v 1 \"{finalOutput}\"", token: token);

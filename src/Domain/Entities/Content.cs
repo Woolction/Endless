@@ -13,7 +13,7 @@ public class Content
     public User? Creator { get; set; }
 
     public string Title { get; set; } = string.Empty;
-    public Guid Slug { get; set; }
+    public string Slug { get; set; } = string.Empty;
     public string? Description { get; set; }
     public DateTime CreatedDate { get; set; }
     public ContentType ContentType { get; set; } = ContentType.Video;

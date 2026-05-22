@@ -9,7 +9,7 @@ public class ContentSearchIndex
     public Guid CreatorId { get; set; }
 
     public string Title { get; set; } = string.Empty;
-    public Guid Slug { get; set; }
+    public string Slug { get; set; } = string.Empty;
     public string? Description { get; set; }
     public DateTime CreatedDate { get; set; }
     public int ContentType { get; set; }

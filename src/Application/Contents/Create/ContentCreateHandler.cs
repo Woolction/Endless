@@ -17,12 +17,14 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
     private readonly IAppDbContext context;
     private readonly ILogger<ContentCreateHandler> logger;
     private readonly ContentUploadPublisher publisher;
+    private readonly IRandomService randomService;
     private readonly IR2Service r2Service;
 
-    public ContentCreateHandler(IAppDbContext context, ContentUploadPublisher publisher, IR2Service r2Service, ILogger<ContentCreateHandler> logger)
+    public ContentCreateHandler(IAppDbContext context, ContentUploadPublisher publisher, IRandomService randomService, IR2Service r2Service, ILogger<ContentCreateHandler> logger)
     {
         this.context = context;
 
+        this.randomService = randomService;
         this.publisher = publisher;
         this.r2Service = r2Service;
         this.logger = logger;
@@ -81,7 +83,7 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
             CreatorId = cmd.UserId,
             ChannelId = cmd.ChannelId,
             Title = cmd.Title,
-            Slug = Guid.NewGuid(),
+            Slug = randomService.GenerateToken(16),
             CreatedDate = DateTime.UtcNow,
             RandomKey = System.Random.Shared.NextDouble(),
             ContentType = cmd.ContentType
@@ -91,7 +93,7 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
             .Select(genre => new ContentGenreVector()
             {
                 Content = content,
-                    GenreId = genre.Id
+                GenreId = genre.Id
             })
             .AsNoTracking()
             .ToArrayAsync(cancellationToken));
@@ -101,7 +103,7 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
         await context.SaveChangesAsync();
 
         var message = new VideoUploadMessage(
-            content.Id, videoPath, photoPath);
+            content.Id, content.Slug, videoPath, photoPath);
 
         await publisher.PublishAsync(message, cancellationToken);
 
