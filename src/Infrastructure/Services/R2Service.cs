@@ -1,7 +1,11 @@
 using Domain.Common.Interfaces.Services;
+using SixLabors.ImageSharp.Formats.Webp;
+using SixLabors.ImageSharp.Processing;
+using Microsoft.AspNetCore.Http;
+using SixLabors.ImageSharp;
+using Domain.Rows.Contents;
 using Amazon.S3.Transfer;
 using Amazon.S3;
-using Microsoft.AspNetCore.Http;
 
 namespace Infrastructure.Services;
 
@@ -40,8 +44,8 @@ public class R2Service : IR2Service
 
         return $"https://<Channel-name>/{keyPrefix}";
     }
-    
-    public async Task<string> SaveFormFileAsync(IFormFile file, string folderName, string ext = null!, CancellationToken token = default)
+
+    public async Task<string> SaveFormFileAsync(IFormFile file, string folderName, CancellationToken token = default)
     {
         /*if (file == null || file.Length == 0)
             throw new ArgumentException("File is empty");*/
@@ -52,7 +56,7 @@ public class R2Service : IR2Service
 
         Directory.CreateDirectory(folder);
 
-        string extension = ext ?? Path.GetExtension(file.FileName);
+        string extension = Path.GetExtension(file.FileName);
         string filePath = Path.Combine(folder, id + extension);
 
         await using var stream = new FileStream(filePath, FileMode.Create);
@@ -81,17 +85,56 @@ public class R2Service : IR2Service
         return $"/storage/{keyPrefix}/master.m3u8";
     }
 
-    public string SaveImage(string file, string fileName, string ext = ".jpeg")
+    public async Task<PreviewPhotoVariants> SavePhotoVariants(string file, string fileName)
     {
-        string folder = Path.Combine("/storage", "images");
-
+        string folder = Path.Combine("/storage/images", fileName);
         Directory.CreateDirectory(folder);
 
-        string path = Path.Combine(folder, fileName + ext);
+        using var image = await Image.LoadAsync(file);
 
-        File.Move(file, path);
+        var sizes = new List<(int w, int h)>();
 
-        return $"/storage/images/{fileName}{ext}";
+        if (image.Width >= 1280 && image.Height >= 720)
+        {
+            sizes.Add((1280, 720));
+            sizes.Add((960, 540));
+            sizes.Add((640, 360));
+        }
+        else if (image.Width >= 960 && image.Height >= 540)
+        {
+            sizes.Add((960, 540));
+            sizes.Add((640, 360));
+        }
+        else if (image.Width >= 640 && image.Height >= 360)
+        {
+            sizes.Add((640, 360));
+        }
+
+        for (int i = 0; i < sizes.Count; i++)
+        {
+            var (w, h) = sizes[i];
+
+            using var clone = image.Clone(x => x
+                .Resize(new ResizeOptions()
+                {
+                    Size = new Size(w, h),
+                    Mode = ResizeMode.Crop,
+                    Sampler = KnownResamplers.Lanczos3
+                }));
+
+            string output = Path.Combine(folder, $"{w}x{h}.webp");
+
+            await clone.SaveAsWebpAsync(output, new WebpEncoder()
+            {
+                Quality = 80
+            });
+        }
+
+        return new PreviewPhotoVariants(
+            folder,
+            "640x360.webp",
+            "960x540.webp",
+            "1280x720.webp"
+        );
     }
-
 }

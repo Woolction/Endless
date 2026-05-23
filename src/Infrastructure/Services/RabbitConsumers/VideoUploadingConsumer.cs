@@ -10,6 +10,7 @@ using System.Text.Json;
 using Domain.Entities;
 using RabbitMQ.Client;
 using System.Text;
+using Microsoft.EntityFrameworkCore.Storage.Internal;
 
 namespace Infrastructure.Services.RabbitConsumers;
 
@@ -62,7 +63,7 @@ public class VideoUploadingConsumer : IConsumer
                 }
 
                 string videoUrl = string.Empty;
-                string photoUrl = string.Empty;
+                PreviewPhotoVariants photoUrl = new();
 
                 double duration = default;
 
@@ -70,7 +71,7 @@ public class VideoUploadingConsumer : IConsumer
                 {
                     logger.LogInformation("save photo");
 
-                    photoUrl = r2Service.SaveImage(message.PhotoPath, message.Slug);
+                    photoUrl = await r2Service.SavePhotoVariants(message.PhotoPath, message.Slug);
                 }
 
                 if (message.VideoPath != null)
@@ -81,17 +82,26 @@ public class VideoUploadingConsumer : IConsumer
 
                     double timeSeconds = Math.Clamp(20, 0, duration / 1.1f);
 
+                    logger.LogInformation("get video height");
+
+                    int height = await ffmpegService.GetVideoHeight(message.VideoPath, token);
+
                     if (message.PhotoPath == null)
                     {
                         logger.LogInformation("get photo from video");
 
                         photoUrl = await ffmpegService.GetPhotoFromVideo(
-                            message.VideoPath, message.Slug, timeSeconds: timeSeconds, token: token);
+                            message.VideoPath, message.Slug, height, timeSeconds: timeSeconds, token: token);
                     }
+
+                    logger.LogInformation("get video fps");
+
+                    int fps = await ffmpegService.GetVideoFps(message.VideoPath, token);
 
                     logger.LogInformation("uploading video");
 
-                    videoUrl = await ffmpegService.UploadGeneratedVideos(message.VideoPath, message.Slug, token);
+                    videoUrl = await ffmpegService.UploadGeneratedVideos(
+                        message.VideoPath, message.Slug, height, fps, token);
                 }
 
                 logger.LogInformation("save changes and create index");
@@ -105,7 +115,8 @@ public class VideoUploadingConsumer : IConsumer
                     .FirstAsync(c => c.Id == message.ContentId);
 
                 // set photo 
-                await content.VideoMeta.SetAverageColor(photoUrl, token);
+                content.VideoMeta.SetPhoto(photoUrl);
+                await content.VideoMeta.SetAverageColor(Path.Combine(photoUrl.BaseUrl, photoUrl.Small), token);
 
                 // set video
                 content.VideoMeta.SetVideo(videoUrl, (int)duration);
@@ -115,7 +126,7 @@ public class VideoUploadingConsumer : IConsumer
                 await scope.ServiceProvider.GetRequiredService<IContentRepository>()
                    .CreateSearchIndex(content, content.VideoMeta, token);
 
-                logger.LogInformation("Send Asc");
+                logger.LogInformation("send asc");
 
                 await channel.BasicAckAsync(
                     ea.DeliveryTag, false, token);
@@ -126,7 +137,7 @@ public class VideoUploadingConsumer : IConsumer
                 if (!string.IsNullOrEmpty(message.VideoPath) && File.Exists(message.VideoPath))
                     File.Delete(message.VideoPath);
 
-                Console.WriteLine("Video.Upload: process succed");
+                logger.LogInformation("process succed");
             }
             catch (Exception ex)
             {

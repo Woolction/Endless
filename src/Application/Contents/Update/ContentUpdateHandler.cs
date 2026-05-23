@@ -63,7 +63,7 @@ public class ContentUpdateHandler : IRequestHandler<ContentUpdateCommand, Result
 
         if (request.PrewievPhoto != null && request.PrewievPhoto.Length != 0)
         {
-            photoPath = await r2Service.SaveFormFileAsync(request.PrewievPhoto, "Images", ".jpeg", cancellationToken);
+            photoPath = await r2Service.SaveFormFileAsync(request.PrewievPhoto, "Images", cancellationToken);
         }
 
         content.c.Title = request.Title;
@@ -80,11 +80,11 @@ public class ContentUpdateHandler : IRequestHandler<ContentUpdateCommand, Result
                 Directory.Delete(directoryName, true);
         }
 
-        path = content.c.VideoMeta.PhotoUrl;
+        path = content.c.VideoMeta.BaseUrl;
 
-        if (!string.IsNullOrEmpty(path))
+        if (!string.IsNullOrEmpty(path) && Directory.Exists(path))
         {
-            File.Delete(path);
+            Directory.Delete(path, true);
         }
 
         await context.SaveChangesAsync();
@@ -101,8 +101,8 @@ public class ContentUpdateHandler : IRequestHandler<ContentUpdateCommand, Result
             content.c.Id, content.c.ChannelId, content.c.CreatorId,
             content.c.Title, content.c.Slug, content.c.Description,
             content.c.CreatedDate, content.c.ContentType.ToString(),
-            content.c.VideoMeta.DurationSeconds, content.c.VideoMeta.VideoUrl,
-            new PreviewPhotoDto(content.c.VideoMeta.PhotoUrl, content.c.VideoMeta.R, content.c.VideoMeta.G, content.c.VideoMeta.B),
+            content.c.VideoMeta.DurationSeconds, content.c.VideoMeta.VideoUrl, new PreviewPhotoDto(
+                content.c.VideoMeta.GetPhotoVariants(), content.c.VideoMeta.R, content.c.VideoMeta.G, content.c.VideoMeta.B),
             content.SaversCount, content.LikersCount, content.CommentsCount, content.DisLikersCount, content.c.ViewsCount);
 
         return Result<ContentDto>.Success(200, contentDto);

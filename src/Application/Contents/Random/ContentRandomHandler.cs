@@ -31,7 +31,7 @@ public class ContentRandomHandler : IRequestHandler<ContentRandomQuery, Result<C
                 c.Id, c.ChannelId, c.CreatorId, c.Title, c.Slug, c.Description,
                 c.CreatedDate, c.ContentType.ToString(),
                 c.VideoMeta.DurationSeconds, c.VideoMeta.VideoUrl,
-                new PreviewPhotoDto(c.VideoMeta.PhotoUrl, c.VideoMeta.R, c.VideoMeta.G, c.VideoMeta.B),
+                new PreviewPhotoDto(c.VideoMeta.GetPhotoVariants(), c.VideoMeta.R, c.VideoMeta.G, c.VideoMeta.B),
                 c.Savers.Count, c.Likers.Count,
                 c.Comments.Count, c.DisLikers.Count, c.ViewsCount))
             .ToArrayAsync(cancellationToken);

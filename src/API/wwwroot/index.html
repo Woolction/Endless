@@ -306,10 +306,24 @@
                 card.className = "video-card";
 
                 const title = v.title.length > 72 ? v.title.substring(0, 72) + "..." : v.title;
-                
+                const p = v.photo.url;
+
                 card.innerHTML = `
                 <div class="thumbnail-wrapper">
-                    <img class="photo-preview" src="${v.photo.url}" alt="${title}"/> 
+                    <img
+                        class="photo-preview"
+                        src="${p.baseUrl}/${p.medium}"
+                        srcset="
+                            ${p.baseUrl}/${p.small} 640w,
+                            ${p.baseUrl}/${p.medium} 960w,
+                            ${p.baseUrl}/${p.large} 1280w
+                        "
+                        sizes="
+                            (max-width: 736px) 100vw,
+                            (max-width: 1430px) 50vw,
+                            33vw
+                        "
+                        alt="${title}"/> 
 
                     <div class="video-duration">${formatDuration(v.durationSeconds)}</div>
                 </div>
@@ -472,6 +486,18 @@
                 })
 
                 const img = card.querySelector(".photo-preview");
+
+                // log
+                img.addEventListener("load", () => {
+                    console.log({
+                        src: img.currentSrc,
+                        naturalWidth: img.naturalWidth,
+                        naturalHeight: img.naturalHeight,
+                        clientWidth: img.clientWidth,
+                        clientHeight: img.clientHeight,
+                        dpr: window.devicePixelRatio
+                    });
+                });
 
                 let rgbaColor;
 

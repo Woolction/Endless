@@ -1,5 +1,7 @@
+using Domain.Rows.Contents;
+
 namespace Application.Dtos;
 
 public record class PreviewPhotoDto(
-    string Url, int R, int G, int B
+    PreviewPhotoVariants Url, int R, int G, int B
 );

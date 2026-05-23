@@ -84,7 +84,7 @@ public class ContentRecommendationHandler : IRequestHandler<ContentRecommendatio
                 c.Id, c.ChannelId, c.CreatorId, c.Title, c.Slug, c.Description,
                 c.CreatedDate, c.ContentType.ToString(), System.Random.Shared.NextDouble(),
                 c.VideoMeta.DurationSeconds, c.VideoMeta.VideoUrl, new PreviewPhotoDto(
-                    c.VideoMeta.PhotoUrl, c.VideoMeta.R, c.VideoMeta.G, c.VideoMeta.B),
+                    c.VideoMeta.GetPhotoVariants(), c.VideoMeta.R, c.VideoMeta.G, c.VideoMeta.B),
                 c.Savers.Count, c.Likers.Count, c.Comments.Count, c.DisLikers.Count, c.ViewsCount))
             .OrderBy(x => x.RandomKey)
             .ToArray();

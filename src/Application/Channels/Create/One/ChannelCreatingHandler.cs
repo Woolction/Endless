@@ -46,14 +46,14 @@ public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Resu
 
         if (cmd.AvatarPhoto != null && cmd.AvatarPhoto.Length != 0)
         {
-            string photoPath = await r2Service.SaveFormFileAsync(
-                cmd.AvatarPhoto, "Images", ".jpeg", cancellationToken);
+            /*string photoPath = await r2Service.SaveFormFileAsync(
+                cmd.AvatarPhoto, "Images", cancellationToken);
 
-            string photoUrl = r2Service.SaveImage(photoPath, slug);
+            string photoUrl = await r2Service.SavePhotoVariants(photoPath, slug);
 
             channel.AvatarPhotoUrl = photoUrl;
 
-            File.Delete(photoPath);
+            File.Delete(photoPath);*/
         }
 
         ChannelOwner channelOwner = new()
