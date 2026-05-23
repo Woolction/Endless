@@ -3,6 +3,9 @@ using Microsoft.Extensions.Logging;
 using System.Globalization;
 using System.Diagnostics;
 using System.Text;
+using System.Text.Json;
+using Domain.Rows.Contents;
+using SixLabors.ImageSharp;
 
 namespace Infrastructure.Services;
 
@@ -17,13 +20,15 @@ public class FfmpegService : IFfmpegService
         this.logger = logger;
     }
 
-    public async Task<string> UploadGeneratedVideos(string videoPath, string videoName, CancellationToken token = default)
+    public async Task<string> UploadGeneratedVideos(string videoPath, string videoName, int height, int fps, CancellationToken token = default)
     {
         string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
 
         try
         {
-            await GenerateHlsVariants(videoPath, tempDir, token);
+            Directory.CreateDirectory(tempDir);
+
+            await GenerateHlsVariants(videoPath, tempDir, height, fps, token);
 
             string folderKey = $"videos/{videoName}";
 
@@ -38,16 +43,9 @@ public class FfmpegService : IFfmpegService
         }
     }
 
-    private async Task GenerateHlsVariants(string videoPath, string outputDir, CancellationToken token = default)
+    private async Task GenerateHlsVariants(string videoPath, string outputDir, int height, int fps, CancellationToken token = default)
     {
-        Directory.CreateDirectory(outputDir);
-
-        // video height
-        int height = await GetVideoHeight(videoPath, token);
-
-        // video fps
-        int result = await GetVideoFps(videoPath, token);
-        int fps = result > 60 ? 60 : result;
+        fps = Math.Clamp(fps, 12, 60);
 
         var variants = new List<int>();
 
@@ -107,15 +105,16 @@ public class FfmpegService : IFfmpegService
         await RunProcess(args, token: token);
     }
 
-    private async Task<int> GetVideoHeight(string videoPath, CancellationToken token = default)
+    public async Task<int> GetVideoHeight(string videoPath, CancellationToken token = default)
     {
         string output = await RunProcess(
             $"-v error -select_streams v:0 -show_entries stream=height -of csv=p=0 \"{videoPath}\"",
             "ffprobe", token);
+
         return int.Parse(output.Trim());
     }
 
-    private async Task<int> GetVideoFps(string videoPath, CancellationToken token = default)
+    public async Task<int> GetVideoFps(string videoPath, CancellationToken token = default)
     {
         string output = await RunProcess(
             $"-v error -select_streams v:0 " +
@@ -181,16 +180,47 @@ public class FfmpegService : IFfmpegService
         return Math.Round(seconds);
     }
 
-    public async Task<string> GetPhotoFromVideo(string videoPath, string photoName, string outputPath = "/storage/images/previewPhoto.jpeg", double timeSeconds = 5, CancellationToken token = default)
+    public async Task<PreviewPhotoVariants> GetPhotoFromVideo(string videoPath, string photoName, int height, double timeSeconds = 5, CancellationToken token = default)
     {
-        string finalOutput = Path.Combine(
-            Path.GetDirectoryName(outputPath)!,
-            $"{photoName}{Path.GetExtension(outputPath)}");
+        string folder = Path.Combine("/storage/images", photoName);
+        Directory.CreateDirectory(folder);
 
-        await RunProcess(
-            $"-ss {timeSeconds} -i \"{videoPath}\" -frames:v 1 \"{finalOutput}\"", token: token);
+        var sizes = new List<(int w, int h)>();
 
-        return finalOutput;
+        if (height >= 720)
+        {
+            sizes.Add((1280, 720));
+            sizes.Add((960, 540));
+            sizes.Add((640, 360));
+        }
+        else if (height >= 540)
+        {
+            sizes.Add((960, 540));
+            sizes.Add((640, 360));
+        }
+        else if (height >= 360)
+        {
+            sizes.Add((640, 360));
+        }
+
+        for (int i = 0; i < sizes.Count; i++)
+        {
+            var (w, h) = sizes[i];
+
+            string output = Path.Combine(folder, $"{w}x{h}.webp");
+
+            await RunProcess(
+                $"-ss {timeSeconds} -i \"{videoPath}\" " +
+                $"-vf \"scale={w}:{h}:force_original_aspect_ratio=increase:flags=lanczos,crop={w}:{h}\" " +
+                $"-frames:v 1 -c:v libwebp -quality 80 \"{output}\"", token: token);
+        }
+
+        return new PreviewPhotoVariants(
+            folder,
+            "640x360.webp",
+            "960x540.webp",
+            "1280x720.webp"
+        );
     }
 
     private string GetBitrate(int height, int fps)

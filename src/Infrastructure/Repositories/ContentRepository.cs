@@ -80,7 +80,12 @@ public class ContentRepository : IContentRepository
                     .Keyword(k => k.CreatorId)
                     .Keyword(k => k.ChannelId)
                     .Keyword(k => k.ContentUrl)
-                    .Keyword(k => k.PreviewPhotoUrl)
+                    .Object(o => o.PreviewPhotoUrl, obj => obj
+                        .Properties(p => p
+                            .Keyword(k => k.PreviewPhotoUrl.BaseUrl)
+                            .Keyword(k => k.PreviewPhotoUrl.Small)
+                            .Keyword(k => k.PreviewPhotoUrl.Medium)
+                            .Keyword(k => k.PreviewPhotoUrl.Large)))
                     .Keyword(l => l.Slug)
                     .Date(d => d.CreatedDate)
                     .LongNumber(l => l.ViewsCount)

@@ -54,13 +54,13 @@ public class UserUpdateHandler : IRequestHandler<UserUpdateCommand, Result<UserD
 
         if (cmd.AvatarPhoto != null && cmd.AvatarPhoto.Length != 0)
         {
-            string photoPath = await r2Service.SaveFormFileAsync(cmd.AvatarPhoto, "Images", ".jpeg", cancellationToken);
+            /*string photoPath = await r2Service.SaveFormFileAsync(cmd.AvatarPhoto, "Images", cancellationToken);
 
-            string photoUrl = r2Service.SaveImage(photoPath, user.u.Slug);
+            string photoUrl = await r2Service.SavePhotoVariants(photoPath, user.u.Slug);
 
             user.u.AvatarPhotoUrl = photoUrl;
 
-            File.Delete(photoPath);
+            File.Delete(photoPath);*/
         }
 
         //for test

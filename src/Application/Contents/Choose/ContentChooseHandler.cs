@@ -27,7 +27,7 @@ public class ContentChooseHandler : IRequestHandler<ContentChooseQuery, Result<C
                     content.Title, content.Slug, content.Description,
                     content.CreatedDate, content.ContentType.ToString(),
                     content.VideoMeta.DurationSeconds, content.VideoMeta.VideoUrl, new PreviewPhotoDto(
-                    content.VideoMeta.PhotoUrl, content.VideoMeta.R, content.VideoMeta.G, content.VideoMeta.B),
+                    content.VideoMeta.GetPhotoVariants(), content.VideoMeta.R, content.VideoMeta.G, content.VideoMeta.B),
                     content.Savers.Count, content.Likers.Count, content.Comments.Count, content.DisLikers.Count, content.ViewsCount))
             .FirstOrDefaultAsync(cancellationToken);
 

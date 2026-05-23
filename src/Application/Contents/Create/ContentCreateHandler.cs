@@ -75,7 +75,7 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
         if (cmd.PrewievPhoto != null && cmd.PrewievPhoto.Length != 0)
         {
             photoPath = await r2Service.SaveFormFileAsync(
-                cmd.PrewievPhoto, "Images", ".jpeg", token: cancellationToken);
+                cmd.PrewievPhoto, "Images", token: cancellationToken);
         }
 
         Content content = new()
@@ -115,7 +115,7 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
             content.Title, content.Slug, content.Description,
             content.CreatedDate, content.ContentType.ToString(), 0,
             content.VideoMeta.VideoUrl, new PreviewPhotoDto(
-                content.VideoMeta.PhotoUrl, content.VideoMeta.R, content.VideoMeta.G, content.VideoMeta.B),
+                content.VideoMeta.GetPhotoVariants(), content.VideoMeta.R, content.VideoMeta.G, content.VideoMeta.B),
             0, 0, 0, 0, 0));
     }
 }

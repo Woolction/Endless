@@ -18,8 +18,8 @@ public class ContentSearchIndex
     public float AverageWatchRatio { get; set; }
     public int AverageWatchTimeSeconds { get; set; }
 
-    public string? ContentUrl { get; set; }
-    public string? PreviewPhotoUrl { get; set; }
+    public string ContentUrl { get; set; } = string.Empty;
+    public PreviewPhotoVariants PreviewPhotoUrl { get; set; } = new();
 
     public int R { get; set; }
     public int G { get; set; }
@@ -44,7 +44,7 @@ public class ContentSearchIndex
         if (content.ContentType == Common.Enums.ContentType.Video)
         {
             ContentUrl = videoMeta.VideoUrl;
-            PreviewPhotoUrl = videoMeta.PhotoUrl;
+            PreviewPhotoUrl = videoMeta.GetPhotoVariants();
 
             DurationSeconds = videoMeta.DurationSeconds;
             AverageWatchRatio = videoMeta.AverageWatchRatio;
