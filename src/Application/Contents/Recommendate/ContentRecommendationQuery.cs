@@ -3,4 +3,4 @@ using MediatR;
 
 namespace Application.Contents.Recommendate;
 
-public record class ContentRecommendationQuery(Guid UserId) : IRequest<Result<ContentRecoDto[]>>;
+public record class ContentRecommendationQuery(Guid UserId) : IRequest<Result<ContentFeedDto[]>>;
