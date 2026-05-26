@@ -1,4 +1,4 @@
-.user-avatar {
+.user-icon {
     width: 40px;
     height: 40px;
 
@@ -11,6 +11,6 @@
     transition: transfrom 0.4s;
 }
 
-.user-avatar:hover {
+.user-icon:hover {
     transform: scale(1.04);
 }
