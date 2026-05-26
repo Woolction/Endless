@@ -24,18 +24,19 @@ YouTube has become a corporate monolith focused on advertising and data collecti
 
 Endless is engineered for high availability and low latency, utilizing a modern distributed stack:
 
-*   **Event-Driven Processing:** Asynchronous workload handling using RabbitMQ (message publishing, and tasks processing with consumer services).
+*   **Event-Driven Processing:** Reliable task queuing, message publishing, and background workload execution through dedicated consumer services.
 *   **Video Processing Pipeline:** Automated generation of multiple video resolutions variants, transcoding, and HLS (m3u8) generation powered by FFmpeg.
 *   **Image Optimization Pipeline:** Automated generation of multiple WebP image resolution variants for user avatars, channel icons, and content thumbnails using ImageSharp and FFmpeg.
 *   **Hybrid Data Layer:** High-performance data access using Dapper for read-heavy operations and Entity Framework Core for complex domain logic.
-*   **Recommendation:** A personalized content ranking system based on vector similarity and user interactions on video or other using custom Preference Engine.
-*   **Searching:** Advanced searching datas using Elasticsearch for contents by smart searching (using filtering) and users/channels by name seaching (using edge-ngram, ngram).
-*   **Real-time Engagement:** Instant notifications and live interactions powered by SignalR (receiving data after the process is completed, receiving notifications, etc).
+*   **Recommendation Engine:** Personalized content ranking based on vector similarity and user interactions using a custom Preference Engine.
+*   **Search Infrastructure:** Elasticsearch-powered content discovery with advanced filtering and user/channel search using edge-ngram and ngram analyzers.
+*   **Real-time Engagement:** Instant notifications, live updates, and background task status delivery powered by SignalR.
 
 ## Tech Stack
 
 - Backend: `ASP.NET Core (.NET 10)`
 - Database: `PostgreSQL`, `Elasticsearch`
+- ORM: `EF Core`, `Dapper`
 - Messaging: `RabbitMQ`
 - Media: `FFmpeg`, `ImageSharp` 
 - Testing: `xUnit`
