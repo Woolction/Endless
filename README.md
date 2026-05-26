@@ -24,18 +24,20 @@ YouTube has become a corporate monolith focused on advertising and data collecti
 
 Endless is engineered for high availability and low latency, utilizing a modern distributed stack:
 
-*   **Asynchronous Video Processing:** Leveraging FFmpeg and RabbitMQ to handle multi-resolution encoding (HLS/m3u8) without blocking the main API.
+*   **Event-Driven Processing:** Asynchronous workload handling using RabbitMQ (message publishing, and tasks processing with consumer services).
+*   **Video Processing Pipeline:** Automated generation of multiple video resolutions variants, transcoding, and HLS (m3u8) generation powered by FFmpeg.
+*   **Image Optimization Pipeline:** Automated generation of multiple WebP image resolution variants for user avatars, channel icons, and content thumbnails using ImageSharp and FFmpeg.
 *   **Hybrid Data Layer:** High-performance data access using Dapper for read-heavy operations and Entity Framework Core for complex domain logic.
-*   **Recommendation:** A personalized video ranking system based on vector similarity using custom Preference Engine
-*   **Searching:** Advanced content filtering and users/channels discovery using Elasticsearch (edge-ngram, ngram).
-*   **Real-time Engagement:** Instant notifications and live interactions powered by SignalR.
+*   **Recommendation:** A personalized content ranking system based on vector similarity and user interactions on video or other using custom Preference Engine.
+*   **Searching:** Advanced searching datas using Elasticsearch for contents by smart searching (using filtering) and users/channels by name seaching (using edge-ngram, ngram).
+*   **Real-time Engagement:** Instant notifications and live interactions powered by SignalR (receiving data after the process is completed, receiving notifications, etc).
 
 ## Tech Stack
 
-- Backend: `ASP.NET Core (.NET)`
+- Backend: `ASP.NET Core (.NET 10)`
 - Database: `PostgreSQL`, `Elasticsearch`
 - Messaging: `RabbitMQ`
-- Media: `FFmpeg` 
+- Media: `FFmpeg`, `ImageSharp` 
 - Testing: `xUnit`
 - DevOps: `CI`, `Docker Compose`
 
