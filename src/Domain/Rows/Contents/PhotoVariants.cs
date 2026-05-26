@@ -1,13 +1,13 @@
 namespace Domain.Rows.Contents;
 
-public class PreviewPhotoVariants
+public class PhotoVariants
 {
     public string BaseUrl { get; init; } = string.Empty;
     public string Small { get; init; } = string.Empty;
     public string? Medium { get; init; }
     public string? Large { get; init; }
 
-    public PreviewPhotoVariants(string baseUrl, string small, string? medium, string? large)
+    public PhotoVariants(string baseUrl, string small, string? medium, string? large)
     {
         BaseUrl = baseUrl;
         Small = small;
@@ -15,7 +15,7 @@ public class PreviewPhotoVariants
         Large = large;
     }
 
-    public PreviewPhotoVariants()
+    public PhotoVariants()
     {
 
     }
