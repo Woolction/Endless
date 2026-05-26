@@ -1,25 +1,26 @@
+using Domain.Common.Interfaces.Repositories;
+using Domain.Common.Interfaces.Services;
+using Domain.Rows.Contents.Video.Upload;
+using Application.Contents.Video.Upload;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Domain.Common.Interfaces.Services;
-using Application.Contents.Dtos;
 using Domain.Common.Interfaces.Db;
+using Application.Contents.Dtos;
+using Domain.Rows.Contents;
+using Application.Dtos;
 using Domain.Entities;
 using MediatR;
-using Application.Dtos;
-using Application.Contents.Create;
-using RabbitMQ.Client;
-using Domain.Rows.Contents;
 
 namespace Application.Contents.Update;
 
 public class ContentUpdateHandler : IRequestHandler<ContentUpdateCommand, Result<ContentDto>>
 {
     private readonly ILogger<ContentUpdateHandler> logger;
+    private readonly VideoUploadPublisher publisher;
     private readonly IAppDbContext context;
-
-    private readonly ContentUploadPublisher publisher;
     private readonly IR2Service r2Service;
-    public ContentUpdateHandler(IAppDbContext context, ILogger<ContentUpdateHandler> logger, ContentUploadPublisher publisher, IR2Service r2Service)
+
+    public ContentUpdateHandler(IAppDbContext context, ILogger<ContentUpdateHandler> logger, VideoUploadPublisher publisher, IR2Service r2Service)
     {
         this.context = context;
         this.logger = logger;
@@ -53,41 +54,44 @@ public class ContentUpdateHandler : IRequestHandler<ContentUpdateCommand, Result
         if (content == null)
             return Result<ContentDto>.Failure(404, "Content not found");
 
+        content.c.Title = request.Title;
+        content.c.ContentType = request.ContentType;
+
         string? videoPath = null;
         string? photoPath = null;
 
         if (request.ContentFile != null && request.ContentFile.Length != 0)
         {
-            videoPath = await r2Service.SaveFormFileAsync(request.ContentFile, "Video", token: cancellationToken);
+            videoPath = await r2Service.SaveFormFileAsync(
+                request.ContentFile, "Video", token: cancellationToken);
+
+            // delete old data
+
+            if (!string.IsNullOrEmpty(content.c.VideoMeta.VideoUrl))
+            {
+                string? directoryName = Path.GetDirectoryName(content.c.VideoMeta.VideoUrl);
+
+                if (directoryName != null)
+                    Directory.Delete(directoryName, true);
+            }
         }
 
         if (request.PrewievPhoto != null && request.PrewievPhoto.Length != 0)
         {
-            photoPath = await r2Service.SaveFormFileAsync(request.PrewievPhoto, "Images", cancellationToken);
-        }
+            photoPath = await r2Service.SaveFormFileAsync(
+                request.PrewievPhoto, "Images", cancellationToken);
 
-        content.c.Title = request.Title;
-        content.c.ContentType = request.ContentType;
+            // delete old data
 
-        // for local storage
-        string path = content.c.VideoMeta.VideoUrl;
-
-        if (!string.IsNullOrEmpty(path))
-        {
-            string? directoryName = Path.GetDirectoryName(path);
-
-            if (directoryName != null)
-                Directory.Delete(directoryName, true);
-        }
-
-        path = content.c.VideoMeta.BaseUrl;
-
-        if (!string.IsNullOrEmpty(path) && Directory.Exists(path))
-        {
-            Directory.Delete(path, true);
+            if (Directory.Exists(content.c.VideoMeta.PhotoBase))
+            {
+                Directory.Delete(content.c.VideoMeta.PhotoBase, true);
+            }
         }
 
         await context.SaveChangesAsync();
+
+        // publishing to rabbit queue
 
         var message = new VideoUploadMessage(
             request.ContentId, content.c.Slug, videoPath, photoPath);
@@ -101,8 +105,16 @@ public class ContentUpdateHandler : IRequestHandler<ContentUpdateCommand, Result
             content.c.Id, content.c.ChannelId, content.c.CreatorId,
             content.c.Title, content.c.Slug, content.c.Description,
             content.c.CreatedDate, content.c.ContentType.ToString(),
-            content.c.VideoMeta.DurationSeconds, content.c.VideoMeta.VideoUrl, new PreviewPhotoDto(
-                content.c.VideoMeta.GetPhotoVariants(), content.c.VideoMeta.R, content.c.VideoMeta.G, content.c.VideoMeta.B),
+            content.c.VideoMeta.DurationSeconds, content.c.VideoMeta.VideoUrl,
+            new PhotoDto(
+                new PhotoVariants(
+                    content.c.VideoMeta.PhotoBase,
+                    content.c.VideoMeta.Small,
+                    content.c.VideoMeta.Medium,
+                    content.c.VideoMeta.Large),
+                content.c.VideoMeta.R,
+                content.c.VideoMeta.G,
+                content.c.VideoMeta.B),
             content.SaversCount, content.LikersCount, content.CommentsCount, content.DisLikersCount, content.c.ViewsCount);
 
         return Result<ContentDto>.Success(200, contentDto);
