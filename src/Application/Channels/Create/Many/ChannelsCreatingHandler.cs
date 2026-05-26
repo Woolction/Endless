@@ -7,6 +7,8 @@ using Domain.Entities;
 using Domain.Common.Enums;
 using MediatR;
 using Npgsql;
+using Application.Dtos;
+using Domain.Rows.Contents;
 
 namespace Application.Channels.Create.Many;
 
@@ -71,16 +73,36 @@ public class ChannelsCreatingHandler : IRequestHandler<ChannelsCreateCommand, Re
         {
             await context.SaveChangesAsync();
 
+            var dtos = new ChannelDto[channels.Count];
+
             for (int i = 0; i < channels.Count; i++)
             {
-                await channelRepository.CreateSearchIndex(channels[i], cancellationToken);
+                var channel = channels[i];
+
+                var meta = await context.ChannelMetas
+                    .AsNoTracking()
+                    .FirstAsync(c => c
+                        .ChannelId == channel.Id,
+                        cancellationToken);
+
+                dtos[i] = new ChannelDto(
+                    channel.Id, channel.Name, "@" + channel.Slug,
+                    channel.Description ?? "", channel.CreatedDate,
+                    new PhotoDto(
+                        new PhotoVariants(
+                            meta.IconBase,
+                            meta.Small,
+                            meta.Medium,
+                            meta.Large),
+                    channel.ChannelMeta.R,
+                    channel.ChannelMeta.G,
+                    channel.ChannelMeta.B), 1, 0, 1, 0, 0);
+
+                await channelRepository.CreateSearchIndex(
+                    channel, meta, cancellationToken);
             }
 
-            return Result<ChannelDto[]>.Success(201, channels.Select(c =>
-                new ChannelDto(
-                    c.Id, c.Name, "@" + c.Slug,
-                    c.Description ?? "", c.CreatedDate,
-                    c.AvatarPhotoUrl, 1, 0, 0, 0, 0)).ToArray());
+            return Result<ChannelDto[]>.Success(201, dtos);
         }
         catch (DbUpdateException ex)
         {

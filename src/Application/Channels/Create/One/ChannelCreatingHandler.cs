@@ -1,12 +1,16 @@
 using Domain.Common.Interfaces.Repositories;
+using Domain.Common.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Domain.Common.Interfaces.Services;
-using Application.Channels.Dtos;
-using Application.Utilities;
 using Domain.Common.Interfaces.Db;
-using Domain.Entities;
+using Application.Channels.Dtos;
+using Domain.Rows.Icon.Upload;
+using Application.Icon.Upload;
+using Application.Utilities;
+using Domain.Rows.Contents;
 using Domain.Common.Enums;
+using Application.Dtos;
+using Domain.Entities;
 using MediatR;
 using Npgsql;
 
@@ -16,14 +20,16 @@ public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Resu
 {
     private readonly ILogger<ChannelCreatingHandler> logger;
     private readonly IChannelRepository channelRepository;
+    private readonly IconUploadPublisher publisher;
     private readonly IAppDbContext context;
     private readonly IR2Service r2Service;
 
 
-    public ChannelCreatingHandler(IAppDbContext context, IChannelRepository channelRepository, ILogger<ChannelCreatingHandler> logger, IR2Service r2Service)
+    public ChannelCreatingHandler(IAppDbContext context, IChannelRepository channelRepository, IconUploadPublisher publisher, ILogger<ChannelCreatingHandler> logger, IR2Service r2Service)
     {
         this.channelRepository = channelRepository;
         this.r2Service = r2Service;
+        this.publisher = publisher;
         this.context = context;
         this.logger = logger;
     }
@@ -43,18 +49,6 @@ public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Resu
             CreatedDate = DateTime.UtcNow,
             IsWound = false
         };
-
-        if (cmd.AvatarPhoto != null && cmd.AvatarPhoto.Length != 0)
-        {
-            /*string photoPath = await r2Service.SaveFormFileAsync(
-                cmd.AvatarPhoto, "Images", cancellationToken);
-
-            string photoUrl = await r2Service.SavePhotoVariants(photoPath, slug);
-
-            channel.AvatarPhotoUrl = photoUrl;
-
-            File.Delete(photoPath);*/
-        }
 
         ChannelOwner channelOwner = new()
         {
@@ -76,31 +70,52 @@ public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Resu
         context.ChannelOwners.Add(channelOwner);
         context.Channels.Add(channel);
 
-        try
+        await context.SaveChangesAsync();
+
+        var meta = await context.ChannelMetas
+            .AsNoTracking()
+            .FirstAsync(c => c
+                .ChannelId == channel.Id,
+                cancellationToken);
+
+        // publishing to rabbit queue
+
+        string? photoPath = null;
+
+        if (cmd.IconPhoto != null && cmd.IconPhoto.Length != 0)
         {
-            await context.SaveChangesAsync();
+            photoPath = await r2Service.SaveFormFileAsync(
+                cmd.IconPhoto, "Images", cancellationToken);
 
-            await channelRepository.CreateSearchIndex(channel, cancellationToken);
-
-            logger.LogInformation("Channel {ChannelId} created with slug {Slug}",
-                channel.Id, slug);
-
-            return Result<ChannelDto>.Success(201, new ChannelDto(
-                channel.Id, channel.Name,
-                "@" + channel.Slug,
-                channel.Description ?? "",
-                channel.CreatedDate,
-                channel.AvatarPhotoUrl,
-                1, 0, 1, 0, 0));
+            if (!string.IsNullOrEmpty(photoPath) && File.Exists(photoPath))
+            {
+                await publisher.PublishAsync(new IconUploadMessage(
+                    channel.Id, IconType.Channel, channel.Slug, photoPath), cancellationToken);
+            }
         }
-        catch (DbUpdateException ex)
+        else
         {
-            logger.LogError(ex, "Error while creating Channel for user {UserId}", cmd.UserId);
-
-            if (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
-                return Result<ChannelDto>.Failure(409, "Channel name already exists");
-
-            throw;
+            await channelRepository.CreateSearchIndex(
+                channel, meta, cancellationToken);
         }
+
+        logger.LogInformation("Channel {ChannelId} created with slug {Slug}",
+            channel.Id, slug);
+
+        return Result<ChannelDto>.Success(201, new ChannelDto(
+            channel.Id, channel.Name,
+            "@" + channel.Slug,
+            channel.Description ?? "",
+            channel.CreatedDate,
+            new PhotoDto(
+                new PhotoVariants(
+                    meta.IconBase,
+                    meta.Small,
+                    meta.Medium,
+                    meta.Large),
+                meta.R,
+                meta.G,
+                meta.B),
+            1, 0, 1, 0, 0));
     }
 }

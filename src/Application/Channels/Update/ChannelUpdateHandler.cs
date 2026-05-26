@@ -1,22 +1,34 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Domain.Common.Interfaces.Db;
 using Application.Channels.Dtos;
 using Application.Utilities;
-using Domain.Common.Interfaces.Db;
-using Domain.Entities;
+using Domain.Rows.Contents;
 using Domain.Common.Enums;
+using Application.Dtos;
+using Domain.Entities;
 using MediatR;
 using Npgsql;
+using Application.Icon.Upload;
+using Domain.Common.Interfaces.Repositories;
+using Domain.Common.Interfaces.Services;
+using Domain.Rows.Icon.Upload;
 
 namespace Application.Channels.Update;
 
 public class ChannelUpdateHandler : IRequestHandler<ChannelUpdateCommand, Result<ChannelDto>>
 {
     private readonly ILogger<ChannelUpdateHandler> logger;
+    private readonly IChannelRepository repository;
+    private readonly IconUploadPublisher publisher;
     private readonly IAppDbContext context;
+    private readonly IR2Service r2Service;
 
-    public ChannelUpdateHandler(IAppDbContext context, ILogger<ChannelUpdateHandler> logger)
+    public ChannelUpdateHandler(IAppDbContext context, IChannelRepository repository, IconUploadPublisher publisher, ILogger<ChannelUpdateHandler> logger, IR2Service r2Service)
     {
+        this.repository = repository;
+        this.r2Service = r2Service;
+        this.publisher = publisher;
         this.context = context;
         this.logger = logger;
     }
@@ -26,16 +38,27 @@ public class ChannelUpdateHandler : IRequestHandler<ChannelUpdateCommand, Result
         var channel = await context.Channels
             .Select(channel => new
             {
-                d = channel,
-                SubscribersCount = channel.Subscribers.Count,
-                ContentsCount = channel.Contents.Count,
-                OwnersCount = channel.Owners.Count
+                c = channel,
+                meta = channel.ChannelMeta,
+                dto = new ChannelDto(
+                channel.Id, channel.Name, "@" + channel.Slug,
+                channel.Description ?? "", channel.CreatedDate,
+                new PhotoDto(
+                    new PhotoVariants(
+                        channel.ChannelMeta.IconBase,
+                        channel.ChannelMeta.Small,
+                        channel.ChannelMeta.Medium,
+                        channel.ChannelMeta.Large),
+                    channel.ChannelMeta.R,
+                    channel.ChannelMeta.G,
+                    channel.ChannelMeta.B),
+                0, 0, 0, channel.TotalLikes, channel.TotalViews)
             })
             .FirstOrDefaultAsync(
-                channel => channel.d.Id == cmd.ChannelId,
+                channel => channel.c.Id == cmd.ChannelId,
                 cancellationToken);
 
-        if (channel is null || channel.d is null)
+        if (channel is null || channel.c is null)
             return Result<ChannelDto>.Failure(404, "Channel not found");
 
         ChannelOwner? currentOwner = await context.ChannelOwners
@@ -58,45 +81,55 @@ public class ChannelUpdateHandler : IRequestHandler<ChannelUpdateCommand, Result
             return Result<ChannelDto>.Failure(403, "You do not have sufficient rights");
         }
 
-        if (!string.IsNullOrEmpty(cmd.Description))
-            channel.d.Description = cmd.Description;
-
         string slug = cmd.Name.GenerateSlug();
 
-        if (await context.Channels.AnyAsync(channel => channel.Name == cmd.Name || channel.Slug == slug, cancellationToken))
+        if (await context.Channels.AnyAsync(channel => channel.Id != cmd.ChannelId &&
+            (channel.Name == cmd.Name || channel.Slug == slug), cancellationToken))
             return Result<ChannelDto>.Failure(409, $"Channel whit name {cmd.Name} hasted");
 
-        string oldName = channel.d.Name;
+        string oldName = channel.c.Name;
 
-        //Updating
-        channel.d.Name = cmd.Name;
-        channel.d.Slug = slug;
+        // updating
+        if (!string.IsNullOrEmpty(cmd.Description))
+            channel.c.Description = cmd.Description;
 
-        try
+        channel.c.Name = cmd.Name;
+        channel.c.Slug = slug;
+
+        string? photoPath = null;
+
+        if (cmd.IconPhoto != null && cmd.IconPhoto.Length > 0)
         {
-            ChannelDto channelDto = new(
-                channel.d.Id, channel.d.Name, "@" + channel.d.Slug,
-                channel.d.Description ?? "", channel.d.CreatedDate,
-                channel.d.AvatarPhotoUrl, channel.SubscribersCount,
-                channel.ContentsCount, channel.OwnersCount,
-                channel.d.TotalLikes, channel.d.TotalViews);
+            photoPath = await r2Service.SaveFormFileAsync(
+                cmd.IconPhoto, "Images", cancellationToken);
 
-            await context.SaveChangesAsync();
+            // delete old data
 
-            logger.LogInformation(
-                "Channel {ChannelId} updated successfully. Changed the name from: {OldName} to: {NewName}",
-                cmd.ChannelId, oldName, cmd.Name);
+            if (Directory.Exists(channel.meta.IconBase))
+            {
+                Directory.Delete(channel.meta.IconBase, true);
+            }
+        } 
 
-            return Result<ChannelDto>.Success(200, channelDto);
-        }
-        catch (DbUpdateException ex)
+        await context.SaveChangesAsync();
+
+        // publishing to rabbit queue 
+
+        if (!string.IsNullOrEmpty(photoPath) && File.Exists(photoPath))
         {
-            logger.LogError(ex, "Error while creating Channel for user {UserId}", cmd.UserId);
-
-            if (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
-                return Result<ChannelDto>.Failure(409, "Channel name already exists");
-
-            throw;
+            await publisher.PublishAsync(new IconUploadMessage(
+                channel.c.Id, IconType.Channel, channel.c.Slug, photoPath), cancellationToken);
         }
+        else
+        {
+            await repository.CreateSearchIndex(
+                channel.c, channel.meta, cancellationToken);
+        }
+
+        logger.LogInformation(
+            "Channel {ChannelId} updated successfully. Changed the name from: {OldName} to: {NewName}",
+            cmd.ChannelId, oldName, cmd.Name);
+
+        return Result<ChannelDto>.Success(200, channel.dto);
     }
 }
