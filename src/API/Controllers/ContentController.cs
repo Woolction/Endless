@@ -130,9 +130,9 @@ public class ContentController : ControllerBase
     }
 
     [HttpGet("random")]
-    public async Task<ActionResult<ContentRecoDto[]>> GetRandomContent()
+    public async Task<ActionResult<ContentFeedDto[]>> GetRandomContent()
     {
-        Result<ContentDto[]> randomContents = await mediator.Send(
+        Result<ContentFeedDto[]> randomContents = await mediator.Send(
             new ContentRandomQuery());
 
         return Ok(randomContents);
@@ -140,9 +140,9 @@ public class ContentController : ControllerBase
 
     [HttpGet("recommendation")]
     [Authorize(Policy = nameof(UserRole.User))]
-    public async Task<ActionResult<ContentRecoDto[]>> GetContentForRecommendation()
+    public async Task<ActionResult<ContentFeedDto[]>> GetContentForRecommendation()
     {
-        Result<ContentRecoDto[]> result = await mediator.Send(new
+        Result<ContentFeedDto[]> result = await mediator.Send(new
             ContentRecommendationQuery(this.GetIDFromClaim()));
 
         if (!result.IsSuccess || result.Data == null)

@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using Application.Utilities;
 using Domain.Common.Enums;
 using Domain.Entities;
+using Application.Dtos;
+using Domain.Rows.Contents;
 
 namespace API.Controllers;
 
@@ -115,12 +117,20 @@ public class ChannelOwnersController : ControllerBase
             currentUserId, UserId, ChannelId);
 
         return Created($"api/ChannelOwners/user/{UserId}/Channel/{ChannelId}",
-            context.Channels.Select(Channel => new ChannelDto(
-                Channel.Id, Channel.Name, "@" + Channel.Slug,
-                Channel.Description ?? "", Channel.CreatedDate,
-                Channel.AvatarPhotoUrl, Channel.Subscribers.Count,
-                Channel.Contents.Count, Channel.Owners.Count,
-                Channel.TotalLikes, Channel.TotalViews))
+            await context.Channels.Select(channel => new ChannelDto(
+                channel.Id, channel.Name, "@" + channel.Slug,
+                channel.Description ?? "", channel.CreatedDate,
+                new PhotoDto(
+                    new PhotoVariants(
+                        channel.ChannelMeta.IconBase,
+                        channel.ChannelMeta.Small,
+                        channel.ChannelMeta.Medium,
+                        channel.ChannelMeta.Large),
+                    channel.ChannelMeta.R,
+                    channel.ChannelMeta.G,
+                    channel.ChannelMeta.B),
+                0,0, channel.Owners.Count,
+                channel.TotalLikes, channel.TotalViews))
             .FirstAsync(Channel => Channel.Id == ChannelId));
     }
 

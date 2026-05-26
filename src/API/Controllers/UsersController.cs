@@ -45,7 +45,7 @@ public class UsersController : ControllerBase
 
         this.CraeteTokensInCookies(result.Data!.Token, result.Data.RefreshToken);
 
-        return Created($"api/users/{result.Data.NewUserId}", result.Data);
+        return Created($"api/users/{result.Data.Id}", result.Data);
     }
 
     [HttpPost("many")]
@@ -139,12 +139,12 @@ public class UsersController : ControllerBase
 
     [Authorize]
     [HttpPut("current")]
-    public async Task<ActionResult<UserDto>> UpdateCurrentUser(UserUpdateRequest request)
+    public async Task<ActionResult<UserDto>> UpdateCurrentUser([FromForm] UserUpdateRequest request)
     {
         UserUpdateCommand cmd = new(
             this.GetIDFromClaim(), request.Name,
             request.Description, request.Role,
-            request.AvatarPhoto);
+            request.IconPhoto);
 
         Result<UserDto> result = await mediator.Send(cmd);
 

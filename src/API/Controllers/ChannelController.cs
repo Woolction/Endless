@@ -28,10 +28,10 @@ public class ChannelController : ControllerBase
 
     [HttpPost]
     [Authorize(Policy = nameof(UserRole.Creator))]
-    public async Task<ActionResult<ChannelDto>> CreateChannel(ChannelCreateRequest request)
+    public async Task<ActionResult<ChannelDto>> CreateChannel([FromForm] ChannelCreateRequest request)
     {
         ChannelCreateCommand cmd = new(
-            this.GetIDFromClaim(), request.Name, request.AvatarPhoto);
+            this.GetIDFromClaim(), request.Name, request.IconPhoto);
 
         Result<ChannelDto> result = await mediator.Send(cmd);
 
@@ -125,10 +125,10 @@ public class ChannelController : ControllerBase
 
     [HttpPut("{ChannelId}")]
     [Authorize(Policy = nameof(UserRole.Creator))]
-    public async Task<ActionResult<ChannelDto>> UpdateChannel(Guid ChannelId, ChannelUpdateRequest request)
+    public async Task<ActionResult<ChannelDto>> UpdateChannel([FromRoute] Guid ChannelId, [FromForm] ChannelUpdateRequest request)
     {
         ChannelUpdateCommand cmd = new(
-            this.GetIDFromClaim(), ChannelId, request.Name, request.Description);
+            this.GetIDFromClaim(), ChannelId, request.Name, request.Description, request.IconPhoto);
 
         Result<ChannelDto> result = await mediator.Send(cmd);
 

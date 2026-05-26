@@ -8,6 +8,7 @@ using Application.Utilities;
 using Domain.Common.Enums;
 using Domain.Entities;
 using Application.Dtos;
+using Domain.Rows.Contents;
 
 namespace API.Controllers;
 
@@ -43,7 +44,15 @@ public class DisLikingController : ControllerBase
                     content.Title, content.Slug, content.Description,
                     content.CreatedDate, content.ContentType.ToString(),
                     content.VideoMeta.DurationSeconds, content.VideoMeta.VideoUrl,
-                    new PreviewPhotoDto(content.VideoMeta.GetPhotoVariants(), content.VideoMeta.R, content.VideoMeta.G, content.VideoMeta.B),
+                    new PhotoDto(
+                        new PhotoVariants(
+                            content.VideoMeta.PhotoBase,
+                            content.VideoMeta.Small,
+                            content.VideoMeta.Medium,
+                            content.VideoMeta.Large),
+                        content.VideoMeta.R,
+                        content.VideoMeta.G,
+                        content.VideoMeta.B),
                     content.Savers.Count, content.Likers.Count, content.Comments.Count, content.DisLikers.Count, content.ViewsCount)
             })
             .FirstOrDefaultAsync(content => content.c.Id == ContentId);
