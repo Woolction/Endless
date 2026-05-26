@@ -19,9 +19,33 @@
         <input type="file" id="photo">
 
         <button onclick="upload()">Upload</button>
-
-        <pre id="res"></pre>
     </div>
+
+    <div class="header">Create/Update Channel</div>
+    
+    <div class="container">
+        <input id="channelId-channel" placeholder="ChannelId">
+        <input id="name-channel" placeholder="Name">
+        <textarea id="desc-channel" placeholder="Description"></textarea>
+    
+        <input type="file" id="icon-channel">
+    
+        <button onclick="createChannel()">Create</button>
+        <button onclick="updateChannel()">Update</button>
+    </div>
+
+    <div class="header">Update User</div>
+
+    <div class="container">
+        <input id="name-user" placeholder="Name">
+        <textarea id="desc-user" placeholder="Description"></textarea>
+    
+        <input type="file" id="icon-user">
+    
+        <button onclick="updateUser()">Update</button>
+    </div>
+
+    <pre id="res"></pre>
 
     <script>
         async function upload() {
@@ -40,6 +64,57 @@
 
             const res = await fetch(`/api/content/channel/${channelId}`, {
                 method: "POST",
+                body: fd
+            });
+
+            document.getElementById("res").textContent = await res.text();
+        }
+        async function createChannel() {
+            const fd = new FormData();
+
+            fd.append("Name", document.getElementById("name-channel").value);
+        
+            fd.append("IconPhoto", document.getElementById("icon-channel").files[0]);
+
+            const res = await fetch(`/api/channel/`, {
+                credentials: "include",
+                method: "POST",
+                body: fd
+            });
+
+            document.getElementById("res").textContent = await res.text();
+        }
+        async function updateChannel() {
+            const fd = new FormData();
+
+            const channelId = document.getElementById("channelId-channel").value;
+
+            fd.append("Name", document.getElementById("name-channel").value);
+            fd.append("Description", document.getElementById("desc-channel").value);
+
+            fd.append("IconPhoto", document.getElementById("icon-channel").files[0]);
+
+            const res = await fetch(`/api/channel/${channelId}`, {
+                credentials: "include",
+                method: "PUT",
+                body: fd
+            });
+
+            document.getElementById("res").textContent = await res.text();
+        }
+            
+        async function updateUser() {
+            const fd = new FormData();
+
+            fd.append("Name", document.getElementById("name-user").value);
+            fd.append("Description", document.getElementById("desc-user").value);
+            fd.append("Role", 2);
+
+            fd.append("IconPhoto", document.getElementById("icon-user").files[0]);
+
+            const res = await fetch(`/api/users/current`, {
+                credentials: "include",
+                method: "PUT",
                 body: fd
             });
 
