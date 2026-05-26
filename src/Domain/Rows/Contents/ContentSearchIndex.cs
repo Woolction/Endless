@@ -19,7 +19,7 @@ public class ContentSearchIndex
     public int AverageWatchTimeSeconds { get; set; }
 
     public string ContentUrl { get; set; } = string.Empty;
-    public PreviewPhotoVariants PreviewPhotoUrl { get; set; } = new();
+    public PhotoVariants PreviewPhotoUrl { get; set; } = new();
 
     public int R { get; set; }
     public int G { get; set; }
@@ -29,7 +29,7 @@ public class ContentSearchIndex
 
     public ContentSearchIndex() { }
 
-    public ContentSearchIndex(Content content, VideoMetaData videoMeta)
+    public ContentSearchIndex(Content content, VideoMeta videoMeta)
     {
         ContentId = content.Id;
         ChannelId = content.ChannelId;
@@ -44,7 +44,16 @@ public class ContentSearchIndex
         if (content.ContentType == Common.Enums.ContentType.Video)
         {
             ContentUrl = videoMeta.VideoUrl;
-            PreviewPhotoUrl = videoMeta.GetPhotoVariants();
+            PreviewPhotoUrl = new PhotoVariants(
+                videoMeta.PhotoBase,
+                videoMeta.Small,
+                videoMeta.Medium,
+                videoMeta.Large
+            );
+
+            R = videoMeta.R;
+            G = videoMeta.G;
+            B = videoMeta.B;
 
             DurationSeconds = videoMeta.DurationSeconds;
             AverageWatchRatio = videoMeta.AverageWatchRatio;

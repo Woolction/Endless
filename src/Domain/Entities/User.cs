@@ -19,7 +19,7 @@ public class User
     public UserConfidentialityType PrivateType { get; set; } = UserConfidentialityType.Request;
     public UserRole Role { get; set; } = UserRole.User;
 
-    public string? AvatarPhotoUrl { get; set; }
+    public UserMeta UserMeta { get; set; } = new();
 
     public long TotalLikes { get; set; }
 

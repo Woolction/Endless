@@ -1,4 +1,5 @@
 using Domain.Entities;
+using Domain.Rows.Contents;
 
 namespace Domain.Rows.Channels;
 
@@ -9,14 +10,18 @@ public class ChannelSearchIndex
     public string Slug { get; set; } = string.Empty;
     public string? Description { get; set; }
     public DateTime CreatedDate { get; set; }
-    public string? AvatarPhotoUrl { get; set; }
-
     public long TotalViews { get; set; }
     public long TotalLikes { get; set; }
 
-    public ChannelSearchIndex() {}
+    public PhotoVariants IconVariants { get; set; } = new();
 
-    public ChannelSearchIndex(Channel channel)
+    public int R { get; set; }
+    public int G { get; set; }
+    public int B { get; set; }
+
+    public ChannelSearchIndex() { }
+
+    public ChannelSearchIndex(Channel channel, ChannelMeta channelMeta)
     {
         ChannelId = channel.Id;
 
@@ -24,7 +29,17 @@ public class ChannelSearchIndex
         Slug = channel.Slug;
         Description = channel.Description;
         CreatedDate = channel.CreatedDate;
-        AvatarPhotoUrl = channel.AvatarPhotoUrl;
+
+        IconVariants = new PhotoVariants(
+            channelMeta.IconBase,
+            channelMeta.Small,
+            channelMeta.Medium,
+            channelMeta.Large
+        );
+
+        R = channelMeta.R;
+        G = channelMeta.G;
+        B = channelMeta.B;
 
         TotalLikes = channel.TotalLikes;
         TotalViews = channel.TotalViews;

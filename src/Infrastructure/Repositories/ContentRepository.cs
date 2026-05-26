@@ -107,7 +107,7 @@ public class ContentRepository : IContentRepository
         return response;
     }
 
-    public async Task<IndexResponse> CreateSearchIndex(Content content, VideoMetaData videoMeta, CancellationToken cancellationToken)
+    public async Task<IndexResponse> CreateSearchIndex(Content content, VideoMeta videoMeta, CancellationToken cancellationToken)
     {
         ContentSearchIndex index = new(content, videoMeta);
 

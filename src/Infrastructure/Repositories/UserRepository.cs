@@ -63,6 +63,15 @@ public class UserRepository : IUserRepository
                 .Date(d => d.RegistryData)
                 .IntegerNumber(k => k.Role)
                 .LongNumber(k => k.TotalLikes)
+                .Object(o => o.IconVariants, v => v
+                    .Properties(p => p
+                        .Keyword(k => k.IconVariants.BaseUrl)
+                        .Keyword(k => k.IconVariants.Small)
+                        .Keyword(k => k.IconVariants.Medium)
+                        .Keyword(k => k.IconVariants.Large)))
+                .IntegerNumber(i => i.R)
+                .IntegerNumber(i => i.G)
+                .IntegerNumber(i => i.B)
                 .Text("name", t => t
                     .Analyzer("edge_analyzer")
                     .SearchAnalyzer("standard")
@@ -74,9 +83,9 @@ public class UserRepository : IUserRepository
                     ))), cancellationToken);
     }
 
-    public async Task<IndexResponse> CreateSearchIndex(User user, CancellationToken cancellationToken)
+    public async Task<IndexResponse> CreateSearchIndex(User user, UserMeta userMeta, CancellationToken cancellationToken)
     {
-        UserSearchIndex index = new(user);
+        UserSearchIndex index = new(user, userMeta);
 
         var response = await client.IndexAsync(index, r => r
             .Index(indexName)
