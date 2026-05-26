@@ -1,29 +1,30 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Infrastructure.Services.RabbitConsumers;
+using Domain.Common.Interfaces.Repositories;
 using Infrastructure.Services.Background;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.RateLimiting;
+using Application.Contents.Video.Upload;
+using Domain.Common.Interfaces.Services;
 using Microsoft.AspNetCore.StaticFiles;
-using Domain.Common.Interfaces.Repositories;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Elastic.Clients.Elasticsearch;
-using Application.Contents.Create;
+using Domain.Common.Interfaces.Db;
 using Infrastructure.Repositories;
-using Domain.Common.Interfaces.Services;
 using Infrastructure.Connector;
 using Infrastructure.Services;
+using Application.Icon.Upload;
 using Infrastructure.Context;
-using Domain.Common.Interfaces.Db;
+using System.Security.Claims;
+using Domain.Common.Enums;
 using Scalar.AspNetCore;
 using Domain.Entities;
 using API.Middleware;
-using Domain.Common.Enums;
 using System.Text;
 using Application;
-using RabbitMQ.Client;
 
 namespace API.Extensions;
 
@@ -74,7 +75,7 @@ public static class ProgramPipeline
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
             options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        }).AddJwtBearer("Bearer", options =>
+        }).AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
         {
             options.TokenValidationParameters = new TokenValidationParameters()
             {
@@ -84,7 +85,8 @@ public static class ProgramPipeline
                 ValidateIssuerSigningKey = true,
                 ValidIssuer = jwtSettings["Issuer"],
                 ValidAudience = jwtSettings["Audience"],
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]!))
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]!)),
+                RoleClaimType = ClaimTypes.Role,
             };
 
             options.Events = new JwtBearerEvents()
@@ -190,10 +192,12 @@ public static class ProgramPipeline
         builder.Services.AddSingleton<IFfmpegService, FfmpegService>();
         builder.Services.AddSingleton<IR2Service, R2Service>();
 
-        builder.Services.AddSingleton<ContentUploadPublisher>();
+        builder.Services.AddSingleton<VideoUploadPublisher>();
+        builder.Services.AddSingleton<IconUploadPublisher>();
 
         //      Transient
         builder.Services.AddTransient<IConsumer, VideoUploadingConsumer>();
+        builder.Services.AddTransient<IConsumer, IconUploadingConsumer>();
 
         // Background Services
 
