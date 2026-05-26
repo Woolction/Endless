@@ -36,6 +36,7 @@ public class UserRegistryHandler : IRequestHandler<UserRegistryCommand, Result<R
         User user = new()
         {
             RegistryData = DateTime.UtcNow,
+            DateOfBirth = DateTime.UtcNow,
             IsWound = false
         };
 
@@ -60,28 +61,23 @@ public class UserRegistryHandler : IRequestHandler<UserRegistryCommand, Result<R
         context.UserVectors.AddRange(vectors);
         context.Users.Add(user);
 
-        try
-        {
-            await context.SaveChangesAsync();
+        await context.SaveChangesAsync();
 
-            string[] tokens = await authService.CreateTokenResponse(user);
+        string[] tokens = await authService.CreateTokenResponse(user);
 
-            if (tokens.Length != 2)
-                return Result<RegistryDto>.Failure(500, "Token could not be created");
+        if (tokens.Length != 2)
+            return Result<RegistryDto>.Failure(500, "Token could not be created");
 
-            logger.LogInformation("User {UserId} registred",
-                user.Id);
+        logger.LogInformation("User {UserId} registred",
+            user.Id);
 
-            await repository.CreateSearchIndex(user, cancellationToken);
+        await repository.CreateSearchIndex(
+            user,
+            await context.UserMetas
+                .AsNoTracking()
+                .FirstAsync(u => u.UserId == user.Id, cancellationToken),
+            cancellationToken);
 
-            return Result<RegistryDto>.Success(201, new RegistryDto(user.Id, tokens[0], tokens[1]));
-        }
-        catch (DbUpdateException ex)
-        {
-            if (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
-                Result<RegistryDto>.Failure(409, "User name already exists");
-
-            throw;
-        }
+        return Result<RegistryDto>.Success(201, new RegistryDto(user.Id, tokens[0], tokens[1]));
     }
 }

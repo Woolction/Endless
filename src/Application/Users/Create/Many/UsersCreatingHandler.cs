@@ -7,6 +7,8 @@ using Domain.Common.Interfaces.Db;
 using Domain.Entities;
 using MediatR;
 using Npgsql;
+using Domain.Rows.Contents;
+using Application.Dtos;
 
 namespace Application.Users.Create.Many;
 
@@ -37,6 +39,7 @@ public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<U
             User user = new()
             {
                 RegistryData = DateTime.UtcNow,
+                DateOfBirth = DateTime.UtcNow,
                 IsWound = true
             };
 
@@ -65,15 +68,38 @@ public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<U
         {
             await context.SaveChangesAsync();
 
+            var dtos = new UserDto[users.Count];
+
             for (int i = 0; i < users.Count; i++)
             {
-                var response = await userRepository.CreateSearchIndex(users[i], cancellationToken);
+                var user = users[i];
+
+                var meta = await context.UserMetas
+                    .AsNoTracking()
+                    .FirstAsync(u => u
+                        .UserId == user.Id,
+                        cancellationToken);
+
+                dtos[i] = new UserDto(
+                    user.Id, user.Name, "@" + user.Slug,
+                    user.Description ?? "", user.RegistryData,
+                    user.Email, user.Role.ToString(),
+                    new PhotoDto(
+                        new PhotoVariants(
+                            meta.IconBase,
+                            meta.Small,
+                            meta.Medium,
+                            meta.Large),
+                        meta.R,
+                        meta.G,
+                        meta.B),
+                    0, 0, 0, 0, 0, 0, 0);
+
+                await userRepository.CreateSearchIndex(
+                    user, meta, cancellationToken);
             }
 
-            return Result<UserDto[]>.Success(201, users.Select(user => new UserDto(
-                    user.Id, user.Name, "@" + user.Slug,
-                    user.Description ?? "", user.RegistryData, user.Email,
-                    user.Role.ToString(), user.AvatarPhotoUrl, 0, 0, 0, 0, 0, 0, 0)).ToArray());
+            return Result<UserDto[]>.Success(201, dtos);
         }
         catch (DbUpdateException ex)
         {
