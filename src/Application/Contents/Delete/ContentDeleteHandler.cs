@@ -52,7 +52,7 @@ public class ContentDeleteHandler : IRequestHandler<ContentDeleteCommand, Result
                 Directory.Delete(directoryName, true);
         }
 
-        path = content.VideoMeta.BaseUrl;
+        path = content.VideoMeta.PhotoBase;
 
         if (!string.IsNullOrEmpty(path) && Directory.Exists(path))
         {

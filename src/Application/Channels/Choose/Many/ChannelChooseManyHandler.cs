@@ -3,6 +3,8 @@ using Microsoft.Extensions.Logging;
 using Application.Channels.Dtos;
 using Domain.Common.Interfaces.Db;
 using MediatR;
+using Domain.Rows.Contents;
+using Application.Dtos;
 
 namespace Application.Channels.Choose.Many;
 
@@ -23,7 +25,15 @@ public class ChannelChooseManyHandler : IRequestHandler<ChannelChooseManyQuery, 
             .Select(channel => new ChannelDto(
                 channel.Id, channel.Name, "@" + channel.Slug,
                 channel.Description ?? "", channel.CreatedDate,
-                channel.AvatarPhotoUrl, channel.Subscribers.Count,
+                new PhotoDto(
+                    new PhotoVariants(
+                        channel.ChannelMeta.IconBase,
+                        channel.ChannelMeta.Small,
+                        channel.ChannelMeta.Medium,
+                        channel.ChannelMeta.Large),
+                    channel.ChannelMeta.R,
+                    channel.ChannelMeta.G,
+                    channel.ChannelMeta.B), channel.Subscribers.Count,
                 channel.Contents.Count, channel.Owners.Count,
                 channel.TotalLikes, channel.TotalViews))
             .AsNoTracking()

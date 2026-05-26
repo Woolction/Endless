@@ -4,6 +4,7 @@ using Application.Contents.Dtos;
 using Domain.Common.Interfaces.Db;
 using MediatR;
 using Application.Dtos;
+using Domain.Rows.Contents;
 
 namespace Application.Contents.Choose;
 
@@ -26,8 +27,15 @@ public class ContentChooseHandler : IRequestHandler<ContentChooseQuery, Result<C
             .Select(content => new ContentDto(content.Id, content.ChannelId, content.CreatorId,
                     content.Title, content.Slug, content.Description,
                     content.CreatedDate, content.ContentType.ToString(),
-                    content.VideoMeta.DurationSeconds, content.VideoMeta.VideoUrl, new PreviewPhotoDto(
-                    content.VideoMeta.GetPhotoVariants(), content.VideoMeta.R, content.VideoMeta.G, content.VideoMeta.B),
+                    content.VideoMeta.DurationSeconds, content.VideoMeta.VideoUrl, new PhotoDto(
+                        new PhotoVariants(
+                            content.VideoMeta.PhotoBase,
+                            content.VideoMeta.Small,
+                            content.VideoMeta.Medium,
+                            content.VideoMeta.Large),
+                        content.VideoMeta.R,
+                        content.VideoMeta.G,
+                        content.VideoMeta.B),
                     content.Savers.Count, content.Likers.Count, content.Comments.Count, content.DisLikers.Count, content.ViewsCount))
             .FirstOrDefaultAsync(cancellationToken);
 

@@ -5,6 +5,9 @@ using Domain.Common.Interfaces.Services;
 using Domain.Common.Interfaces.Db;
 using Domain.Entities;
 using MediatR;
+using Domain.Rows.Contents;
+using Application.Dtos;
+using Application.Users.Dtos;
 
 namespace Application.Authentications.Login;
 
@@ -23,22 +26,38 @@ public class UserLoginHandler : IRequestHandler<AuthCreateCommand, Result<AuthDt
 
     public async Task<Result<AuthDto>> Handle(AuthCreateCommand cmd, CancellationToken cancellationToken)
     {
-        User? user = await context.Users.FirstOrDefaultAsync(user =>
-            user.Email == cmd.Email, cancellationToken);
+        var user = await context.Users
+            .Select(user => new {
+                u = user,
+                dto = new UserDto(
+                user.Id, user.Name, "@" + user.Slug,
+                user.Description ?? "", user.RegistryData, user.Email,
+                user.Role.ToString(), new PhotoDto(
+                    new PhotoVariants(
+                        user.UserMeta.IconBase,
+                        user.UserMeta.Small,
+                        user.UserMeta.Medium,
+                        user.UserMeta.Large),
+                    user.UserMeta.R,
+                    user.UserMeta.G,
+                    user.UserMeta.B), user.TotalLikes,
+                0, 0, 0, 0, 0, 0) })
+            .FirstOrDefaultAsync(user =>
+                user.u.Email == cmd.Email, cancellationToken);
 
-        if (user is null)
+        if (user == null || user.u == null)
             return Result<AuthDto>.Failure(404, "User not found");
 
-        var result = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, cmd.Password);
+        var result = passwordHasher.VerifyHashedPassword(user.u, user.u.PasswordHash, cmd.Password);
 
         if (result == PasswordVerificationResult.Failed)
             return Result<AuthDto>.Failure(400, "Dont valid password");
 
-        string[] tokens = await authService.CreateTokenResponse(user);
+        string[] tokens = await authService.CreateTokenResponse(user.u);
 
         if (tokens.Length != 2)
             return Result<AuthDto>.Failure(500, "Token could not be created");
 
-        return Result<AuthDto>.Success(200, new AuthDto(user.Id, tokens[0], tokens[1]));
+        return Result<AuthDto>.Success(200, new AuthDto(user.dto, tokens[0], tokens[1]));
     }
 }

@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using Application.Utilities;
 using Domain.Common.Enums;
 using Domain.Entities;
+using Domain.Rows.Contents;
+using Application.Dtos;
 
 namespace API.Controllers;
 
@@ -24,31 +26,38 @@ public class SubscriptionController : ControllerBase
         this.logger = logger;
     }
 
-    [HttpPost("Channel/{ChannelId}")]
+    [HttpPost("channel/{ChannelId}")]
     [Authorize(Policy = nameof(UserRole.User))]
     public async Task<ActionResult<ChannelDto>> Subscription(Guid ChannelId)
     {
         Guid currentUserId = this.GetIDFromClaim();
 
         User? currentUser = await context.Users.FindAsync(currentUserId);
-        var Channel = await context.Channels
-            .Select(Channel => new
+        var channel = await context.Channels
+            .Select(channel => new
             {
-                d = Channel,
-                dResponse = new ChannelDto(
-                    Channel.Id, Channel.Name, "@" + Channel.Slug,
-                    Channel.Description ?? "", Channel.CreatedDate,
-                    Channel.AvatarPhotoUrl, Channel.Subscribers.Count,
-                    Channel.Contents.Count, Channel.Owners.Count,
-                    Channel.TotalLikes, Channel.TotalViews)
+                c = channel,
+                dto = new ChannelDto(
+                    channel.Id, channel.Name, "@" + channel.Slug,
+                    channel.Description ?? "", channel.CreatedDate,
+                    new PhotoDto(
+                        new PhotoVariants(
+                            channel.ChannelMeta.IconBase,
+                            channel.ChannelMeta.Small,
+                            channel.ChannelMeta.Medium,
+                            channel.ChannelMeta.Large),
+                        channel.ChannelMeta.R,
+                        channel.ChannelMeta.G,
+                        channel.ChannelMeta.B), channel.Subscribers.Count,
+                    0,0, channel.TotalLikes, channel.TotalViews)
             })
             .AsNoTracking()
-            .FirstOrDefaultAsync(Channel => Channel.d.Id == ChannelId);
+            .FirstOrDefaultAsync(channel => channel.c.Id == ChannelId);
 
         if (currentUser is null)
             return NotFound("User not found");
-        if (Channel is null || Channel is null)
-            return NotFound("Channel not found");
+        if (channel is null || channel.c is null)
+            return NotFound("channel not found");
 
         ChannelSubscription ChannelSubscription = new()
         {
@@ -62,48 +71,46 @@ public class SubscriptionController : ControllerBase
 
         await context.SaveChangesAsync();
 
-        logger.LogInformation("User {UserId} subscriped Channel {ChannelId}",
+        logger.LogInformation("User {UserId} subscriped channel {ChannelId}",
           currentUserId, ChannelId);
 
-        return Created($"api/subscription/user/{currentUserId}/Channel/{ChannelId}",
-            Channel.dResponse);
+        return Created($"api/subscription/user/{currentUserId}/channel/{ChannelId}",
+            channel.dto);
     }
 
-    [HttpGet("user/{UserId}/Channel/{ChannelId}")]
+    [HttpGet("user/{UserId}/channel/{ChannelId}")]
     [Authorize(Policy = nameof(UserRole.User))]
     public async Task<ActionResult> GetSubscribedChannels(Guid UserId, Guid ChannelId)
     {
         return NotFound("Dont released this end point");
     }
 
-    [HttpGet("Channel/{ChannelId}")]
+    [HttpGet("channel/{ChannelId}")]
     [Authorize(Policy = nameof(UserRole.User))]
     public async Task<ActionResult> GetCurrentUserSubscribedChannels(Guid ChannelId)
     {
         return NotFound("Dont released this end point");
     }
 
-    [HttpDelete("Channel/{ChannelId}")]
+    [HttpDelete("channel/{ChannelId}")]
     [Authorize(Policy = nameof(UserRole.User))]
     public async Task<IActionResult> ReSubscription(Guid ChannelId)
     {
         Guid currentUserId = this.GetIDFromClaim();
 
         ChannelSubscription? ChannelSubscription = await context.ChannelSubscriptions
-            .Include(ChannelSubscription => ChannelSubscription.Subscriber)
-            .Include(ChannelSubscription => ChannelSubscription.Channel)
             .FirstOrDefaultAsync(ChannelSubscription =>
                 ChannelSubscription.SubscriberId == currentUserId &&
                 ChannelSubscription.ChannelId == ChannelId);
 
         if (ChannelSubscription is null)
-            return NotFound("Subscriped Channel not found");
+            return NotFound("Subscriped channel not found");
 
         context.ChannelSubscriptions.Remove(ChannelSubscription);
 
         await context.SaveChangesAsync();
 
-        logger.LogInformation("User {UserId} re subscriped Channel {ChannelId}",
+        logger.LogInformation("User {UserId} re subscriped channel {ChannelId}",
           currentUserId, ChannelId);
 
         return NoContent();

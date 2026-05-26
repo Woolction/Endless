@@ -6,6 +6,8 @@ using Application.Users.Dtos;
 using Application.Utilities;
 using Domain.Common.Enums;
 using Domain.Entities;
+using Application.Dtos;
+using Domain.Rows.Contents;
 
 namespace API.Controllers;
 
@@ -45,8 +47,16 @@ public class FollowController : ControllerBase
                 uResponse = new UserDto(
                     user.Id, user.Name, "@" + user.Slug,
                     user.Description ?? "", user.RegistryData, user.Email,
-                    user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
-                    user.Comments.Count, user.Contents.Count, user.Followers.Count,
+                    user.Role.ToString(), new PhotoDto(
+                        new PhotoVariants(
+                            user.UserMeta.IconBase,
+                            user.UserMeta.Small,
+                            user.UserMeta.Medium,
+                            user.UserMeta.Large),
+                        user.UserMeta.R,
+                        user.UserMeta.G,
+                        user.UserMeta.B),
+                    user.TotalLikes, user.Comments.Count, user.Contents.Count, user.Followers.Count,
                     user.Following.Count, user.OwnedChannels.Count, user.SubscripedChannels.Count)
             })
             .AsNoTracking()

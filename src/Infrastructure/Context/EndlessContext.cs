@@ -10,10 +10,12 @@ public class EndlessContext : DbContext, IAppDbContext
     public EndlessContext(DbContextOptions<EndlessContext> options) : base(options) { }
 
     public DbSet<User> Users { get; set; }
+    public DbSet<UserMeta> UserMetas { get; set; }
     public DbSet<UserFollowing> UserFollowings { get; set; }
     public DbSet<UserInteractionContent> UserInteractionContents { get; set; }
 
     public DbSet<Channel> Channels { get; set; }
+    public DbSet<ChannelMeta> ChannelMetas { get; set; }
     public DbSet<ChannelOwner> ChannelOwners { get; set; }
     public DbSet<ChannelSubscription> ChannelSubscriptions { get; set; }
 
@@ -27,7 +29,7 @@ public class EndlessContext : DbContext, IAppDbContext
     public DbSet<UserGenreVector> UserVectors { get; set; }
     public DbSet<ContentGenreVector> ContentVectors { get; set; }
 
-    public DbSet<VideoMetaData> VideoMetas { get; set; }
+    public DbSet<VideoMeta> VideoMetas { get; set; }
 
     public DbSet<Comment> Comments { get; set; }
     public DbSet<LikedComment> LikedComments { get; set; }
@@ -55,6 +57,14 @@ public class EndlessContext : DbContext, IAppDbContext
             .IsUnique();
         userBuilder
             .OwnsOne(u => u.RefreshToken);
+
+        EntityTypeBuilder<UserMeta> UserMetaBuilder = builder.Entity<UserMeta>();
+        UserMetaBuilder
+            .HasOne(c => c.User)
+            .WithOne(c => c.UserMeta)
+            .HasForeignKey<UserMeta>(c => c.UserId);
+        UserMetaBuilder
+            .HasKey(v => v.UserId);
 
         EntityTypeBuilder<UserFollowing> userSubBuilder = builder.Entity<UserFollowing>();
         userSubBuilder
@@ -92,6 +102,14 @@ public class EndlessContext : DbContext, IAppDbContext
         ChannelBuilder
             .HasIndex(d => d.Slug)
             .IsUnique();
+
+        EntityTypeBuilder<ChannelMeta> ChannelMetaBuilder = builder.Entity<ChannelMeta>();
+        ChannelMetaBuilder
+            .HasOne(c => c.Channel)
+            .WithOne(c => c.ChannelMeta)
+            .HasForeignKey<ChannelMeta>(c => c.ChannelId);
+        ChannelMetaBuilder
+            .HasKey(v => v.ChannelId);
 
         EntityTypeBuilder<ChannelOwner> ChannelOwnerBuilder = builder.Entity<ChannelOwner>();
         ChannelOwnerBuilder
@@ -233,11 +251,11 @@ public class EndlessContext : DbContext, IAppDbContext
             .HasIndex(gC => gC.GenreId);
 
         // Meta
-        EntityTypeBuilder<VideoMetaData> videoMetaBuilder = builder.Entity<VideoMetaData>();
+        EntityTypeBuilder<VideoMeta> videoMetaBuilder = builder.Entity<VideoMeta>();
         videoMetaBuilder
             .HasOne(v => v.Content)
             .WithOne(c => c.VideoMeta)
-            .HasForeignKey<VideoMetaData>(v => v.ContentId);
+            .HasForeignKey<VideoMeta>(v => v.ContentId);
         videoMetaBuilder
             .HasKey(v => v.ContentId);
 

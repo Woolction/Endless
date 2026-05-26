@@ -3,4 +3,4 @@ using MediatR;
 
 namespace Application.Contents.Random;
 
-public record class ContentRandomQuery() : IRequest<Result<ContentDto[]>>;
+public record class ContentRandomQuery() : IRequest<Result<ContentFeedDto[]>>;

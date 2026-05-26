@@ -60,11 +60,19 @@ public class ChannelRepository : IChannelRepository
             .Properties<ChannelSearchIndex>(p => p
                 .Keyword(k => k.ChannelId)
                 .Keyword(k => k.Slug)
-                .Keyword(k => k.AvatarPhotoUrl)
+                .Object(o => o.IconVariants, v => v
+                    .Properties(p => p
+                        .Keyword(k => k.IconVariants.BaseUrl)
+                        .Keyword(k => k.IconVariants.Small)
+                        .Keyword(k => k.IconVariants.Medium)
+                        .Keyword(k => k.IconVariants.Large)))
                 .Text(k => k.Description)
                 .Date(d => d.CreatedDate)
                 .LongNumber(k => k.TotalViews)
                 .LongNumber(k => k.TotalLikes)
+                .IntegerNumber(i => i.R)
+                .IntegerNumber(i => i.G)
+                .IntegerNumber(i => i.B)
                 .Text("name", t => t
                     .Analyzer("edge_analyzer")
                     .SearchAnalyzer("standard")
@@ -76,9 +84,9 @@ public class ChannelRepository : IChannelRepository
                     ))), cancellationToken);
     }
 
-    public async Task<IndexResponse> CreateSearchIndex(Channel channel, CancellationToken cancellationToken)
+    public async Task<IndexResponse> CreateSearchIndex(Channel channel, ChannelMeta channelMeta, CancellationToken cancellationToken)
     {
-        ChannelSearchIndex index = new(channel);
+        ChannelSearchIndex index = new(channel, channelMeta);
 
         var response = await client.IndexAsync(index, r => r
             .Index(indexName)

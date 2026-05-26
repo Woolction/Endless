@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Domain.Common.Interfaces.Repositories;
 using Domain.Common.Interfaces.Services;
+using Domain.Rows.Contents.Video.Upload;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Domain.Common.Interfaces.Db;
@@ -10,7 +11,7 @@ using System.Text.Json;
 using Domain.Entities;
 using RabbitMQ.Client;
 using System.Text;
-using Microsoft.EntityFrameworkCore.Storage.Internal;
+using System.Runtime.CompilerServices;
 
 namespace Infrastructure.Services.RabbitConsumers;
 
@@ -42,6 +43,12 @@ public class VideoUploadingConsumer : IConsumer
             autoDelete: false,
             cancellationToken: token);
 
+        await channel.BasicQosAsync(
+            prefetchSize: 0,
+            prefetchCount: 1,
+            global: false,
+            token);
+
         var consumer = new AsyncEventingBasicConsumer(channel);
 
         consumer.ReceivedAsync += async (model, ea) =>
@@ -63,7 +70,7 @@ public class VideoUploadingConsumer : IConsumer
                 }
 
                 string videoUrl = string.Empty;
-                PreviewPhotoVariants photoUrl = new();
+                PhotoVariants photoUrl = new();
 
                 double duration = default;
 
@@ -106,7 +113,7 @@ public class VideoUploadingConsumer : IConsumer
 
                 logger.LogInformation("save changes and create index");
 
-                using var scope = scopeFactory.CreateScope();
+                await using var scope = scopeFactory.CreateAsyncScope();
 
                 var context = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
@@ -116,7 +123,7 @@ public class VideoUploadingConsumer : IConsumer
 
                 // set photo 
                 content.VideoMeta.SetPhoto(photoUrl);
-                await content.VideoMeta.SetAverageColor(Path.Combine(photoUrl.BaseUrl, photoUrl.Small), token);
+                await content.VideoMeta.SetAverageColor(photoUrl.Small, token);
 
                 // set video
                 content.VideoMeta.SetVideo(videoUrl, (int)duration);
@@ -147,12 +154,6 @@ public class VideoUploadingConsumer : IConsumer
                     ea.DeliveryTag, false, false, token);
             }
         };
-
-        await channel.BasicQosAsync(
-            prefetchSize: 0,
-            prefetchCount: 1,
-            global: false,
-            token);
 
         await channel.BasicConsumeAsync(
             queue: "video.upload",

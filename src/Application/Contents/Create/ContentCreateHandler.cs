@@ -1,26 +1,27 @@
-using Domain.Common.Interfaces.Repositories;
+using Application.Contents.Video.Upload;
+using Domain.Common.Interfaces.Services;
+using Domain.Rows.Contents.Video.Upload;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Domain.Common.Interfaces.Services;
-using Application.Contents.Dtos;
 using Domain.Common.Interfaces.Db;
-using Domain.Rows.Contents;
-using Domain.Entities;
+using Application.Contents.Dtos;
 using Domain.Common.Enums;
-using MediatR;
 using Application.Dtos;
+using Domain.Entities;
+using MediatR;
+using Domain.Rows.Contents;
 
 namespace Application.Contents.Create;
 
 public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result<ContentDto>>
 {
-    private readonly IAppDbContext context;
     private readonly ILogger<ContentCreateHandler> logger;
-    private readonly ContentUploadPublisher publisher;
+    private readonly VideoUploadPublisher publisher;
     private readonly IRandomService randomService;
+    private readonly IAppDbContext context;
     private readonly IR2Service r2Service;
 
-    public ContentCreateHandler(IAppDbContext context, ContentUploadPublisher publisher, IRandomService randomService, IR2Service r2Service, ILogger<ContentCreateHandler> logger)
+    public ContentCreateHandler(IAppDbContext context, VideoUploadPublisher publisher, IRandomService randomService, IR2Service r2Service, ILogger<ContentCreateHandler> logger)
     {
         this.context = context;
 
@@ -63,21 +64,6 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
                 return Result<ContentDto>.Failure(404, "User not found");
         }
 
-        string? videoPath = null;
-        string? photoPath = null;
-
-        if (cmd.ContentFile != null && cmd.ContentFile.Length != 0)
-        {
-            videoPath = await r2Service.SaveFormFileAsync(
-                cmd.ContentFile, "Video", token: cancellationToken);
-        }
-
-        if (cmd.PrewievPhoto != null && cmd.PrewievPhoto.Length != 0)
-        {
-            photoPath = await r2Service.SaveFormFileAsync(
-                cmd.PrewievPhoto, "Images", token: cancellationToken);
-        }
-
         Content content = new()
         {
             CreatorId = cmd.UserId,
@@ -102,10 +88,25 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
 
         await context.SaveChangesAsync();
 
-        var message = new VideoUploadMessage(
-            content.Id, content.Slug, videoPath, photoPath);
+        // publishing to rabbit queue
 
-        await publisher.PublishAsync(message, cancellationToken);
+        string? videoPath = null;
+        string? photoPath = null;
+
+        if (cmd.ContentFile != null && cmd.ContentFile.Length != 0)
+        {
+            videoPath = await r2Service.SaveFormFileAsync(
+                cmd.ContentFile, "Video", token: cancellationToken);
+        }
+
+        if (cmd.PrewievPhoto != null && cmd.PrewievPhoto.Length != 0)
+        {
+            photoPath = await r2Service.SaveFormFileAsync(
+                cmd.PrewievPhoto, "Images", token: cancellationToken);
+        }
+
+        await publisher.PublishAsync(new VideoUploadMessage(
+            content.Id, content.Slug, videoPath, photoPath), cancellationToken);
 
         logger.LogInformation("Content {ContentId} created for user {UserId}",
             content.Id, cmd.UserId);
@@ -114,8 +115,16 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
             content.Id, content.ChannelId, content.CreatorId,
             content.Title, content.Slug, content.Description,
             content.CreatedDate, content.ContentType.ToString(), 0,
-            content.VideoMeta.VideoUrl, new PreviewPhotoDto(
-                content.VideoMeta.GetPhotoVariants(), content.VideoMeta.R, content.VideoMeta.G, content.VideoMeta.B),
+            content.VideoMeta.VideoUrl,
+            new PhotoDto(
+                new PhotoVariants(
+                    content.VideoMeta.PhotoBase,
+                    content.VideoMeta.Small,
+                    content.VideoMeta.Medium,
+                    content.VideoMeta.Large),
+                content.VideoMeta.R,
+                content.VideoMeta.G,
+                content.VideoMeta.B),
             0, 0, 0, 0, 0));
     }
 }

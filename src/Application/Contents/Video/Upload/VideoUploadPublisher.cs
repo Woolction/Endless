@@ -1,15 +1,15 @@
-using System.Text;
-using System.Text.Json;
+using Domain.Rows.Contents.Video.Upload;
 using Domain.Common.Interfaces.Db;
-using Domain.Rows.Contents;
+using System.Text.Json;
 using RabbitMQ.Client;
+using System.Text;
 
-namespace Application.Contents.Create;
+namespace Application.Contents.Video.Upload;
 
-public class ContentUploadPublisher
+public class VideoUploadPublisher
 {
     private readonly IRabbitMqConnector connection;
-    public ContentUploadPublisher(IRabbitMqConnector connection)
+    public VideoUploadPublisher(IRabbitMqConnector connection)
     {
         this.connection = connection;
     }

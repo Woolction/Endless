@@ -10,6 +10,8 @@ using Domain.Common.Enums;
 using Domain.Entities;
 using API.Extensions;
 using Application.Comments.Update;
+using Application.Dtos;
+using Domain.Rows.Contents;
 
 namespace API.Controllers;
 
@@ -29,7 +31,7 @@ public class CommentController : ControllerBase
     }
 
     [HttpGet("content/{ContentId}")]
-    public async Task<ActionResult<CommentSendedDto[]>> GetCommentWithContnet(Guid ContentId)
+    public async Task<ActionResult<CommentSendedDto[]>> GetCommentByContentId(Guid ContentId)
     {
         bool hasContent = await context.Contents
             .AsNoTracking().AnyAsync(content => content.Id == ContentId);
@@ -39,18 +41,25 @@ public class CommentController : ControllerBase
 
         var comments = await context.Comments
             .Where(comment => comment.ContentId == ContentId)
-            .Include(comment => comment.Commentator)
             .Select(comment => new CommentSendedDto(
                 new CommentDto(
                     comment.Id, comment.Text,
                     comment.PublicatedDate, comment.Likers.Count,
                     comment.DisLikers.Count, comment.ViewsCount),
                 new UserDto(
-                    comment.Commentator!.Id, comment.Commentator!.Name, "@" + comment.Commentator!.Slug,
-                    comment.Commentator!.Description ?? "", comment.Commentator!.RegistryData, comment.Commentator!.Email,
-                    comment.Commentator!.Role.ToString(), comment.Commentator!.AvatarPhotoUrl, comment.Commentator!.TotalLikes,
-                    comment.Commentator!.Comments.Count, comment.Commentator!.Contents.Count, comment.Commentator!.Followers.Count,
-                    comment.Commentator!.Following.Count, comment.Commentator!.OwnedChannels.Count, comment.Commentator!.SubscripedChannels.Count)))
+                    comment.Commentator.Id, comment.Commentator.Name, "@" + comment.Commentator.Slug,
+                    comment.Commentator.Description ?? "", comment.Commentator.RegistryData, comment.Commentator.Email,
+                    comment.Commentator.Role.ToString(), new PhotoDto(
+                        new PhotoVariants(
+                            comment.Commentator.UserMeta.IconBase,
+                            comment.Commentator.UserMeta.Small,
+                            comment.Commentator.UserMeta.Medium,
+                            comment.Commentator.UserMeta.Large),
+                        comment.Commentator.UserMeta.R,
+                        comment.Commentator.UserMeta.G,
+                        comment.Commentator.UserMeta.B), comment.Commentator.TotalLikes,
+                    comment.Commentator.Comments.Count, comment.Commentator.Contents.Count, comment.Commentator.Followers.Count,
+                    comment.Commentator.Following.Count, comment.Commentator.OwnedChannels.Count, comment.Commentator.SubscripedChannels.Count)))
             .ToArrayAsync();
 
         logger.LogInformation("Returned {Count} comment in content {ContentId}",
@@ -78,7 +87,15 @@ public class CommentController : ControllerBase
                 uResponse = new UserDto(
                     user.Id, user.Name, "@" + user.Slug,
                     user.Description ?? "", user.RegistryData, user.Email,
-                    user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
+                    user.Role.ToString(), new PhotoDto(
+                        new PhotoVariants(
+                            user.UserMeta.IconBase,
+                            user.UserMeta.Small,
+                            user.UserMeta.Medium,
+                            user.UserMeta.Large),
+                        user.UserMeta.R,
+                        user.UserMeta.G,
+                        user.UserMeta.B), user.TotalLikes,
                     user.Comments.Count, user.Contents.Count, user.Followers.Count,
                     user.Following.Count, user.OwnedChannels.Count, user.SubscripedChannels.Count)
             })

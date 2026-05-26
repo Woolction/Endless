@@ -7,7 +7,7 @@
     <title>Endless</title>
 
     <link rel="stylesheet" href="/css/styles.css">
-    
+
     <link rel="stylesheet" href="/css/sidebar.css">
     <link rel="stylesheet" href="/css/navbar.css">
     <link rel="stylesheet" href="/css/user.css">
@@ -36,9 +36,9 @@
                 </a>
             </div>
 
-            <div class="navbar-right">
+            <div class="navbar-right" id="navbar-right">
                 <i data-lucide="bell"></i>
-                <img class="user-avatar" />
+                <img class="user-icon" />
             </div>
         </header>
 
@@ -47,7 +47,7 @@
                 <div class="sidebar-menu-item">
                     <span class="icon">
                         <i data-lucide="home"></i>
-                    </span> 
+                    </span>
                     <span class="text">Home</span>
                 </div>
 
@@ -133,11 +133,30 @@
             });
         }
 
+        const userIcon = document.querySelector(".user-icon");
+
         async function refreshToken() {
-            await fetch("/api/auth/token", {
+            const res = await fetch("/api/auth/token", {
                 method: "PUT",
                 credentials: "include"
             });
+
+            if (!res.ok) 
+                return;
+
+            const data = await res.json();
+
+            const icon = data.userDto.icon.variants;
+
+            userIcon.src = icon.baseUrl + "/" + icon.medium;
+
+            userIcon.srcset = `
+               ${icon.baseUrl}/${icon.small} 64w,    
+               ${icon.baseUrl}/${icon.medium} 128w,    
+               ${icon.baseUrl}/${icon.large} 256w
+               `;
+
+            userIcon.sizes = "40px";
         }
 
         function formatDuration(seconds) {
@@ -147,12 +166,11 @@
             return `${min}:${sec.toString().padStart(2, "0")}`;
         }
 
-        function utcDate(date) 
-        {
+        function utcDate(date) {
             const videoDate = new Date(date);
             const now = new Date();
 
-            
+
             if (now.getUTCFullYear() === videoDate.getUTCFullYear() &&
                 now.getUTCMonth() === videoDate.getUTCMonth() &&
                 now.getUTCDate() === videoDate.getUTCDate()) {
@@ -164,20 +182,12 @@
         }
 
         async function fetchVideos() {
+            
+            await refreshToken();
 
             let res = await fetch("/api/content/recommendation", {
                 credentials: "include"
             });
-
-            // 401 => refresh token
-            if (res.status === 401) {
-
-                await refreshToken();
-
-                res = await fetch("/api/content/recommendation", {
-                    credentials: "include"
-                });
-            }
 
             // 404 => fallback to random
             if (res.status === 404 || res.status === 401) {
@@ -208,8 +218,7 @@
             let saveIcon = "save";
             let saveText = "Save";
 
-            if (isSaved) 
-            {
+            if (isSaved) {
                 saveIcon = "save-off";
                 saveText = "Saved";
             }
@@ -242,9 +251,9 @@
 
             menu.addEventListener("click", (e) => {
                 e.stopPropagation();
-                
+
                 const item = e.target.closest(".video-menu-item");
-                
+
                 if (!item)
                     return;
 
@@ -260,13 +269,11 @@
                         let itemIcon = item.querySelector(".video-menu-item svg");
                         let itemText = item.querySelector(".video-menu-item-text");
 
-                        if (isSaved) 
-                        {
+                        if (isSaved) {
                             itemIcon.setAttribute("data-lucide", "save-off");
                             itemText.textContent = "Saved";
                         }
-                        else 
-                        {
+                        else {
                             itemIcon.setAttribute("data-lucide", "save");
                             itemText.textContent = "Save";
                         }
@@ -282,13 +289,13 @@
                         console.log("Album:", currentVideo);
 
                         break;
-                    case "download": 
+                    case "download":
                         console.log("Download", currentVideo.contentId);
 
                         break;
                     case "not-interest":
                         console.log("Not interest:", currentVideo.contentId)
-                        
+
                         break;
                     case "report":
                         console.log("Report:", currentVideo.contentId);
@@ -306,12 +313,11 @@
                 card.className = "video-card";
 
                 const title = v.title.length > 72 ? v.title.substring(0, 72) + "..." : v.title;
-                const p = v.photo.url;
+                const p = v.photo.variants;
 
                 card.innerHTML = `
                 <div class="thumbnail-wrapper">
-                    <img
-                        class="photo-preview"
+                    <img class="photo-preview"
                         src="${p.baseUrl}/${p.medium}"
                         srcset="
                             ${p.baseUrl}/${p.small} 640w,
@@ -329,7 +335,14 @@
                 </div>
 
                 <div class="video-info">
-                    <img class="channel-avatar"/>
+                    <img class="channel-icon"
+                        src="${v.ownerIcon.variants.baseUrl}/${v.ownerIcon.variants.medium}"
+                        srcset="
+                            ${v.ownerIcon.variants.baseUrl}/${v.ownerIcon.variants.small} 64w,
+                            ${v.ownerIcon.variants.baseUrl}/${v.ownerIcon.variants.medium} 128w,
+                            ${v.ownerIcon.variants.baseUrl}/${v.ownerIcon.variants.large} 256w
+                        "
+                        sizes="40px"/>
 
                     <div class="video-meta">
                         <div class="video-top-row">
@@ -339,7 +352,7 @@
                         </div>
 
                         <div class="channel-name">
-                            Endless 
+                            ${v.ownerName} 
                             <button class="tooltip-wrapper">
                                 <i class="verified-badge" data-lucide="badge-check"></i>
                                 <div class="tooltip">
@@ -430,7 +443,7 @@
                     const button = e.currentTarget;
 
                     if (menu.classList.contains("open") && currentButton === button) {
-                        
+
                         menu.classList.remove("open");
 
                         currentButton = null;
@@ -469,12 +482,12 @@
                     currentVideo = null;
                 });
 
-                card.querySelector(".channel-avatar").addEventListener("click", (e) => {
+                card.querySelector(".channel-icon").addEventListener("click", (e) => {
                     e.stopPropagation();
 
                     console.log("...");
                 });
-                
+
                 card.querySelector(".channel-name").addEventListener("click", (e) => {
                     e.stopPropagation();
 
@@ -531,7 +544,7 @@
 
                 grid.appendChild(card);
             });
-                
+
             lucide.createIcons();
         }
 

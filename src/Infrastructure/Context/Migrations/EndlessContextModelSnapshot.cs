@@ -28,9 +28,6 @@ namespace Infrastructure.Context.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AvatarPhotoUrl")
-                        .HasColumnType("text");
-
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("timestamp with time zone");
 
@@ -63,6 +60,39 @@ namespace Infrastructure.Context.Migrations
                         .IsUnique();
 
                     b.ToTable("Channels");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ChannelMeta", b =>
+                {
+                    b.Property<Guid>("ChannelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("B")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("G")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("IconBase")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Large")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Medium")
+                        .HasColumnType("text");
+
+                    b.Property<int>("R")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Small")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("ChannelId");
+
+                    b.ToTable("ChannelMetas");
                 });
 
             modelBuilder.Entity("Domain.Entities.ChannelOwner", b =>
@@ -404,9 +434,6 @@ namespace Infrastructure.Context.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AvatarPhotoUrl")
-                        .HasColumnType("text");
-
                     b.Property<DateTime>("DateOfBirth")
                         .HasColumnType("timestamp with time zone");
 
@@ -521,7 +548,40 @@ namespace Infrastructure.Context.Migrations
                     b.ToTable("UserInteractionContents");
                 });
 
-            modelBuilder.Entity("Domain.Entities.VideoMetaData", b =>
+            modelBuilder.Entity("Domain.Entities.UserMeta", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("B")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("G")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("IconBase")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Large")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Medium")
+                        .HasColumnType("text");
+
+                    b.Property<int>("R")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Small")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("UserMetas");
+                });
+
+            modelBuilder.Entity("Domain.Entities.VideoMeta", b =>
                 {
                     b.Property<Guid>("ContentId")
                         .HasColumnType("uuid");
@@ -535,10 +595,6 @@ namespace Infrastructure.Context.Migrations
                     b.Property<int>("B")
                         .HasColumnType("integer");
 
-                    b.Property<string>("BaseUrl")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<int>("DurationSeconds")
                         .HasColumnType("integer");
 
@@ -549,6 +605,10 @@ namespace Infrastructure.Context.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Medium")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PhotoBase")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("R")
@@ -565,6 +625,17 @@ namespace Infrastructure.Context.Migrations
                     b.HasKey("ContentId");
 
                     b.ToTable("VideoMetas");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ChannelMeta", b =>
+                {
+                    b.HasOne("Domain.Entities.Channel", "Channel")
+                        .WithOne("ChannelMeta")
+                        .HasForeignKey("Domain.Entities.ChannelMeta", "ChannelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Channel");
                 });
 
             modelBuilder.Entity("Domain.Entities.ChannelOwner", b =>
@@ -843,11 +914,22 @@ namespace Infrastructure.Context.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Domain.Entities.VideoMetaData", b =>
+            modelBuilder.Entity("Domain.Entities.UserMeta", b =>
+                {
+                    b.HasOne("Domain.Entities.User", "User")
+                        .WithOne("UserMeta")
+                        .HasForeignKey("Domain.Entities.UserMeta", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Domain.Entities.VideoMeta", b =>
                 {
                     b.HasOne("Domain.Entities.Content", "Content")
                         .WithOne("VideoMeta")
-                        .HasForeignKey("Domain.Entities.VideoMetaData", "ContentId")
+                        .HasForeignKey("Domain.Entities.VideoMeta", "ContentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -856,6 +938,9 @@ namespace Infrastructure.Context.Migrations
 
             modelBuilder.Entity("Domain.Entities.Channel", b =>
                 {
+                    b.Navigation("ChannelMeta")
+                        .IsRequired();
+
                     b.Navigation("Contents");
 
                     b.Navigation("Owners");
@@ -915,6 +1000,9 @@ namespace Infrastructure.Context.Migrations
                     b.Navigation("SubscripedChannels");
 
                     b.Navigation("UserInterations");
+
+                    b.Navigation("UserMeta")
+                        .IsRequired();
 
                     b.Navigation("Vectors");
                 });

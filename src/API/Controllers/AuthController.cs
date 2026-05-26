@@ -40,7 +40,7 @@ public class AuthController : ControllerBase
             };
         }
 
-        logger.LogInformation("User {UserId} Logined", result.Data!.UserId);
+        logger.LogInformation("User {UserId} Logined", result.Data!.UserDto.Id);
 
         this.CraeteTokensInCookies(result.Data.Token, result.Data.RefreshToken);
 
@@ -71,7 +71,7 @@ public class AuthController : ControllerBase
             };
         }
 
-        logger.LogInformation("User {UserId} Refreshed Token", result.Data!.UserId);
+        logger.LogInformation("User {UserId} Refreshed Token", result.Data!.UserDto.Id);
 
         this.CraeteTokensInCookies(result.Data.Token, result.Data.RefreshToken);
 

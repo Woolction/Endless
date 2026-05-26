@@ -6,22 +6,30 @@ using Application.Utilities;
 using Domain.Common.Interfaces.Db;
 using MediatR;
 using Npgsql;
+using Domain.Rows.Contents;
+using Application.Dtos;
+using Domain.Common.Interfaces.Repositories;
+using Domain.Rows.Icon.Upload;
+using Domain.Common.Enums;
+using Application.Icon.Upload;
 
 namespace Application.Users.Update;
 
 public class UserUpdateHandler : IRequestHandler<UserUpdateCommand, Result<UserDto>>
 {
     private readonly ILogger<UserUpdateHandler> logger;
+    private readonly IUserRepository userRepository;
+    private readonly IconUploadPublisher publisher;
     private readonly IAppDbContext context;
-    private readonly IFfmpegService ffmpegService;
     private readonly IR2Service r2Service;
 
-    public UserUpdateHandler(IAppDbContext context, ILogger<UserUpdateHandler> logger, IFfmpegService ffmpegService, IR2Service r2Service)
+    public UserUpdateHandler(IAppDbContext context, ILogger<UserUpdateHandler> logger, IUserRepository userRepository, IconUploadPublisher publisher, IR2Service r2Service)
     {
         this.context = context;
         this.logger = logger;
 
-        this.ffmpegService = ffmpegService;
+        this.userRepository = userRepository;
+        this.publisher = publisher;
         this.r2Service = r2Service;
     }
 
@@ -31,12 +39,23 @@ public class UserUpdateHandler : IRequestHandler<UserUpdateCommand, Result<UserD
             .Select(user => new
             {
                 u = user,
-                CommentsCount = user.Comments.Count,
-                ContentsCount = user.Contents.Count,
-                FollowersCount = user.Followers.Count,
-                FollowingCount = user.Following.Count,
-                OwnedChannelsCount = user.OwnedChannels.Count,
-                SubscripedChannelsCount = user.SubscripedChannels.Count
+                meta = user.UserMeta,
+                dto = new UserDto(
+                user.Id, user.Name, "@" + user.Slug,
+                user.Description ?? "", user.RegistryData,
+                user.Email, user.Role.ToString(),
+                new PhotoDto(
+                    new PhotoVariants(
+                        user.UserMeta.IconBase,
+                        user.UserMeta.Small,
+                        user.UserMeta.Medium,
+                        user.UserMeta.Large),
+                    user.UserMeta.R,
+                    user.UserMeta.G,
+                    user.UserMeta.B), user.TotalLikes,
+                user.Comments.Count, user.Contents.Count,
+                user.Followers.Count, user.Following.Count,
+                user.OwnedChannels.Count, user.SubscripedChannels.Count)
             })
             .FirstOrDefaultAsync(user => user.u.Id == cmd.UserId, cancellationToken);
 
@@ -52,45 +71,42 @@ public class UserUpdateHandler : IRequestHandler<UserUpdateCommand, Result<UserD
         if (!string.IsNullOrEmpty(cmd.Description))
             user.u.Description = cmd.Description;
 
-        if (cmd.AvatarPhoto != null && cmd.AvatarPhoto.Length != 0)
-        {
-            /*string photoPath = await r2Service.SaveFormFileAsync(cmd.AvatarPhoto, "Images", cancellationToken);
-
-            string photoUrl = await r2Service.SavePhotoVariants(photoPath, user.u.Slug);
-
-            user.u.AvatarPhotoUrl = photoUrl;
-
-            File.Delete(photoPath);*/
-        }
-
-        //for test
+        // for test
         user.u.Role = cmd.Role;
 
-        try
+
+        string? photoPath = null;
+
+        if (cmd.IconPhoto != null && cmd.IconPhoto.Length != 0)
         {
-            await context.SaveChangesAsync();
+            photoPath = await r2Service.SaveFormFileAsync(
+                cmd.IconPhoto, "Images", cancellationToken);
 
-            logger.LogInformation("User {UserId} updated", cmd.UserId);
+            // delete old data
 
-            UserDto userDto = new(
-                user.u.Id, user.u.Name, "@" + user.u.Slug,
-                user.u.Description ?? "", user.u.RegistryData,
-                user.u.Email, user.u.Role.ToString(),
-                user.u.AvatarPhotoUrl, user.u.TotalLikes,
-                user.CommentsCount, user.ContentsCount,
-                user.FollowersCount, user.FollowingCount,
-                user.OwnedChannelsCount, user.SubscripedChannelsCount);
-
-            return Result<UserDto>.Success(200, userDto);
+            if (Directory.Exists(user.meta.IconBase))
+            {
+                Directory.Delete(user.meta.IconBase, true);
+            }
         }
-        catch (DbUpdateException ex)
+
+        await context.SaveChangesAsync();
+
+        // publishing to rabbit queue
+
+        if (!string.IsNullOrEmpty(photoPath) && File.Exists(photoPath))
         {
-            logger.LogError(ex, "Error while updating user {UserId}", cmd.UserId);
-
-            if (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
-                return Result<UserDto>.Failure(409, $"This name {cmd.Name} already existn");
-
-            throw;
+            await publisher.PublishAsync(new IconUploadMessage(
+                cmd.UserId, IconType.User, user.u.Slug, photoPath), cancellationToken);
         }
+        else
+        {
+            await userRepository.CreateSearchIndex(
+                user.u, user.meta, cancellationToken);
+        }
+
+        logger.LogInformation("User {UserId} updated", cmd.UserId);
+
+        return Result<UserDto>.Success(200, user.dto);
     }
 }

@@ -6,10 +6,11 @@ using Domain.Common.Interfaces.Db;
 using Domain.Entities;
 using MediatR;
 using Application.Dtos;
+using Domain.Rows.Contents;
 
 namespace Application.Contents.Recommendate;
 
-public class ContentRecommendationHandler : IRequestHandler<ContentRecommendationQuery, Result<ContentRecoDto[]>>
+public class ContentRecommendationHandler : IRequestHandler<ContentRecommendationQuery, Result<ContentFeedDto[]>>
 {
     private readonly ILogger<ContentRecommendationHandler> logger;
     private readonly IRecommendationService recommendation;
@@ -22,17 +23,21 @@ public class ContentRecommendationHandler : IRequestHandler<ContentRecommendatio
         this.logger = logger;
     }
 
-    public async Task<Result<ContentRecoDto[]>> Handle(ContentRecommendationQuery query, CancellationToken cancellationToken)
+    public async Task<Result<ContentFeedDto[]>> Handle(ContentRecommendationQuery query, CancellationToken cancellationToken)
     {
         if (!await context.Users.AsNoTracking().AnyAsync(u => u.Id == query.UserId, cancellationToken))
-            return Result<ContentRecoDto[]>.Failure(404, "User Not found");
+            return Result<ContentFeedDto[]>.Failure(404, "User Not found");
 
         double r = System.Random.Shared.NextDouble();
 
         var candidates = await context.Contents
             .AsNoTracking()
-            .Where(c => c.RandomKey > r && c.VideoMeta != null)
+            .Where(c => c.RandomKey > r)
             .Include(c => c.VideoMeta)
+            .Include(c => c.Channel)
+                .ThenInclude(ch => ch.ChannelMeta)
+            .Include(c => c.Creator)
+                .ThenInclude(u => u.UserMeta)
             .Take(300)
             .ToListAsync(cancellationToken);
 
@@ -42,6 +47,10 @@ public class ContentRecommendationHandler : IRequestHandler<ContentRecommendatio
                 .AsNoTracking()
                 .Where(c => c.RandomKey < r && c.VideoMeta != null)
                 .Include(c => c.VideoMeta)
+                .Include(c => c.Channel)
+                    .ThenInclude(ch => ch.ChannelMeta)
+                .Include(c => c.Creator)
+                    .ThenInclude(u => u.UserMeta)
                 .Take(300 - candidates.Count)
                 .ToListAsync(cancellationToken);
 
@@ -79,19 +88,49 @@ public class ContentRecommendationHandler : IRequestHandler<ContentRecommendatio
             .Select(x => x.Content)
             .Concat(random);
 
-        ContentRecoDto[] result = combined
-            .Select(c => new ContentRecoDto(
-                c.Id, c.ChannelId, c.CreatorId, c.Title, c.Slug, c.Description,
-                c.CreatedDate, c.ContentType.ToString(), System.Random.Shared.NextDouble(),
-                c.VideoMeta.DurationSeconds, c.VideoMeta.VideoUrl, new PreviewPhotoDto(
-                    c.VideoMeta.GetPhotoVariants(), c.VideoMeta.R, c.VideoMeta.G, c.VideoMeta.B),
-                c.Savers.Count, c.Likers.Count, c.Comments.Count, c.DisLikers.Count, c.ViewsCount))
-            .OrderBy(x => x.RandomKey)
+        ContentFeedDto[] result = combined
+            .Select(c =>
+            {
+                dynamic owner = (c.Channel == null ? c.Creator : c.Channel)!;
+
+                return new ContentFeedDto(
+                    c.Id, c.ChannelId, c.CreatorId, owner.Name, owner.Slug, owner.GetType() == typeof(User) ?
+                    new PhotoDto(
+                        new PhotoVariants(
+                            owner.UserMeta.IconBase,
+                            owner.UserMeta.Small,
+                            owner.UserMeta.Medium,
+                            owner.UserMeta.Large),
+                        owner.UserMeta.R,
+                        owner.UserMeta.G,
+                        owner.UserMeta.B) :
+                    new PhotoDto(
+                        new PhotoVariants(
+                            owner.ChannelMeta.IconBase,
+                            owner.ChannelMeta.Small,
+                            owner.ChannelMeta.Medium,
+                            owner.ChannelMeta.Large),
+                        owner.ChannelMeta.R,
+                        owner.ChannelMeta.G,
+                        owner.ChannelMeta.B),
+                    c.Title, c.Slug, c.Description, c.CreatedDate, c.ContentType.ToString(),
+                    c.VideoMeta.DurationSeconds, c.VideoMeta.VideoUrl, new PhotoDto(
+                        new PhotoVariants(
+                            c.VideoMeta.PhotoBase,
+                            c.VideoMeta.Small,
+                            c.VideoMeta.Medium,
+                            c.VideoMeta.Large),
+                        c.VideoMeta.R,
+                        c.VideoMeta.G,
+                        c.VideoMeta.B),
+                    c.ViewsCount);
+            })
+            .OrderBy(_ => System.Random.Shared.NextDouble())
             .ToArray();
 
         logger.LogInformation("Returned {Count} recommendet contents for User {UserId}",
             result.Length, query.UserId);
 
-        return Result<ContentRecoDto[]>.Success(200, result);
+        return Result<ContentFeedDto[]>.Success(200, result);
     }
 }

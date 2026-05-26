@@ -3,6 +3,8 @@ using Microsoft.Extensions.Logging;
 using Application.Users.Dtos;
 using Domain.Common.Interfaces.Db;
 using MediatR;
+using Domain.Rows.Contents;
+using Application.Dtos;
 
 namespace Application.Users.Choose;
 
@@ -23,7 +25,15 @@ public class UserChooseHandler : IRequestHandler<UserChooseQuery, Result<UserDto
             .Select(user => new UserDto(
                 user.Id, user.Name, "@" + user.Slug,
                 user.Description ?? "", user.RegistryData, user.Email,
-                user.Role.ToString(), user.AvatarPhotoUrl, user.TotalLikes,
+                user.Role.ToString(), new PhotoDto(
+                    new PhotoVariants(
+                        user.UserMeta.IconBase,
+                        user.UserMeta.Small,
+                        user.UserMeta.Medium,
+                        user.UserMeta.Large),
+                    user.UserMeta.R,
+                    user.UserMeta.G,
+                    user.UserMeta.B), user.TotalLikes,
                 user.Comments.Count, user.Contents.Count, user.Followers.Count,
                 user.Following.Count, user.OwnedChannels.Count, user.SubscripedChannels.Count))
             .AsNoTracking()
