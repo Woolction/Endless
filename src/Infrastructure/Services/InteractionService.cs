@@ -9,7 +9,7 @@ public class InteractionService : IInteractionService
     //call when user exits the video
     public void Interaction(UserGenreVector[] userVectors, Content content, ContentGenreVector[] contentVectors, UserInteractionContent interaction, int Count)
     {
-        VideoMetaData videoMeta = content.VideoMeta!;
+        VideoMeta videoMeta = content.VideoMeta!;
 
         if (videoMeta.DurationSeconds == 0)
             return;
@@ -73,7 +73,7 @@ public class InteractionService : IInteractionService
 
     private void UpdateWatchStats(Content content, int watchTimeSeconds)
     {
-        VideoMetaData videoMeta = content.VideoMeta; 
+        VideoMeta videoMeta = content.VideoMeta;
 
         content.ViewsCount++;
 

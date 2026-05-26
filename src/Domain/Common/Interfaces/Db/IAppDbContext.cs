@@ -6,10 +6,12 @@ namespace Domain.Common.Interfaces.Db;
 public interface IAppDbContext
 {
     DbSet<User> Users { get; set; }
+    DbSet<UserMeta> UserMetas { get; set; }
     DbSet<UserFollowing> UserFollowings { get; set; }
     DbSet<UserInteractionContent> UserInteractionContents { get; set; }
 
     DbSet<Channel> Channels { get; set; }
+    DbSet<ChannelMeta> ChannelMetas { get; set; }
     DbSet<ChannelOwner> ChannelOwners { get; set; }
     DbSet<ChannelSubscription> ChannelSubscriptions { get; set; }
 
@@ -23,7 +25,7 @@ public interface IAppDbContext
     DbSet<UserGenreVector> UserVectors { get; set; }
     DbSet<ContentGenreVector> ContentVectors { get; set; }
 
-    DbSet<VideoMetaData> VideoMetas { get; set; }
+    DbSet<VideoMeta> VideoMetas { get; set; }
 
     DbSet<Comment> Comments { get; set; }
     DbSet<LikedComment> LikedComments { get; set; }

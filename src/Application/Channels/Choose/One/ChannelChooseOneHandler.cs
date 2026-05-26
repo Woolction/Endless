@@ -3,6 +3,8 @@ using Microsoft.Extensions.Logging;
 using Application.Channels.Dtos;
 using Domain.Common.Interfaces.Db;
 using MediatR;
+using Application.Dtos;
+using Domain.Rows.Contents;
 
 namespace Application.Channels.Choose.One;
 
@@ -25,7 +27,16 @@ public class ChannelChooseOneHandler : IRequestHandler<ChannelChooseOneQuery, Re
             .Select(channel => new ChannelDto(
                 channel.Id, channel.Name, "@" + channel.Slug,
                 channel.Description ?? "", channel.CreatedDate,
-                channel.AvatarPhotoUrl, channel.Subscribers.Count,
+                new PhotoDto(
+                    new PhotoVariants(
+                        channel.ChannelMeta.IconBase,
+                        channel.ChannelMeta.Small,
+                        channel.ChannelMeta.Medium,
+                        channel.ChannelMeta.Large),
+                    channel.ChannelMeta.R,
+                    channel.ChannelMeta.G,
+                    channel.ChannelMeta.B),
+                channel.Subscribers.Count,
                 channel.Contents.Count, channel.Owners.Count,
                 channel.TotalLikes, channel.TotalViews))
             .FirstOrDefaultAsync(cancellationToken);
