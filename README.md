@@ -61,7 +61,7 @@ Audience=EndlessUsers
 ExpireMinutes=30
 ```
 #### 3. Obtain a license:
-obtain a license (community) from [SixLabors](https://sixlabors.com/pricing) and put in root for ImageSharp or change version to 3.1.11 in Domain.csproj
+Obtain a Community License from [SixLabors](https://sixlabors.com/pricing) and place the license file in the project root directory or change version to 3.1.11 in Domain.csproj
 ```.csproj
 from => 
   <PackageReference Include="SixLabors.ImageSharp" Version="4.0.0" />
@@ -78,18 +78,18 @@ docker compose up --build
 
 - main: http://localhost:5000
 - upload video: http://localhost:5000/upload.html
-- watch videos: http://localhost:5000/watch.html
+- watch video: http://localhost:5000/watch.html
 ```
 
 ---
 
 ## Supporting
 
-Endless is built and maintained int the free time of creator and contributors. The most effective way to support the project is to share your time and experience.
+Endless is built and maintained in the free time of its creator and contributors. The most effective way to support the project is to share your time and experience.
 
 ### The primary ways to help are to:
 
-1. ***`Contributing:`*** Contribute features and fixing bugs, please read the [Contributing Rules](CONTRIBUTING.md) and how best to contribute to development before making your first pull request.
+1. ***`Contributing:`*** Contribute features and fix bugs, please read the [Contributing Rules](CONTRIBUTING.md) and how best to contribute to development before making your first pull request.
 2. ***`Promotion:`*** Want to help us grow? Check out our [Promotion Guide](PROMOTION.md) We need people who can create hype around the project.
 3. ***`Issues:`*** Find bugs and report them as described in [Contributing Rules](CONTRIBUTING.md) or come up with new features
 
