@@ -251,11 +251,12 @@ public static class ProgramPipeline
         app.UseCookiePolicy();
 
         app.UseRateLimiter();
+
+        app.MapControllers();
     }
 
     public static void EndPointsRegistry(this WebApplication app)
     {
-        app.MapControllers();
 
         //app.MapGet("/", () => Results.Redirect("/index.html"));
     }
