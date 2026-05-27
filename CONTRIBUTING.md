@@ -21,13 +21,13 @@ Please adhere to these guidelines when publishing commits.
 Use the following format: `<type>: <short description>`
 
 #### Supported Types
-- **feat:** -> add a new feature
-- **fix:** -> fix a bug
-- **docs:** -> create or update any `.md` files (including LICENSE)
-- **chore:** -> create or update configurations, dependencies, or build tools
-- **refactor:** -> code changes that neither fix a bug nor add a feature
-- **test:** -> add or update tests
-- **perf:** -> code changes that improve performance
+- **feat:** => add a new feature
+- **fix:** => fix a bug
+- **docs:** => create or update any `.md` files (including LICENSE)
+- **chore:** => create or update configurations, dependencies, or build tools
+- **refactor:** => code changes that neither fix a bug nor add a feature
+- **test:** => add or update tests
+- **perf:** => code changes that improve performance
 
 ## Good Pull Request
 Please adhere to these guidelines when opening a PR
