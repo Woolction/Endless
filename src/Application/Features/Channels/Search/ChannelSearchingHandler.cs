@@ -1,0 +1,51 @@
+using Application.Features.Dtos;
+using Application.Features.Channels.Dtos;
+using Domain.Common.Interfaces.Repositories;
+using Elastic.Clients.Elasticsearch;
+using Microsoft.Extensions.Logging;
+using Domain.Rows.Channels;
+using MediatR;
+
+namespace Application.Features.Channels.Search;
+
+public class ChannelSearchingHandler : IRequestHandler<ChannelSearchQuery, Result<SearchedChannelDto[]>>
+{
+    private readonly ILogger<ChannelSearchingHandler> logger;
+    private readonly IChannelRepository channelRepository;
+
+    public ChannelSearchingHandler(IChannelRepository channelRepository, ILogger<ChannelSearchingHandler> logger)
+    {
+        this.channelRepository = channelRepository;
+        this.logger = logger;
+    }
+
+    public async Task<Result<SearchedChannelDto[]>> Handle(ChannelSearchQuery query, CancellationToken cancellationToken)
+    {
+        ICollection<FieldValue> lastValue = [];
+
+        if (query.LastScore != null)
+            lastValue.Add(FieldValue.Double(
+                query.LastScore.Value));
+
+        ChannelSearchRow result = await channelRepository.SearchChannelsByName(query.Name, lastValue, cancellationToken);
+
+        SearchedChannelDto[] channelDtos = result.SearchedChannels.Select(c => new SearchedChannelDto(new ChannelDto(
+            c.SearchedChannel.ChannelId, c.SearchedChannel.Name, c.SearchedChannel.Slug,
+            c.SearchedChannel.Description, c.SearchedChannel.CreatedDate,
+            new PhotoDto(
+                c.SearchedChannel.IconVariants,
+                c.SearchedChannel.R,
+                c.SearchedChannel.G,
+                c.SearchedChannel.B),
+            0, 0, 0, c.SearchedChannel.TotalLikes,
+            c.SearchedChannel.TotalViews), c.Score)).ToArray();
+
+        if (channelDtos.Length < 1)
+            return Result<SearchedChannelDto[]>.Failure(404, $"Channel with name: {query.Name} not found");
+
+        logger.LogInformation("Search returned Channels {Count} results for {Query}",
+           channelDtos.Length, query.Name);
+
+        return Result<SearchedChannelDto[]>.Success(200, channelDtos);
+    }
+}

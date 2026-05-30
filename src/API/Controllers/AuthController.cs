@@ -1,8 +1,8 @@
-using Application.Authentications.Login;
-using Application.Authentications.Update;
+using Application.Features.Authentications.Login;
+using Application.Features.Authentications.Update;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
-using Application.Authentications.Dtos;
+using Application.Features.Authentications.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using Application.Utilities;
 using Application;

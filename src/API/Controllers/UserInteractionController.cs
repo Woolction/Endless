@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
-using Application.Genres.UserInteraction;
+using Application.Features.Genres.UserInteraction;
 using Domain.Common.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Domain.Common.Interfaces.Db;
 using Microsoft.AspNetCore.Mvc;
-using Application.Genres.Dtos;
+using Application.Features.Genres.Dtos;
 using Application.Utilities;
 using Domain.Common.Enums;
 using Domain.Entities;

@@ -1,11 +1,11 @@
-using Application.Channels.Search.CreateIndex;
-using Application.Contents.Search.CreateIndex;
-using Application.Users.Search.CreateIndex;
+using Application.Features.Channels.Search.CreateIndex;
+using Application.Features.Contents.Search.CreateIndex;
+using Application.Features.Users.Search.CreateIndex;
 using Microsoft.AspNetCore.Authorization;
-using Application.Searchs.DeleteIndex;
+using Application.Features.Searchs.DeleteIndex;
 using Microsoft.AspNetCore.Mvc;
 using Domain.Common.Enums;
-using Application.Searchs;
+using Application.Features.Searchs;
 using Application;
 using MediatR;
 

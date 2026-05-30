@@ -1,16 +1,16 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Domain.Common.Interfaces.Db;
-using Application.Comments.Create;
-using Application.Comments.Dtos;
+using Application.Features.Comments.Create;
+using Application.Features.Comments.Dtos;
 using Microsoft.AspNetCore.Mvc;
-using Application.Users.Dtos;
+using Application.Features.Users.Dtos;
 using Application.Utilities;
 using Domain.Common.Enums;
 using Domain.Entities;
 using API.Extensions;
-using Application.Comments.Update;
-using Application.Dtos;
+using Application.Features.Comments.Update;
+using Application.Features.Dtos;
 using Domain.Rows.Contents;
 
 namespace API.Controllers;

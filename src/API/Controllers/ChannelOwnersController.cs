@@ -1,12 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Domain.Common.Interfaces.Db;
-using Application.Channels.Dtos;
+using Application.Features.Channels.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using Application.Utilities;
 using Domain.Common.Enums;
 using Domain.Entities;
-using Application.Dtos;
+using Application.Features.Dtos;
 using Domain.Rows.Contents;
 
 namespace API.Controllers;
