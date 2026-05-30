@@ -12,19 +12,22 @@ using System.Text.Json;
 using RabbitMQ.Client;
 using Domain.Entities;
 using System.Text;
+using MediatR;
 
-namespace Infrastructure.Services.RabbitConsumers;
+namespace Infrastructure.RabbitMQ.Consumers;
 
 public class IconUploadingConsumer : IConsumer
 {
     private readonly ILogger<IconUploadingConsumer> logger;
     private readonly IServiceScopeFactory factory;
     private readonly IR2Service r2Service;
+    private readonly IMediator mediator;
     private IChannel? channel;
 
-    public IconUploadingConsumer(ILogger<IconUploadingConsumer> logger, IServiceScopeFactory factory, IR2Service r2Service)
+    public IconUploadingConsumer(ILogger<IconUploadingConsumer> logger, IMediator mediator, IServiceScopeFactory factory, IR2Service r2Service)
     {
         this.r2Service = r2Service;
+        this.mediator = mediator;
         this.factory = factory;
         this.logger = logger;
     }
@@ -65,6 +68,8 @@ public class IconUploadingConsumer : IConsumer
 
                     return;
                 }
+
+                await mediator.Send(message, token);
 
                 PhotoVariants iconVariants = await r2Service.SaveIconVariants(
                     message.PhotoPath, message.Slug, message.Type, token);

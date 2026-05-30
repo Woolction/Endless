@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Infrastructure.Services.RabbitConsumers;
 using Domain.Common.Interfaces.Repositories;
 using Infrastructure.Services.Background;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.RateLimiting;
+using Infrastructure.RabbitMQ.Consumers;
 using Application.Contents.Video.Upload;
 using Domain.Common.Interfaces.Services;
 using Microsoft.AspNetCore.StaticFiles;

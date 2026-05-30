@@ -11,9 +11,8 @@ using System.Text.Json;
 using Domain.Entities;
 using RabbitMQ.Client;
 using System.Text;
-using System.Runtime.CompilerServices;
 
-namespace Infrastructure.Services.RabbitConsumers;
+namespace Infrastructure.RabbitMQ.Consumers;
 
 public class VideoUploadingConsumer : IConsumer
 {
