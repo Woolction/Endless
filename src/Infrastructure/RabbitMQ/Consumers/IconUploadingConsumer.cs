@@ -69,7 +69,7 @@ public class IconUploadingConsumer : IConsumer
                     return;
                 }
 
-                //await mediator.Send(message, token);
+                await mediator.Send(message, token);
 
                 PhotoVariants iconVariants = await r2Service.SaveIconVariants(
                     message.PhotoPath, message.Slug, message.Type, token);

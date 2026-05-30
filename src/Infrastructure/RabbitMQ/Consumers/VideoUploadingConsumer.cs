@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
-using Application.Features.Rows.Contents.Video.Upload;
+using Application.Features.Contents.Video.Upload;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Application.Interfaces.Db;
@@ -11,6 +11,7 @@ using System.Text.Json;
 using Domain.Entities;
 using RabbitMQ.Client;
 using System.Text;
+using MediatR;
 
 namespace Infrastructure.RabbitMQ.Consumers;
 
@@ -21,13 +22,15 @@ public class VideoUploadingConsumer : IConsumer
 
     private readonly IFfmpegService ffmpegService;
     private readonly IR2Service r2Service;
+    private readonly IMediator mediator;
     private IChannel? channel;
 
-    public VideoUploadingConsumer(IServiceScopeFactory scopeFactory, ILogger<VideoUploadingConsumer> logger, IFfmpegService ffmpegService, IR2Service r2Service)
+    public VideoUploadingConsumer(IServiceScopeFactory scopeFactory, IMediator mediator, ILogger<VideoUploadingConsumer> logger, IFfmpegService ffmpegService, IR2Service r2Service)
     {
         this.ffmpegService = ffmpegService;
         this.scopeFactory = scopeFactory;
         this.r2Service = r2Service;
+        this.mediator = mediator;
         this.logger = logger;
     }
 
@@ -67,6 +70,8 @@ public class VideoUploadingConsumer : IConsumer
 
                     return;
                 }
+
+                await mediator.Send(message, token);
 
                 string videoUrl = string.Empty;
                 PhotoVariants photoUrl = new();
