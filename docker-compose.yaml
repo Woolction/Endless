@@ -13,6 +13,7 @@ services:
         condition: service_started
     volumes:
       - ./storage:/storage
+      - ./src/API/wwwroot:/app/wwwroot
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       
