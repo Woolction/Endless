@@ -1,6 +1,6 @@
 using Application.Interfaces.Repositories;
 using Elastic.Clients.Elasticsearch;
-using Domain.Rows.Users;
+using Application.Features.Rows.Users;
 using Domain.Entities;
 using Elastic.Clients.Elasticsearch.QueryDsl;
 using Elastic.Clients.Elasticsearch.Analysis;

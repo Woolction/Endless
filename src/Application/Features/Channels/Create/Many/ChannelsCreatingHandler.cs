@@ -8,7 +8,7 @@ using Domain.Entities;
 using Domain.Common.Enums;
 using MediatR;
 using Npgsql;
-using Domain.Rows.Contents;
+using Application.Features.Rows.Contents;
 
 namespace Application.Features.Channels.Create.Many;
 

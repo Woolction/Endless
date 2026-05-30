@@ -7,9 +7,8 @@ using Application.Interfaces.Services;
 using Application.Utilities;
 using Application.Interfaces.Db;
 using MediatR;
-using Domain.Rows.Contents;
+using Application.Features.Rows.Contents;
 using Application.Interfaces.Repositories;
-using Domain.Rows.Icon.Upload;
 using Domain.Common.Enums;
 
 namespace Application.Features.Users.Update;

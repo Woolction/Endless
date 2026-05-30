@@ -3,7 +3,7 @@ using Elastic.Clients.Elasticsearch.Analysis;
 using Elastic.Clients.Elasticsearch.QueryDsl;
 using Application.Interfaces.Repositories;
 using Elastic.Clients.Elasticsearch;
-using Domain.Rows.Contents;
+using Application.Features.Rows.Contents;
 using Elastic.Transport;
 using Domain.Entities;
 

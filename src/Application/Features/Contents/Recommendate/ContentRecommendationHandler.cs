@@ -6,7 +6,7 @@ using Application.Interfaces.Services;
 using Application.Interfaces.Db;
 using Domain.Entities;
 using MediatR;
-using Domain.Rows.Contents;
+using Application.Features.Rows.Contents;
 
 namespace Application.Features.Contents.Recommendate;
 

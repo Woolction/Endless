@@ -1,7 +1,7 @@
+using Application.Features.Rows.Contents;
 using Domain.Entities;
-using Domain.Rows.Contents;
 
-namespace Domain.Rows.Channels;
+namespace Application.Features.Rows.Channels;
 
 public class ChannelSearchIndex
 {

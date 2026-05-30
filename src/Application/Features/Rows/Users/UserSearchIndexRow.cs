@@ -1,4 +1,4 @@
-namespace Domain.Rows.Users;
+namespace Application.Features.Rows.Users;
 
 public class UserSearchIndexRow
 {

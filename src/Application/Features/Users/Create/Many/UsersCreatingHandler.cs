@@ -8,7 +8,7 @@ using Application.Interfaces.Db;
 using Domain.Entities;
 using MediatR;
 using Npgsql;
-using Domain.Rows.Contents;
+using Application.Features.Rows.Contents;
 
 namespace Application.Features.Users.Create.Many;
 

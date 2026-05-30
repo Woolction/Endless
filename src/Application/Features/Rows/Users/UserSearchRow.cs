@@ -1,6 +1,6 @@
 using Elastic.Clients.Elasticsearch;
 
-namespace Domain.Rows.Users;
+namespace Application.Features.Rows.Users;
 
 public class UserSearchRow
 {

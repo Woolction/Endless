@@ -11,7 +11,7 @@ using Domain.Entities;
 using API.Extensions;
 using Application.Features.Comments.Update;
 using Application.Features.Dtos;
-using Domain.Rows.Contents;
+using Application.Features.Rows.Contents;
 
 namespace API.Controllers;
 

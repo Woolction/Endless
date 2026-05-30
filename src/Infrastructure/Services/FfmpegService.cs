@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
-using Domain.Rows.Contents;
+using Application.Features.Rows.Contents;
 using SixLabors.ImageSharp;
 
 namespace Infrastructure.Services;

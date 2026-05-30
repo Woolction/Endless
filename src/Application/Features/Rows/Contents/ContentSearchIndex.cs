@@ -1,6 +1,6 @@
 using Domain.Entities;
 
-namespace Domain.Rows.Contents;
+namespace Application.Features.Rows.Contents;
 
 public class ContentSearchIndex
 {
@@ -41,7 +41,7 @@ public class ContentSearchIndex
         CreatedDate = content.CreatedDate;
         ContentType = (int)content.ContentType;
 
-        if (content.ContentType == Common.Enums.ContentType.Video)
+        if (content.ContentType == Domain.Common.Enums.ContentType.Video)
         {
             ContentUrl = videoMeta.VideoUrl;
             PreviewPhotoUrl = new PhotoVariants(

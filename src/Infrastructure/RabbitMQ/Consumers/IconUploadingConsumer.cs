@@ -4,9 +4,9 @@ using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Application.Interfaces.Db;
-using Domain.Rows.Icon.Upload;
+using Application.Features.Icon.Upload;
 using RabbitMQ.Client.Events;
-using Domain.Rows.Contents;
+using Application.Features.Rows.Contents;
 using Domain.Common.Enums;
 using System.Text.Json;
 using RabbitMQ.Client;
@@ -95,8 +95,10 @@ public class IconUploadingConsumer : IConsumer
                         return;
                     }
 
-                    meta.SetPhoto(iconVariants);
-                    await meta.SetAverageColor(iconVariants.Small);
+                    meta.SetPhoto(
+                        iconVariants.BaseUrl, iconVariants.Small, iconVariants.Medium, iconVariants.Large);
+                    await meta.SetAverageColor(
+                        iconVariants.Small, token);
 
                     await context.SaveChangesAsync();
 
@@ -120,8 +122,10 @@ public class IconUploadingConsumer : IConsumer
                         return;
                     }
 
-                    meta.SetPhoto(iconVariants);
-                    await meta.SetAverageColor(iconVariants.Small);
+                    meta.SetPhoto(
+                        iconVariants.BaseUrl, iconVariants.Small, iconVariants.Medium, iconVariants.Large);
+                    await meta.SetAverageColor(
+                        iconVariants.Small, token);
 
                     await context.SaveChangesAsync();
 

@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Application.Utilities;
 using Domain.Common.Enums;
 using Domain.Entities;
-using Domain.Rows.Contents;
+using Application.Features.Rows.Contents;
 using Application.Features.Dtos;
 
 namespace API.Controllers;

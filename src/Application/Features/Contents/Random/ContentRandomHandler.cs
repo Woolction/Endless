@@ -6,7 +6,7 @@ using System.Globalization;
 using System.Threading.Channels;
 using Application.Features.Dtos;
 using Application.Features.Contents.Dtos;
-using Domain.Rows.Contents;
+using Application.Features.Rows.Contents;
 
 namespace Application.Features.Contents.Random;
 

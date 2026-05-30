@@ -1,8 +1,8 @@
+using Application.Features.Rows.Contents;
 using Domain.Common.Enums;
 using Domain.Entities;
-using Domain.Rows.Contents;
 
-namespace Domain.Rows.Users;
+namespace Application.Features.Rows.Users;
 
 public class UserSearchIndex
 {

@@ -8,7 +8,7 @@ using Application.Utilities;
 using Domain.Common.Enums;
 using Domain.Entities;
 using Application.Features.Dtos;
-using Domain.Rows.Contents;
+using Application.Features.Rows.Contents;
 
 namespace API.Controllers;
 

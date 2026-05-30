@@ -2,7 +2,6 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp;
-using Domain.Rows.Contents;
 
 namespace Domain.Entities;
 
@@ -34,12 +33,12 @@ public class VideoMeta
         DurationSeconds = durationSeconds;
     }
 
-    public void SetPhoto(PhotoVariants variants)
+    public void SetPhoto(string photoBase, string small, string? medium, string? large)
     {
-        PhotoBase = variants.BaseUrl;
-        Small = variants.Small;
-        Medium = variants.Medium;
-        Large = variants.Large;
+        PhotoBase = photoBase;
+        Small = small;
+        Medium = medium;
+        Large = large;
     }
 
     public async Task SetAverageColor(string photoUrl, CancellationToken token = default)

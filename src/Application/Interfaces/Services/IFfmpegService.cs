@@ -1,4 +1,4 @@
-using Domain.Rows.Contents;
+using Application.Features.Rows.Contents;
 
 namespace Application.Interfaces.Services;
 

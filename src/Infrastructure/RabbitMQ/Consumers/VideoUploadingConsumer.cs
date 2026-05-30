@@ -1,12 +1,12 @@
 using Microsoft.Extensions.DependencyInjection;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
-using Domain.Rows.Contents.Video.Upload;
+using Application.Features.Rows.Contents.Video.Upload;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Application.Interfaces.Db;
 using RabbitMQ.Client.Events;
-using Domain.Rows.Contents;
+using Application.Features.Rows.Contents;
 using System.Text.Json;
 using Domain.Entities;
 using RabbitMQ.Client;
@@ -77,20 +77,23 @@ public class VideoUploadingConsumer : IConsumer
                 {
                     logger.LogInformation("save photo");
 
-                    photoUrl = await r2Service.SavePhotoVariants(message.PhotoPath, message.Slug);
+                    photoUrl = await r2Service.SavePhotoVariants(
+                        message.PhotoPath, message.Slug, token);
                 }
 
                 if (message.VideoPath != null)
                 {
                     logger.LogInformation("get video duration");
 
-                    duration = await ffmpegService.GetVideoDuration(message.VideoPath, token);
+                    duration = await ffmpegService.GetVideoDuration(
+                        message.VideoPath, token);
 
                     double timeSeconds = Math.Clamp(20, 0, duration / 1.1f);
 
                     logger.LogInformation("get video height");
 
-                    int height = await ffmpegService.GetVideoHeight(message.VideoPath, token);
+                    int height = await ffmpegService.GetVideoHeight(
+                        message.VideoPath, token);
 
                     if (message.PhotoPath == null)
                     {
@@ -121,11 +124,14 @@ public class VideoUploadingConsumer : IConsumer
                     .FirstAsync(c => c.Id == message.ContentId);
 
                 // set photo 
-                content.VideoMeta.SetPhoto(photoUrl);
-                await content.VideoMeta.SetAverageColor(photoUrl.Small, token);
+                content.VideoMeta.SetPhoto(
+                    photoUrl.BaseUrl, photoUrl.Small, photoUrl.Medium, photoUrl.Large);
+                await content.VideoMeta.SetAverageColor(
+                    photoUrl.Small, token);
 
                 // set video
-                content.VideoMeta.SetVideo(videoUrl, (int)duration);
+                content.VideoMeta.SetVideo(
+                    videoUrl, (int)duration);
 
                 await context.SaveChangesAsync();
 

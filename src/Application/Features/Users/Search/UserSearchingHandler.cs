@@ -3,7 +3,7 @@ using Application.Features.Users.Dtos;
 using Application.Interfaces.Repositories;
 using Elastic.Clients.Elasticsearch;
 using Microsoft.Extensions.Logging;
-using Domain.Rows.Users;
+using Application.Features.Rows.Users;
 using MediatR;
 
 namespace Application.Features.Users.Search;

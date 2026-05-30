@@ -1,4 +1,4 @@
-namespace Domain.Rows.Contents;
+namespace Application.Features.Rows.Contents;
 
 public class ContentSearchRow
 {

@@ -3,7 +3,7 @@ using Application.Features.Channels.Dtos;
 using Application.Interfaces.Repositories;
 using Elastic.Clients.Elasticsearch;
 using Microsoft.Extensions.Logging;
-using Domain.Rows.Channels;
+using Application.Features.Rows.Channels;
 using MediatR;
 
 namespace Application.Features.Channels.Search;

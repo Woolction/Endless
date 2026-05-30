@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Http;
-using Domain.Rows.Contents;
+using Application.Features.Rows.Contents;
 using Domain.Common.Enums;
 
 namespace Application.Interfaces.Services;

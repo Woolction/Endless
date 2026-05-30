@@ -1,5 +1,5 @@
 using Application.Interfaces.Db;
-using Domain.Rows.Icon.Upload;
+using Application.Features.Icon.Upload;
 using System.Text.Json;
 using RabbitMQ.Client;
 using System.Text;

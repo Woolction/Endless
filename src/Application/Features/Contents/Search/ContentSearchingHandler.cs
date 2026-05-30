@@ -2,7 +2,7 @@ using Application.Features.Dtos;
 using Application.Interfaces.Repositories;
 using Elastic.Clients.Elasticsearch;
 using Microsoft.Extensions.Logging;
-using Domain.Rows.Contents;
+using Application.Features.Rows.Contents;
 using MediatR;
 using Application.Features.Contents.Create;
 using Application.Features.Contents.Dtos;

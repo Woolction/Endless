@@ -1,4 +1,4 @@
-namespace Domain.Rows.Channels;
+namespace Application.Features.Rows.Channels;
 
 public class ChannelSearchIndexRow
 {

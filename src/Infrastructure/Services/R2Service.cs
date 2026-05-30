@@ -3,7 +3,7 @@ using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.Processing;
 using Microsoft.AspNetCore.Http;
 using SixLabors.ImageSharp;
-using Domain.Rows.Contents;
+using Application.Features.Rows.Contents;
 using Domain.Common.Enums;
 using Amazon.S3.Transfer;
 using Amazon.S3;

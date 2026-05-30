@@ -1,6 +1,6 @@
 using Elastic.Clients.Elasticsearch.IndexManagement;
 using Elastic.Clients.Elasticsearch;
-using Domain.Rows.Contents;
+using Application.Features.Rows.Contents;
 using Domain.Entities;
 
 namespace Application.Interfaces.Repositories;
