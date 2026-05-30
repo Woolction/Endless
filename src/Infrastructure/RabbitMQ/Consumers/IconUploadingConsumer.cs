@@ -1,16 +1,9 @@
-using Microsoft.Extensions.DependencyInjection;
-using Application.Interfaces.Repositories;
-using Application.Interfaces.Services;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Application.Interfaces.Db;
 using Application.Features.Icon.Upload;
+using Application.Interfaces.Services;
+using Microsoft.Extensions.Logging;
 using RabbitMQ.Client.Events;
-using Application.Features.Rows.Contents;
-using Domain.Common.Enums;
 using System.Text.Json;
 using RabbitMQ.Client;
-using Domain.Entities;
 using System.Text;
 using Application;
 using MediatR;
@@ -20,16 +13,12 @@ namespace Infrastructure.RabbitMQ.Consumers;
 public class IconUploadingConsumer : IConsumer
 {
     private readonly ILogger<IconUploadingConsumer> logger;
-    private readonly IServiceScopeFactory factory;
-    private readonly IR2Service r2Service;
     private readonly IMediator mediator;
     private IChannel? channel;
 
-    public IconUploadingConsumer(ILogger<IconUploadingConsumer> logger, IMediator mediator, IServiceScopeFactory factory, IR2Service r2Service)
+    public IconUploadingConsumer(ILogger<IconUploadingConsumer> logger, IMediator mediator)
     {
-        this.r2Service = r2Service;
         this.mediator = mediator;
-        this.factory = factory;
         this.logger = logger;
     }
 
