@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Domain.Common.Interfaces.Db;
+using Application.Interfaces.Db;
 using Application.Features.Contents.Dtos;
 using Application.Features.Comments.Dtos;
 using Microsoft.AspNetCore.Mvc;

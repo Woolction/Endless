@@ -3,13 +3,12 @@ using Application.Features.Icon.Upload;
 using Application.Features.Users.Dtos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Domain.Common.Interfaces.Services;
+using Application.Interfaces.Services;
 using Application.Utilities;
-using Domain.Common.Interfaces.Db;
+using Application.Interfaces.Db;
 using MediatR;
-using Npgsql;
 using Domain.Rows.Contents;
-using Domain.Common.Interfaces.Repositories;
+using Application.Interfaces.Repositories;
 using Domain.Rows.Icon.Upload;
 using Domain.Common.Enums;
 

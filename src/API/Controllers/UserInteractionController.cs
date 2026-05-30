@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Application.Features.Genres.UserInteraction;
-using Domain.Common.Interfaces.Services;
+using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
-using Domain.Common.Interfaces.Db;
+using Application.Interfaces.Db;
 using Microsoft.AspNetCore.Mvc;
 using Application.Features.Genres.Dtos;
 using Application.Utilities;

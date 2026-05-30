@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace Domain.Common;
+namespace Domain.Common.ObjectDatas;
 
 [Owned]
 public class RefreshToken

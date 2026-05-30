@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Domain.Common.Interfaces.Db;
+using Application.Interfaces.Db;
 using MediatR;
 using System.Globalization;
 using System.Threading.Channels;

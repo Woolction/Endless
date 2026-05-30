@@ -1,6 +1,6 @@
-using Domain.Common.Interfaces.Services;
+using Application.Interfaces.Services;
 using Microsoft.Extensions.Hosting;
-using Domain.Common.Interfaces.Db;
+using Application.Interfaces.Db;
 
 namespace Infrastructure.Services.Background;
 

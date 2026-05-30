@@ -1,5 +1,5 @@
 using Application.Features.Dtos;
-using Domain.Common.Interfaces.Repositories;
+using Application.Interfaces.Repositories;
 using Elastic.Clients.Elasticsearch;
 using Microsoft.Extensions.Logging;
 using Domain.Rows.Contents;

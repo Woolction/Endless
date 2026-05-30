@@ -1,12 +1,12 @@
 using Application.Features.Dtos;
 using Application.Features.Contents.Dtos;
 using Application.Features.Contents.Video.Upload;
-using Domain.Common.Interfaces.Repositories;
-using Domain.Common.Interfaces.Services;
+using Application.Interfaces.Repositories;
+using Application.Interfaces.Services;
 using Domain.Rows.Contents.Video.Upload;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Domain.Common.Interfaces.Db;
+using Application.Interfaces.Db;
 using Domain.Rows.Contents;
 using Domain.Entities;
 using MediatR;

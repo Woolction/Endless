@@ -1,5 +1,5 @@
 using Domain.Rows.Contents.Video.Upload;
-using Domain.Common.Interfaces.Db;
+using Application.Interfaces.Db;
 using System.Text.Json;
 using RabbitMQ.Client;
 using System.Text;

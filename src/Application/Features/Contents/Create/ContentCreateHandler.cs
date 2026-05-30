@@ -1,11 +1,11 @@
 using Application.Features.Dtos;
 using Application.Features.Contents.Dtos;
 using Application.Features.Contents.Video.Upload;
-using Domain.Common.Interfaces.Services;
+using Application.Interfaces.Services;
 using Domain.Rows.Contents.Video.Upload;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Domain.Common.Interfaces.Db;
+using Application.Interfaces.Db;
 using Domain.Common.Enums;
 using Domain.Entities;
 using MediatR;
@@ -36,10 +36,10 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
         if (cmd.ChannelId != null)
         {
             ChannelOwner? channelOwner = await context.ChannelOwners
-            .FirstOrDefaultAsync(owner =>
-                owner.OwnerId == cmd.UserId &&
-                owner.ChannelId == cmd.ChannelId,
-                cancellationToken: cancellationToken);
+                .FirstOrDefaultAsync(owner =>
+                    owner.OwnerId == cmd.UserId &&
+                    owner.ChannelId == cmd.ChannelId,
+                    cancellationToken: cancellationToken);
 
             if (channelOwner == null)
             {

@@ -1,7 +1,7 @@
 using Elastic.Clients.Elasticsearch.IndexManagement;
 using Elastic.Clients.Elasticsearch.Analysis;
 using Elastic.Clients.Elasticsearch.QueryDsl;
-using Domain.Common.Interfaces.Repositories;
+using Application.Interfaces.Repositories;
 using Elastic.Clients.Elasticsearch;
 using Domain.Rows.Channels;
 using Domain.Entities;

@@ -1,11 +1,11 @@
 using Application.Features.Dtos;
 using Application.Features.Channels.Dtos;
 using Application.Features.Icon.Upload;
-using Domain.Common.Interfaces.Repositories;
-using Domain.Common.Interfaces.Services;
+using Application.Interfaces.Repositories;
+using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Domain.Common.Interfaces.Db;
+using Application.Interfaces.Db;
 using Domain.Rows.Icon.Upload;
 using Application.Utilities;
 using Domain.Rows.Contents;

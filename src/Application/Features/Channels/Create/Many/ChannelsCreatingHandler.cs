@@ -1,9 +1,9 @@
 using Application.Features.Dtos;
 using Application.Features.Channels.Dtos;
-using Domain.Common.Interfaces.Repositories;
+using Application.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Application.Utilities;
-using Domain.Common.Interfaces.Db;
+using Application.Interfaces.Db;
 using Domain.Entities;
 using Domain.Common.Enums;
 using MediatR;

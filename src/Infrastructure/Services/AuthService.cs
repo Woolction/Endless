@@ -1,13 +1,11 @@
 using Microsoft.Extensions.Configuration;
-using Domain.Common.Interfaces.Services;
+using Application.Interfaces.Services;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
-using System.Security.Cryptography;
-using Domain.Common.Interfaces.Db;
+using Application.Interfaces.Db;
 using System.Security.Claims;
 using Domain.Entities;
 using System.Text;
-using Elastic.Clients.Elasticsearch.Snapshot;
 
 namespace Infrastructure.Services;
 

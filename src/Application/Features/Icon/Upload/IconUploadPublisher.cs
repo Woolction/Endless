@@ -1,4 +1,4 @@
-using Domain.Common.Interfaces.Db;
+using Application.Interfaces.Db;
 using Domain.Rows.Icon.Upload;
 using System.Text.Json;
 using RabbitMQ.Client;

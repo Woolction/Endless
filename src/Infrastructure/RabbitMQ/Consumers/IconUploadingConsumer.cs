@@ -1,9 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
-using Domain.Common.Interfaces.Repositories;
-using Domain.Common.Interfaces.Services;
+using Application.Interfaces.Repositories;
+using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Domain.Common.Interfaces.Db;
+using Application.Interfaces.Db;
 using Domain.Rows.Icon.Upload;
 using RabbitMQ.Client.Events;
 using Domain.Rows.Contents;
@@ -69,7 +69,7 @@ public class IconUploadingConsumer : IConsumer
                     return;
                 }
 
-                await mediator.Send(message, token);
+                //await mediator.Send(message, token);
 
                 PhotoVariants iconVariants = await r2Service.SaveIconVariants(
                     message.PhotoPath, message.Slug, message.Type, token);

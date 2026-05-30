@@ -1,6 +1,6 @@
-using Domain.Common.Interfaces.Repositories;
+using Application.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
-using Domain.Common.Interfaces.Db;
+using Application.Interfaces.Db;
 using Domain.Entities;
 using MediatR;
 

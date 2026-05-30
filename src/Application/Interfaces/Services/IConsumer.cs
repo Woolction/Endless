@@ -1,6 +1,6 @@
 using RabbitMQ.Client;
 
-namespace Domain.Common.Interfaces.Services;
+namespace Application.Interfaces.Services;
 
 public interface IConsumer : IDisposable
 {

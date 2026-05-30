@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Domain.Rows.Contents;
 using Domain.Common.Enums;
 
-namespace Domain.Common.Interfaces.Services;
+namespace Application.Interfaces.Services;
 
 public interface IR2Service
 {

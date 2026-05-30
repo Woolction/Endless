@@ -3,15 +3,15 @@ using Application.Features.Channels.Dtos;
 using Application.Features.Icon.Upload;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Domain.Common.Interfaces.Db;
+using Application.Interfaces.Db;
 using Application.Utilities;
 using Domain.Rows.Contents;
 using Domain.Common.Enums;
 using Domain.Entities;
 using MediatR;
 using Npgsql;
-using Domain.Common.Interfaces.Repositories;
-using Domain.Common.Interfaces.Services;
+using Application.Interfaces.Repositories;
+using Application.Interfaces.Services;
 using Domain.Rows.Icon.Upload;
 
 namespace Application.Features.Channels.Update;

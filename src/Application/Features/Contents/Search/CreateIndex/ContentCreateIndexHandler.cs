@@ -1,5 +1,5 @@
 using Application.Features.Searchs;
-using Domain.Common.Interfaces.Repositories;
+using Application.Interfaces.Repositories;
 using Elastic.Clients.Elasticsearch;
 using MediatR;
 

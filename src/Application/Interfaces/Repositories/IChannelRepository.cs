@@ -3,7 +3,7 @@ using Elastic.Clients.Elasticsearch;
 using Domain.Rows.Channels;
 using Domain.Entities;
 
-namespace Domain.Common.Interfaces.Repositories;
+namespace Application.Interfaces.Repositories;
 
 public interface IChannelRepository
 {

@@ -1,6 +1,6 @@
 using Domain.Rows.Contents;
 
-namespace Domain.Common.Interfaces.Services;
+namespace Application.Interfaces.Services;
 
 public interface IFfmpegService
 {

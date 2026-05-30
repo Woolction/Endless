@@ -1,4 +1,4 @@
-using Domain.Common.Interfaces.Services;
+using Application.Interfaces.Services;
 using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.Processing;
 using Microsoft.AspNetCore.Http;

@@ -1,4 +1,4 @@
-using Domain.Common.Interfaces.Repositories;
+using Application.Interfaces.Repositories;
 using Elastic.Clients.Elasticsearch;
 using Domain.Rows.Users;
 using Domain.Entities;
