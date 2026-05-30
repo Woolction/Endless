@@ -12,6 +12,7 @@ using System.Text.Json;
 using RabbitMQ.Client;
 using Domain.Entities;
 using System.Text;
+using Application;
 using MediatR;
 
 namespace Infrastructure.RabbitMQ.Consumers;
@@ -69,68 +70,12 @@ public class IconUploadingConsumer : IConsumer
                     return;
                 }
 
-                await mediator.Send(message, token);
+                Result<Null> result = await mediator.Send(message, token);
 
-                PhotoVariants iconVariants = await r2Service.SaveIconVariants(
-                    message.PhotoPath, message.Slug, message.Type, token);
-
-                await using var scope = factory.CreateAsyncScope();
-
-                var context = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-
-                if (message.Type == IconType.User)
+                if (!result.IsSuccess)
                 {
-                    UserMeta? meta = await context.UserMetas
-                        .Include(u => u.User)
-                        .FirstOrDefaultAsync(u => u
-                            .UserId == message.Id, token);
-
-                    if (meta == null)
-                    {
-                        logger.LogError("user not found");
-
-                        await channel.BasicNackAsync(
-                            ea.DeliveryTag, false, false, token);
-
-                        return;
-                    }
-
-                    meta.SetPhoto(
-                        iconVariants.BaseUrl, iconVariants.Small, iconVariants.Medium, iconVariants.Large);
-                    await meta.SetAverageColor(
-                        iconVariants.Small, token);
-
-                    await context.SaveChangesAsync();
-
-                    await scope.ServiceProvider.GetRequiredService<IUserRepository>()
-                        .CreateSearchIndex(meta.User!, meta, token);
-                }
-                else if (message.Type == IconType.Channel)
-                {
-                    ChannelMeta? meta = await context.ChannelMetas
-                        .Include(c => c.Channel)
-                        .FirstOrDefaultAsync(c => c
-                            .ChannelId == message.Id, token);
-
-                    if (meta == null)
-                    {
-                        logger.LogError("channel not found");
-
-                        await channel.BasicNackAsync(
-                            ea.DeliveryTag, false, false, token);
-
-                        return;
-                    }
-
-                    meta.SetPhoto(
-                        iconVariants.BaseUrl, iconVariants.Small, iconVariants.Medium, iconVariants.Large);
-                    await meta.SetAverageColor(
-                        iconVariants.Small, token);
-
-                    await context.SaveChangesAsync();
-
-                    await scope.ServiceProvider.GetRequiredService<IChannelRepository>()
-                        .CreateSearchIndex(meta.Channel!, meta, token);
+                    await channel.BasicNackAsync(
+                        ea.DeliveryTag, false, false, token);
                 }
     
                 File.Delete(message.PhotoPath);
