@@ -1,6 +1,9 @@
+using System.Text.Json;
 using Application.Features.Dtos;
 using Application.Features.Channels.Dtos;
 using Application.Features.Icon.Upload;
+using Application.Features.Rows;
+using Application.Features.Rows.Channels;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
@@ -18,15 +21,15 @@ namespace Application.Features.Channels.Create.One;
 public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Result<ChannelDto>>
 {
     private readonly ILogger<ChannelCreatingHandler> logger;
-    private readonly IChannelRepository channelRepository;
+    private readonly SearchIndexUpsertPublisher indexUpsertPublisher;
     private readonly IconUploadPublisher publisher;
     private readonly IAppDbContext context;
     private readonly IR2Service r2Service;
 
 
-    public ChannelCreatingHandler(IAppDbContext context, IChannelRepository channelRepository, IconUploadPublisher publisher, ILogger<ChannelCreatingHandler> logger, IR2Service r2Service)
+    public ChannelCreatingHandler(IAppDbContext context, SearchIndexUpsertPublisher indexUpsertPublisher, IconUploadPublisher publisher, ILogger<ChannelCreatingHandler> logger, IR2Service r2Service)
     {
-        this.channelRepository = channelRepository;
+        this.indexUpsertPublisher =  indexUpsertPublisher;
         this.r2Service = r2Service;
         this.publisher = publisher;
         this.context = context;
@@ -94,8 +97,9 @@ public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Resu
         }
         else
         {
-            await channelRepository.CreateSearchIndex(
-                channel, meta, cancellationToken);
+            await indexUpsertPublisher.Publish(
+                new SearchIndexUpsertMessage(nameof(Channel), 
+                    JsonSerializer.Serialize(new ChannelSearchIndex(channel, meta))), cancellationToken);
         }
 
         logger.LogInformation("Channel {ChannelId} created with slug {Slug}",

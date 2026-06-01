@@ -1,6 +1,9 @@
+using System.Text.Json;
 using Application.Features.Dtos;
 using Application.Features.Channels.Dtos;
 using Application.Features.Icon.Upload;
+using Application.Features.Rows;
+using Application.Features.Rows.Channels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Application.Interfaces.Db;
@@ -18,14 +21,14 @@ namespace Application.Features.Channels.Update;
 public class ChannelUpdateHandler : IRequestHandler<ChannelUpdateCommand, Result<ChannelDto>>
 {
     private readonly ILogger<ChannelUpdateHandler> logger;
-    private readonly IChannelRepository repository;
+    private readonly SearchIndexUpsertPublisher indexUpsertPublisher;
     private readonly IconUploadPublisher publisher;
     private readonly IAppDbContext context;
     private readonly IR2Service r2Service;
 
-    public ChannelUpdateHandler(IAppDbContext context, IChannelRepository repository, IconUploadPublisher publisher, ILogger<ChannelUpdateHandler> logger, IR2Service r2Service)
+    public ChannelUpdateHandler(IAppDbContext context, SearchIndexUpsertPublisher indexUpsertPublisher, IconUploadPublisher publisher, ILogger<ChannelUpdateHandler> logger, IR2Service r2Service)
     {
-        this.repository = repository;
+        this.indexUpsertPublisher = indexUpsertPublisher;
         this.r2Service = r2Service;
         this.publisher = publisher;
         this.context = context;
@@ -121,8 +124,9 @@ public class ChannelUpdateHandler : IRequestHandler<ChannelUpdateCommand, Result
         }
         else
         {
-            await repository.CreateSearchIndex(
-                channel.c, channel.meta, cancellationToken);
+            await indexUpsertPublisher.Publish(
+                new SearchIndexUpsertMessage(nameof(Channel), 
+                    JsonSerializer.Serialize(new ChannelSearchIndex(channel.c!, channel.meta))), cancellationToken);
         }
 
         logger.LogInformation(

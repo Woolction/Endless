@@ -1,5 +1,8 @@
+using System.Text.Json;
 using Application.Features.Dtos;
 using Application.Features.Channels.Dtos;
+using Application.Features.Rows;
+using Application.Features.Rows.Channels;
 using Application.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Application.Utilities;
@@ -14,12 +17,12 @@ namespace Application.Features.Channels.Create.Many;
 
 public class ChannelsCreatingHandler : IRequestHandler<ChannelsCreateCommand, Result<ChannelDto[]>>
 {
-    private readonly IChannelRepository channelRepository;
+    private readonly SearchIndexUpsertPublisher indexUpsertPublisher;
     private readonly IAppDbContext context;
 
-    public ChannelsCreatingHandler(IAppDbContext context, IChannelRepository channelRepository)
+    public ChannelsCreatingHandler(IAppDbContext context, SearchIndexUpsertPublisher indexUpsertPublisher)
     {
-        this.channelRepository = channelRepository;
+        this.indexUpsertPublisher = indexUpsertPublisher;
         this.context = context;
     }
 
@@ -98,8 +101,9 @@ public class ChannelsCreatingHandler : IRequestHandler<ChannelsCreateCommand, Re
                     channel.ChannelMeta.G,
                     channel.ChannelMeta.B), 1, 0, 1, 0, 0);
 
-                await channelRepository.CreateSearchIndex(
-                    channel, meta, cancellationToken);
+                await indexUpsertPublisher.Publish(
+                    new SearchIndexUpsertMessage(nameof(Channel), 
+                        JsonSerializer.Serialize(new ChannelSearchIndex(channel, meta))), cancellationToken);
             }
 
             return Result<ChannelDto[]>.Success(201, dtos);
