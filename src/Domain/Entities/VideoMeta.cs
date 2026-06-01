@@ -10,14 +10,14 @@ public class VideoMeta
     public Guid ContentId { get; set; }
     public Content? Content { get; set; }
 
-    //Video
+    // video
     public string VideoUrl { get; set; } = string.Empty;
 
     public int DurationSeconds { get; set; }
     public int AverageWatchTimeSeconds { get; set; }
     public float AverageWatchRatio { get; set; }
 
-    //Photo
+    // photo
     public string PhotoBase { get; set; } = "/storage/content-previews";
     public string Small { get; set; } = string.Empty;
     public string? Medium { get; set; }
@@ -29,6 +29,12 @@ public class VideoMeta
 
     public void SetVideo(string videoUrl, int durationSeconds)
     {
+        // for local storage
+        string? directoryName = Path.GetDirectoryName(VideoUrl);
+
+        if (directoryName != null)
+            Directory.Delete(directoryName, true);
+            
         VideoUrl = videoUrl;
         DurationSeconds = durationSeconds;
     }
