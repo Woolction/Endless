@@ -25,6 +25,7 @@ using Domain.Entities;
 using API.Middleware;
 using System.Text;
 using Application;
+using Application.Features.Rows;
 
 namespace API.Extensions;
 
@@ -192,10 +193,12 @@ public static class ProgramPipeline
         builder.Services.AddSingleton<IFfmpegService, FfmpegService>();
         builder.Services.AddSingleton<IR2Service, R2Service>();
 
+        builder.Services.AddSingleton<SearchIndexUpsertPublisher>();
         builder.Services.AddSingleton<VideoUploadPublisher>();
         builder.Services.AddSingleton<IconUploadPublisher>();
 
         //      Transient
+        builder.Services.AddTransient<IConsumer, SearchIndexUpsertingConsumer>();
         builder.Services.AddTransient<IConsumer, VideoUploadingConsumer>();
         builder.Services.AddTransient<IConsumer, IconUploadingConsumer>();
 
