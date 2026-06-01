@@ -56,6 +56,7 @@ nunit-*.xml
 # Custom
 appsettings.Development.json
 /storage
+/.idea
 *.env
 *.lic
 *.lscache
