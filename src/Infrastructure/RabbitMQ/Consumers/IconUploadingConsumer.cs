@@ -6,6 +6,7 @@ using System.Text.Json;
 using RabbitMQ.Client;
 using System.Text;
 using Application;
+using Elastic.Clients.Elasticsearch;
 using MediatR;
 
 namespace Infrastructure.RabbitMQ.Consumers;
@@ -51,7 +52,7 @@ public class IconUploadingConsumer : IConsumer
 
                 if (message == null)
                 {
-                    logger.LogError("message is null");
+                    logger.LogError("failed to deserialize message");
 
                     await channel.BasicNackAsync(
                         ea.DeliveryTag, false, false, token);
@@ -63,11 +64,15 @@ public class IconUploadingConsumer : IConsumer
 
                 if (!result.IsSuccess)
                 {
+                    logger.LogError("failed to upload icon");
+                    
                     await channel.BasicNackAsync(
                         ea.DeliveryTag, false, false, token);
+
+                    return;
                 }
-    
-                File.Delete(message.PhotoPath);
+                
+                logger.LogInformation("icon upload completed: send asc");
 
                 await channel.BasicAckAsync(
                     ea.DeliveryTag, false, token);
