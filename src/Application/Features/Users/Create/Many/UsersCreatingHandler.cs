@@ -1,4 +1,6 @@
+using System.Text.Json;
 using Application.Features.Dtos;
+using Application.Features.Rows;
 using Application.Features.Users.Dtos;
 using Application.Interfaces.Repositories;
 using Microsoft.AspNetCore.Identity;
@@ -9,19 +11,20 @@ using Domain.Entities;
 using MediatR;
 using Npgsql;
 using Application.Features.Rows.Contents;
+using Application.Features.Rows.Users;
 
 namespace Application.Features.Users.Create.Many;
 
 public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<UserDto[]>>
 {
     private readonly IPasswordHasher<User> passwordHasher;
-    private readonly IUserRepository userRepository;
+    private readonly SearchIndexUpsertPublisher indexUpsertPublisher;
     private readonly IAppDbContext context;
 
-    public UsersCreatingHandler(IAppDbContext context, IUserRepository userRepository, IPasswordHasher<User> passwordHasher)
+    public UsersCreatingHandler(IAppDbContext context, SearchIndexUpsertPublisher indexUpsertPublisher, IPasswordHasher<User> passwordHasher)
     {
         this.passwordHasher = passwordHasher;
-        this.userRepository = userRepository;
+        this.indexUpsertPublisher =  indexUpsertPublisher;
         this.context = context;
     }
 
@@ -94,9 +97,10 @@ public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<U
                         meta.G,
                         meta.B),
                     0, 0, 0, 0, 0, 0, 0);
-
-                await userRepository.CreateSearchIndex(
-                    user, meta, cancellationToken);
+                
+                await indexUpsertPublisher.Publish(
+                    new SearchIndexUpsertMessage(nameof(User), 
+                        JsonSerializer.Serialize(new UserSearchIndex(user, meta))), cancellationToken);
             }
 
             return Result<UserDto[]>.Success(201, dtos);

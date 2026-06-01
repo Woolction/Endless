@@ -1,3 +1,6 @@
+using System.Text.Json;
+using Application.Features.Rows;
+using Application.Features.Rows.Users;
 using Application.Interfaces.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -13,17 +16,17 @@ namespace Application.Features.Users.Create.Registry;
 
 public class UserRegistryHandler : IRequestHandler<UserRegistryCommand, Result<RegistryDto>>
 {
+    private readonly SearchIndexUpsertPublisher indexUpsertPublisher;
     private readonly IPasswordHasher<User> passwordHasher;
     private readonly ILogger<UserRegistryHandler> logger;
-    private readonly IUserRepository repository;
     private readonly IAuthService authService;
     private readonly IAppDbContext context;
 
-    public UserRegistryHandler(IPasswordHasher<User> passwordHasher, IAuthService authService, IAppDbContext context, ILogger<UserRegistryHandler> logger, IUserRepository repository)
+    public UserRegistryHandler(IPasswordHasher<User> passwordHasher, IAuthService authService, IAppDbContext context, ILogger<UserRegistryHandler> logger, SearchIndexUpsertPublisher indexUpsertPublisher)
     {
+        this.indexUpsertPublisher = indexUpsertPublisher;
         this.passwordHasher = passwordHasher;
         this.authService = authService;
-        this.repository = repository;
         this.context = context;
         this.logger = logger;
     }
@@ -70,12 +73,13 @@ public class UserRegistryHandler : IRequestHandler<UserRegistryCommand, Result<R
 
         logger.LogInformation("User {UserId} registred",
             user.Id);
-
-        await repository.CreateSearchIndex(
-            user,
-            await context.UserMetas
-                .AsNoTracking()
-                .FirstAsync(u => u.UserId == user.Id, cancellationToken),
+        
+        await indexUpsertPublisher.Publish(
+            new SearchIndexUpsertMessage(nameof(User), 
+                JsonSerializer.Serialize(new UserSearchIndex(user,
+                    await context.UserMetas
+                        .AsNoTracking()
+                        .FirstAsync(u => u.UserId == user.Id, cancellationToken)))), 
             cancellationToken);
 
         return Result<RegistryDto>.Success(201, new RegistryDto(user.Id, tokens[0], tokens[1]));

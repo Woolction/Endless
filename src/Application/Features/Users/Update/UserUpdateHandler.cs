@@ -1,5 +1,7 @@
+using System.Text.Json;
 using Application.Features.Dtos;
 using Application.Features.Icon.Upload;
+using Application.Features.Rows;
 using Application.Features.Users.Dtos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -8,25 +10,27 @@ using Application.Utilities;
 using Application.Interfaces.Db;
 using MediatR;
 using Application.Features.Rows.Contents;
+using Application.Features.Rows.Users;
 using Application.Interfaces.Repositories;
 using Domain.Common.Enums;
+using Domain.Entities;
 
 namespace Application.Features.Users.Update;
 
 public class UserUpdateHandler : IRequestHandler<UserUpdateCommand, Result<UserDto>>
 {
+    private readonly SearchIndexUpsertPublisher indexUpsertPublisher;
     private readonly ILogger<UserUpdateHandler> logger;
-    private readonly IUserRepository userRepository;
     private readonly IconUploadPublisher publisher;
     private readonly IAppDbContext context;
     private readonly IR2Service r2Service;
 
-    public UserUpdateHandler(IAppDbContext context, ILogger<UserUpdateHandler> logger, IUserRepository userRepository, IconUploadPublisher publisher, IR2Service r2Service)
+    public UserUpdateHandler(IAppDbContext context, ILogger<UserUpdateHandler> logger, SearchIndexUpsertPublisher indexUpsertPublisher, IconUploadPublisher publisher, IR2Service r2Service)
     {
         this.context = context;
         this.logger = logger;
 
-        this.userRepository = userRepository;
+        this.indexUpsertPublisher =  indexUpsertPublisher;
         this.publisher = publisher;
         this.r2Service = r2Service;
     }
@@ -99,8 +103,9 @@ public class UserUpdateHandler : IRequestHandler<UserUpdateCommand, Result<UserD
         }
         else
         {
-            await userRepository.CreateSearchIndex(
-                user.u, user.meta, cancellationToken);
+            await indexUpsertPublisher.Publish(
+                new SearchIndexUpsertMessage(nameof(User), 
+                    JsonSerializer.Serialize(new UserSearchIndex(user.u, user.meta))), cancellationToken);
         }
 
         logger.LogInformation("User {UserId} updated", cmd.UserId);
