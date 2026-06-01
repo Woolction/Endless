@@ -16,7 +16,7 @@ public class VideoUploadPublisher
 
     public async Task PublishAsync(VideoUploadMessage message, CancellationToken cancellationToken)
     {
-        using var channel = await connection.Connection.CreateChannelAsync(cancellationToken: cancellationToken);
+        await using var channel = await connection.Connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
         await channel.QueueDeclareAsync(
             queue: "video.upload",
@@ -39,7 +39,7 @@ public class VideoUploadPublisher
             routingKey: "video.upload",
             mandatory: true,
             properties,
-            body: body,
+            body,
             cancellationToken);
     }
 }
