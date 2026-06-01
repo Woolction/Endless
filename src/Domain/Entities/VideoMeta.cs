@@ -2,7 +2,6 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp;
-using Domain.Rows.Contents;
 
 namespace Domain.Entities;
 
@@ -11,14 +10,14 @@ public class VideoMeta
     public Guid ContentId { get; set; }
     public Content? Content { get; set; }
 
-    //Video
+    // video
     public string VideoUrl { get; set; } = string.Empty;
 
     public int DurationSeconds { get; set; }
     public int AverageWatchTimeSeconds { get; set; }
     public float AverageWatchRatio { get; set; }
 
-    //Photo
+    // photo
     public string PhotoBase { get; set; } = "/storage/content-previews";
     public string Small { get; set; } = string.Empty;
     public string? Medium { get; set; }
@@ -30,16 +29,22 @@ public class VideoMeta
 
     public void SetVideo(string videoUrl, int durationSeconds)
     {
+        // for local storage
+        string? directoryName = Path.GetDirectoryName(VideoUrl);
+
+        if (directoryName != null)
+            Directory.Delete(directoryName, true);
+            
         VideoUrl = videoUrl;
         DurationSeconds = durationSeconds;
     }
 
-    public void SetPhoto(PhotoVariants variants)
+    public void SetPhoto(string photoBase, string small, string? medium, string? large)
     {
-        PhotoBase = variants.BaseUrl;
-        Small = variants.Small;
-        Medium = variants.Medium;
-        Large = variants.Large;
+        PhotoBase = photoBase;
+        Small = small;
+        Medium = medium;
+        Large = large;
     }
 
     public async Task SetAverageColor(string photoUrl, CancellationToken token = default)

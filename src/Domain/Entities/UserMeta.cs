@@ -2,7 +2,6 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp;
-using Domain.Rows.Contents;
 
 namespace Domain.Entities;
 
@@ -20,12 +19,12 @@ public class UserMeta
     public int G { get; set; }
     public int B { get; set; }
 
-    public void SetPhoto(PhotoVariants variants)
+    public void SetPhoto(string iconBase, string small, string? medium, string? large)
     {
-        IconBase = variants.BaseUrl;
-        Small = variants.Small;
-        Medium = variants.Medium;
-        Large = variants.Large;
+        IconBase = iconBase;
+        Small = small;
+        Medium = medium;
+        Large = large;
     }
 
     public async Task SetAverageColor(string photoUrl, CancellationToken token = default)

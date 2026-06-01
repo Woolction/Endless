@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Application.Genres.CreateMany;
-using Domain.Common.Interfaces.Db;
+using Application.Features.Genres.CreateMany;
+using Application.Interfaces.Db;
 using Microsoft.AspNetCore.Mvc;
-using Application.Genres.Dtos;
+using Application.Features.Genres.Dtos;
 using Domain.Common.Enums;
 using Domain.Entities;
 using API.Extensions;

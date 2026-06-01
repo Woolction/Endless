@@ -1,9 +1,9 @@
 using Elastic.Clients.Elasticsearch.IndexManagement;
 using Elastic.Clients.Elasticsearch.Analysis;
 using Elastic.Clients.Elasticsearch.QueryDsl;
-using Domain.Common.Interfaces.Repositories;
+using Application.Interfaces.Repositories;
 using Elastic.Clients.Elasticsearch;
-using Domain.Rows.Channels;
+using Application.Features.Rows.Channels;
 using Domain.Entities;
 using System.Data;
 
@@ -84,10 +84,8 @@ public class ChannelRepository : IChannelRepository
                     ))), cancellationToken);
     }
 
-    public async Task<IndexResponse> CreateSearchIndex(Channel channel, ChannelMeta channelMeta, CancellationToken cancellationToken)
+    public async Task<IndexResponse> CreateSearchIndex(ChannelSearchIndex index, CancellationToken cancellationToken)
     {
-        ChannelSearchIndex index = new(channel, channelMeta);
-
         var response = await client.IndexAsync(index, r => r
             .Index(indexName)
             .Id(index.ChannelId), cancellationToken);

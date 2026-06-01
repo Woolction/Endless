@@ -1,4 +1,4 @@
-using Domain.Common.Interfaces.Services;
+using Application.Interfaces.Services;
 using Domain.Entities;
 using Infrastructure.Managers;
 

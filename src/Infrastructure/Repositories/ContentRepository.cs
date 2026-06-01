@@ -1,9 +1,9 @@
 using Elastic.Clients.Elasticsearch.IndexManagement;
 using Elastic.Clients.Elasticsearch.Analysis;
 using Elastic.Clients.Elasticsearch.QueryDsl;
-using Domain.Common.Interfaces.Repositories;
+using Application.Interfaces.Repositories;
 using Elastic.Clients.Elasticsearch;
-using Domain.Rows.Contents;
+using Application.Features.Rows.Contents;
 using Elastic.Transport;
 using Domain.Entities;
 
@@ -107,10 +107,8 @@ public class ContentRepository : IContentRepository
         return response;
     }
 
-    public async Task<IndexResponse> CreateSearchIndex(Content content, VideoMeta videoMeta, CancellationToken cancellationToken)
+    public async Task<IndexResponse> CreateSearchIndex(ContentSearchIndex index, CancellationToken cancellationToken)
     {
-        ContentSearchIndex index = new(content, videoMeta);
-
         var response = await client.IndexAsync(index, c => c
             .Index(indexName)
             .Id(index.ContentId), cancellationToken);

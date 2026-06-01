@@ -1,22 +1,22 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Infrastructure.Services.RabbitConsumers;
-using Domain.Common.Interfaces.Repositories;
+using Application.Interfaces.Repositories;
 using Infrastructure.Services.Background;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.RateLimiting;
-using Application.Contents.Video.Upload;
-using Domain.Common.Interfaces.Services;
+using Infrastructure.RabbitMQ.Consumers;
+using Application.Features.Contents.Video.Upload;
+using Application.Interfaces.Services;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Elastic.Clients.Elasticsearch;
-using Domain.Common.Interfaces.Db;
+using Application.Interfaces.Db;
 using Infrastructure.Repositories;
 using Infrastructure.Connector;
 using Infrastructure.Services;
-using Application.Icon.Upload;
+using Application.Features.Icon.Upload;
 using Infrastructure.Context;
 using System.Security.Claims;
 using Domain.Common.Enums;
@@ -25,6 +25,7 @@ using Domain.Entities;
 using API.Middleware;
 using System.Text;
 using Application;
+using Application.Features.Rows;
 
 namespace API.Extensions;
 
@@ -192,10 +193,12 @@ public static class ProgramPipeline
         builder.Services.AddSingleton<IFfmpegService, FfmpegService>();
         builder.Services.AddSingleton<IR2Service, R2Service>();
 
+        builder.Services.AddSingleton<SearchIndexUpsertPublisher>();
         builder.Services.AddSingleton<VideoUploadPublisher>();
         builder.Services.AddSingleton<IconUploadPublisher>();
 
         //      Transient
+        builder.Services.AddTransient<IConsumer, SearchIndexUpsertingConsumer>();
         builder.Services.AddTransient<IConsumer, VideoUploadingConsumer>();
         builder.Services.AddTransient<IConsumer, IconUploadingConsumer>();
 
@@ -251,11 +254,12 @@ public static class ProgramPipeline
         app.UseCookiePolicy();
 
         app.UseRateLimiter();
+
+        app.MapControllers();
     }
 
     public static void EndPointsRegistry(this WebApplication app)
     {
-        app.MapControllers();
 
         //app.MapGet("/", () => Results.Redirect("/index.html"));
     }
