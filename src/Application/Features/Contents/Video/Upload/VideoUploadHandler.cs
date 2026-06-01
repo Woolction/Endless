@@ -1,11 +1,117 @@
+using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
+using Application.Features.Rows.Contents;
+using Application.Interfaces.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Application.Features.Rows;
+using Application.Interfaces.Db;
+using Domain.Entities;
 using MediatR;
 
 namespace Application.Features.Contents.Video.Upload;
 
 public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Null>>
 {
+    private readonly ILogger<VideoUploadHandler> logger;
+    private readonly IServiceScopeFactory scopeFactory;
+
+    private readonly SearchIndexUpsertPublisher publisher;
+    private readonly IFfmpegService ffmpegService;
+    private readonly IR2Service r2Service;
+    
+    public VideoUploadHandler(ILogger<VideoUploadHandler> logger, IServiceScopeFactory scopeFactory, SearchIndexUpsertPublisher publisher, IFfmpegService ffmpegService, IR2Service r2Service)
+    {
+        this.ffmpegService = ffmpegService;
+        this.scopeFactory = scopeFactory;
+        this.publisher = publisher;
+        this.r2Service = r2Service;
+        this.logger = logger;
+    }
+
     public async Task<Result<Null>> Handle(VideoUploadMessage message, CancellationToken token)
     {
+        PhotoVariants photoUrl = new();
+
+        string videoUrl = string.Empty;
+        double duration = 0;
+
+        if (message.PhotoPath != null)
+        {
+            logger.LogInformation("save photo");
+
+            photoUrl = await r2Service.SavePhotoVariants(
+                message.PhotoPath, message.Slug, token);
+        }
+
+        if (message.VideoPath != null)
+        {
+            logger.LogInformation("get video duration:");
+
+            duration = await ffmpegService.GetVideoDuration(
+                message.VideoPath, token);
+
+            double timeSeconds = Math.Clamp(20, 0, duration / 1.1f); // 20 that from user message  
+
+            logger.LogInformation("get video height:");
+
+            int height = await ffmpegService.GetVideoHeight(
+                message.VideoPath, token);
+
+            if (message.PhotoPath == null)
+            {
+                logger.LogInformation("get photo from video:");
+
+                photoUrl = await ffmpegService.GetPhotoFromVideo(
+                    message.VideoPath, message.Slug, height, timeSeconds: timeSeconds, token: token);
+            }
+
+            logger.LogInformation("get video fps:");
+
+            int fps = await ffmpegService.GetVideoFps(message.VideoPath, token);
+
+            logger.LogInformation("generate video to m3u8");
+
+            videoUrl = await ffmpegService.UploadGeneratedVideos(
+                message.VideoPath, message.Slug, height, fps, token);
+        }
+
+        logger.LogInformation("save changes");
+
+        await using var scope = scopeFactory.CreateAsyncScope();
+
+        var context = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+
+        Content content = await context.Contents
+            .Include(c => c.VideoMeta)
+            .FirstAsync(c => c.Id == message.ContentId);
+
+        // set photo 
+        content.VideoMeta.SetPhoto(
+            photoUrl.BaseUrl, photoUrl.Small, photoUrl.Medium, photoUrl.Large);
+        await content.VideoMeta.SetAverageColor(
+            photoUrl.Small, token);
+
+        // set video
+        content.VideoMeta.SetVideo(
+            videoUrl, (int)duration);
+
+        await context.SaveChangesAsync();
+
+        // publish to upserting search index
+        await publisher.Publish(
+            new SearchIndexUpsertMessage(nameof(Content), 
+                JsonSerializer.Serialize(new ContentSearchIndex(content, content.VideoMeta))), token);
+        
+        // delete the files
+        if (!string.IsNullOrEmpty(message.PhotoPath) && File.Exists(message.PhotoPath))
+            File.Delete(message.PhotoPath);
+
+        if (!string.IsNullOrEmpty(message.VideoPath) && File.Exists(message.VideoPath))
+            File.Delete(message.VideoPath);
+
+        logger.LogInformation("video upload complete: process succeed");
+        
         return Result<Null>.Success(200, new Null());
     }
 }

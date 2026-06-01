@@ -11,6 +11,7 @@ using System.Text.Json;
 using Domain.Entities;
 using RabbitMQ.Client;
 using System.Text;
+using Application;
 using MediatR;
 
 namespace Infrastructure.RabbitMQ.Consumers;
@@ -63,7 +64,7 @@ public class VideoUploadingConsumer : IConsumer
 
                 if (message == null)
                 {
-                    logger.LogError("message is null");
+                    logger.LogError("failed to deserialize message");
 
                     await channel.BasicNackAsync(
                         ea.DeliveryTag, false, false, token);
@@ -71,94 +72,24 @@ public class VideoUploadingConsumer : IConsumer
                     return;
                 }
 
-                await mediator.Send(message, token);
+                Result<Null> result = await mediator.Send(message, token);
 
-                string videoUrl = string.Empty;
-                PhotoVariants photoUrl = new();
-
-                double duration = default;
-
-                if (message.PhotoPath != null)
+                if (!result.IsSuccess)
                 {
-                    logger.LogInformation("save photo");
-
-                    photoUrl = await r2Service.SavePhotoVariants(
-                        message.PhotoPath, message.Slug, token);
+                    logger.LogError("failed to upload video");
+                    
+                    await channel.BasicNackAsync(
+                        ea.DeliveryTag, false, false, token);
                 }
 
-                if (message.VideoPath != null)
-                {
-                    logger.LogInformation("get video duration");
-
-                    duration = await ffmpegService.GetVideoDuration(
-                        message.VideoPath, token);
-
-                    double timeSeconds = Math.Clamp(20, 0, duration / 1.1f);
-
-                    logger.LogInformation("get video height");
-
-                    int height = await ffmpegService.GetVideoHeight(
-                        message.VideoPath, token);
-
-                    if (message.PhotoPath == null)
-                    {
-                        logger.LogInformation("get photo from video");
-
-                        photoUrl = await ffmpegService.GetPhotoFromVideo(
-                            message.VideoPath, message.Slug, height, timeSeconds: timeSeconds, token: token);
-                    }
-
-                    logger.LogInformation("get video fps");
-
-                    int fps = await ffmpegService.GetVideoFps(message.VideoPath, token);
-
-                    logger.LogInformation("uploading video");
-
-                    videoUrl = await ffmpegService.UploadGeneratedVideos(
-                        message.VideoPath, message.Slug, height, fps, token);
-                }
-
-                logger.LogInformation("save changes and create index");
-
-                await using var scope = scopeFactory.CreateAsyncScope();
-
-                var context = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
-
-                Content content = await context.Contents
-                    .Include(c => c.VideoMeta)
-                    .FirstAsync(c => c.Id == message.ContentId);
-
-                // set photo 
-                content.VideoMeta.SetPhoto(
-                    photoUrl.BaseUrl, photoUrl.Small, photoUrl.Medium, photoUrl.Large);
-                await content.VideoMeta.SetAverageColor(
-                    photoUrl.Small, token);
-
-                // set video
-                content.VideoMeta.SetVideo(
-                    videoUrl, (int)duration);
-
-                await context.SaveChangesAsync();
-
-                await scope.ServiceProvider.GetRequiredService<IContentRepository>()
-                   .CreateSearchIndex(content, content.VideoMeta, token);
-
-                logger.LogInformation("send asc");
+                logger.LogInformation("video upload completed: send asc");
 
                 await channel.BasicAckAsync(
                     ea.DeliveryTag, false, token);
-
-                if (!string.IsNullOrEmpty(message.PhotoPath) && File.Exists(message.PhotoPath))
-                    File.Delete(message.PhotoPath);
-
-                if (!string.IsNullOrEmpty(message.VideoPath) && File.Exists(message.VideoPath))
-                    File.Delete(message.VideoPath);
-
-                logger.LogInformation("process succed");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"video uploding consumer: in task {ea.DeliveryTag} exception: {ex}");
+                logger.LogError("video uploding consumer: in task {DeliveryTag} exception: {ex}", ea.DeliveryTag, ex);
 
                 await channel.BasicNackAsync(
                     ea.DeliveryTag, false, false, token);
