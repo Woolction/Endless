@@ -84,10 +84,8 @@ public class ChannelRepository : IChannelRepository
                     ))), cancellationToken);
     }
 
-    public async Task<IndexResponse> CreateSearchIndex(Channel channel, ChannelMeta channelMeta, CancellationToken cancellationToken)
+    public async Task<IndexResponse> CreateSearchIndex(ChannelSearchIndex index, CancellationToken cancellationToken)
     {
-        ChannelSearchIndex index = new(channel, channelMeta);
-
         var response = await client.IndexAsync(index, r => r
             .Index(indexName)
             .Id(index.ChannelId), cancellationToken);

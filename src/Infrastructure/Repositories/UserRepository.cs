@@ -83,10 +83,8 @@ public class UserRepository : IUserRepository
                     ))), cancellationToken);
     }
 
-    public async Task<IndexResponse> CreateSearchIndex(User user, UserMeta userMeta, CancellationToken cancellationToken)
+    public async Task<IndexResponse> CreateSearchIndex(UserSearchIndex index, CancellationToken cancellationToken)
     {
-        UserSearchIndex index = new(user, userMeta);
-
         var response = await client.IndexAsync(index, r => r
             .Index(indexName)
             .Id(index.UserId), cancellationToken);

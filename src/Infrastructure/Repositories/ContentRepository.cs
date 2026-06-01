@@ -107,10 +107,8 @@ public class ContentRepository : IContentRepository
         return response;
     }
 
-    public async Task<IndexResponse> CreateSearchIndex(Content content, VideoMeta videoMeta, CancellationToken cancellationToken)
+    public async Task<IndexResponse> CreateSearchIndex(ContentSearchIndex index, CancellationToken cancellationToken)
     {
-        ContentSearchIndex index = new(content, videoMeta);
-
         var response = await client.IndexAsync(index, c => c
             .Index(indexName)
             .Id(index.ContentId), cancellationToken);
