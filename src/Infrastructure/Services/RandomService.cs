@@ -1,5 +1,5 @@
 using System.Security.Cryptography;
-using Domain.Common.Interfaces.Services;
+using Application.Interfaces.Services;
 using Microsoft.AspNetCore.WebUtilities;
 
 namespace Infrastructure.Services;

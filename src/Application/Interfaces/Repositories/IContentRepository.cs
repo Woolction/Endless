@@ -1,0 +1,14 @@
+using Elastic.Clients.Elasticsearch.IndexManagement;
+using Elastic.Clients.Elasticsearch;
+using Application.Features.Rows.Contents;
+using Domain.Entities;
+
+namespace Application.Interfaces.Repositories;
+
+public interface IContentRepository
+{
+    Task<ContentSearchRow> SearchContentsByName(string name, ICollection<FieldValue> lastValues, CancellationToken cancellationToken);
+    Task<DeleteResponse> DeleteSearchIndex(Guid contentId, CancellationToken cancellationToken);
+    Task<IndexResponse> CreateSearchIndex(ContentSearchIndex index, CancellationToken cancellationToken);
+    Task<CreateIndexResponse> CreateMapping(CancellationToken cancellationToken);
+}

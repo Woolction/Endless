@@ -1,4 +1,4 @@
-using Domain.Common.Interfaces.Db;
+using Application.Interfaces.Db;
 using RabbitMQ.Client;
 
 namespace Infrastructure.Connector;

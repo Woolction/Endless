@@ -1,10 +1,6 @@
+using Application.Interfaces.Services;
 using Microsoft.Extensions.Hosting;
-using Domain.Common.Interfaces.Services;
-using Infrastructure.Connector;
-using Domain.Common.Interfaces.Db;
-using Infrastructure.Services.RabbitConsumers;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
+using Application.Interfaces.Db;
 
 namespace Infrastructure.Services.Background;
 

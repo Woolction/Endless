@@ -1,5 +1,5 @@
+using Domain.Common.ObjectDatas;
 using Domain.Common.Enums;
-using Domain.Common;
 
 namespace Domain.Entities;
 

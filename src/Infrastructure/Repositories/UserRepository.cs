@@ -1,6 +1,6 @@
-using Domain.Common.Interfaces.Repositories;
+using Application.Interfaces.Repositories;
 using Elastic.Clients.Elasticsearch;
-using Domain.Rows.Users;
+using Application.Features.Rows.Users;
 using Domain.Entities;
 using Elastic.Clients.Elasticsearch.QueryDsl;
 using Elastic.Clients.Elasticsearch.Analysis;
@@ -83,10 +83,8 @@ public class UserRepository : IUserRepository
                     ))), cancellationToken);
     }
 
-    public async Task<IndexResponse> CreateSearchIndex(User user, UserMeta userMeta, CancellationToken cancellationToken)
+    public async Task<IndexResponse> CreateSearchIndex(UserSearchIndex index, CancellationToken cancellationToken)
     {
-        UserSearchIndex index = new(user, userMeta);
-
         var response = await client.IndexAsync(index, r => r
             .Index(indexName)
             .Id(index.UserId), cancellationToken);
