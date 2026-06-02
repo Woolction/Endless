@@ -1,16 +1,33 @@
+using Application.Interfaces.Services;
+using Application.Interfaces.Db;
+
 namespace Workers;
 
-public class Worker(ILogger<Worker> logger) : BackgroundService
+public class Worker : BackgroundService
 {
+    private readonly IRabbitMqConnector connector;
+    private readonly IConsumer[] consumers;
+
+    public Worker(IRabbitMqConnector connector, IEnumerable<IConsumer> consumers)
+    {
+        this.connector = connector;
+        this.consumers = [.. consumers];
+    }
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        while (!stoppingToken.IsCancellationRequested)
+        await connector.CreateConnectionAsync();
+
+        for (int i = 0; i < consumers.Length; i++)
         {
-            if (logger.IsEnabled(LogLevel.Information))
-            {
-                logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
-            }
-            await Task.Delay(1000, stoppingToken);
+            await consumers[i].Consume(connector.Connection, stoppingToken);
+        }
+
+        await Task.Delay(Timeout.Infinite, stoppingToken);
+
+        for (int i = 0; i < consumers.Length; i++)
+        {
+            consumers[i].Dispose();
         }
     }
 }
