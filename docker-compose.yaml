@@ -3,7 +3,7 @@ services:
     image: endless-api:latest
     build: 
       context: .
-      dockerfile: docker/Dockerfile
+      dockerfile: docker/api/Dockerfile
     depends_on:
       db:
         condition: service_healthy
@@ -60,6 +60,7 @@ services:
       - ELASTICSEARCH_HOSTS=http://search:9200
     depends_on:
       - search
+
   rabbitmq:
     image: rabbitmq:4.3.0-management
     ports:
