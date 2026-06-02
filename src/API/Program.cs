@@ -1,5 +1,3 @@
-using API.Extensions;
-
 namespace API;
 
 public class Program

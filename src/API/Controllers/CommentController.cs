@@ -8,7 +8,7 @@ using Application.Features.Users.Dtos;
 using Application.Utilities;
 using Domain.Common.Enums;
 using Domain.Entities;
-using API.Extensions;
+using Application.Extensions;
 using Application.Features.Comments.Update;
 using Application.Features.Dtos;
 using Application.Features.Rows.Contents;

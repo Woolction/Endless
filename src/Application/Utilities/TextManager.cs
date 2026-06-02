@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 namespace Application.Utilities;
 
-public static partial class TextUtility
+public static partial class TextManager
 {
     public static string GenerateSlug(this string text)
     {

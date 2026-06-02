@@ -27,7 +27,7 @@ using System.Text;
 using Application;
 using Application.Features.Rows;
 
-namespace API.Extensions;
+namespace API;
 
 public static class ProgramPipeline
 {

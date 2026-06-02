@@ -8,7 +8,7 @@ using Application.Features.Genres.Dtos;
 using Application.Utilities;
 using Domain.Common.Enums;
 using Domain.Entities;
-using API.Extensions;
+using Application.Extensions;
 
 namespace API.Controllers;
 

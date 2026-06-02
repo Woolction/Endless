@@ -1,7 +1,7 @@
 using Application.Features.Comments.Dtos;
 using Domain.Entities;
 
-namespace API.Extensions;
+namespace Application.Extensions;
 
 public static class CommentExtension
 {
