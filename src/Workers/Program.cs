@@ -1,6 +1,8 @@
-using Application;
 using Application.Interfaces.Services;
+using Application.Interfaces.Db;
+using Infrastructure.Connector;
 using Workers.Consumers;
+using Application;
 
 namespace Workers;
 
@@ -20,6 +22,12 @@ public class Program
         // MediatR
         builder.Services.AddMediatR(cf =>
             cf.RegisterServicesFromAssembly(typeof(AppMaker).Assembly));
+
+        // RabbitMQ
+        builder.Services.AddSingleton<RabbitConnectorFactory>();
+
+        builder.Services.AddSingleton<IRabbitMqConnector>(provider =>
+            provider.GetRequiredService<RabbitConnectorFactory>());
 
         // Consumers
         builder.Services.AddTransient<IConsumer, SearchIndexUpsertingConsumer>();
