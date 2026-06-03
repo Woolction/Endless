@@ -1,22 +1,21 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Application.Features.Contents.Video.Upload;
 using Application.Interfaces.Repositories;
-using Infrastructure.Services.Background;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.RateLimiting;
-using Infrastructure.RabbitMQ.Consumers;
-using Application.Features.Contents.Video.Upload;
-using Application.Interfaces.Services;
+using Application.Features.Icon.Upload;
 using Microsoft.AspNetCore.StaticFiles;
+using Application.Interfaces.Services;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Elastic.Clients.Elasticsearch;
-using Application.Interfaces.Db;
 using Infrastructure.Repositories;
+using Application.Interfaces.Db;
+using Application.Features.Rows;
 using Infrastructure.Connector;
 using Infrastructure.Services;
-using Application.Features.Icon.Upload;
 using Infrastructure.Context;
 using System.Security.Claims;
 using Domain.Common.Enums;
@@ -25,7 +24,6 @@ using Domain.Entities;
 using API.Middleware;
 using System.Text;
 using Application;
-using Application.Features.Rows;
 
 namespace API;
 
@@ -198,13 +196,8 @@ public static class ProgramPipeline
         builder.Services.AddSingleton<IconUploadPublisher>();
 
         //      Transient
-        builder.Services.AddTransient<IConsumer, SearchIndexUpsertingConsumer>();
-        builder.Services.AddTransient<IConsumer, VideoUploadingConsumer>();
-        builder.Services.AddTransient<IConsumer, IconUploadingConsumer>();
 
         // Background Services
-
-        builder.Services.AddHostedService<RabbitMqConsumers>();
     }
 
     public static void MiddlewareRegistry(this WebApplication app)
