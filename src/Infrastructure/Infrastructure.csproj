@@ -16,7 +16,6 @@
     <PackageReference Include="Elastic.Clients.Elasticsearch" Version="9.3.4" />
     <PackageReference Include="RabbitMQ.Client" Version="7.2.1" />
     <PackageReference Include="AWSSDK.S3" Version="4.0.18.8" />
-    <PackageReference Include="MediatR" Version="14.1.0" />
     <PackageReference Include="Npgsql" Version="10.0.2" />
     <PackageReference Include="Dapper" Version="2.1.72" />
   </ItemGroup>
