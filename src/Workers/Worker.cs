@@ -16,11 +16,11 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await connector.CreateConnectionAsync();
+        var connection = await connector.CreateConnectionAsync(stoppingToken);
 
         for (int i = 0; i < consumers.Length; i++)
         {
-            await consumers[i].Consume(connector.Connection, stoppingToken);
+            await consumers[i].Consume(connection, stoppingToken);
         }
 
         await Task.Delay(Timeout.Infinite, stoppingToken);
