@@ -21,9 +21,9 @@ public class IconUploadHandler : IRequestHandler<IconUploadMessage, Result<Null>
     private readonly ILogger<IconUploadHandler> logger;
     private readonly SearchIndexUpsertPublisher publisher;
     private readonly IServiceScopeFactory factory;
-    private readonly IR2Service r2Service;
-    
-    public IconUploadHandler(IR2Service r2Service, ILogger<IconUploadHandler> logger, SearchIndexUpsertPublisher publisher, IServiceScopeFactory factory)
+    private readonly IStorage r2Service;
+
+    public IconUploadHandler(IStorage r2Service, ILogger<IconUploadHandler> logger, SearchIndexUpsertPublisher publisher, IServiceScopeFactory factory)
     {
         this.r2Service = r2Service;
         this.publisher = publisher;
@@ -57,7 +57,7 @@ public class IconUploadHandler : IRequestHandler<IconUploadMessage, Result<Null>
             await UploadUserIcon(context, meta, iconVariants, token);
 
             await publisher.Publish(
-                new SearchIndexUpsertMessage(nameof(User), 
+                new SearchIndexUpsertMessage(nameof(User),
                     JsonSerializer.Serialize(new UserSearchIndex(meta.User!, meta))), token);
         }
         else if (message.Type == IconType.Channel)
@@ -70,20 +70,20 @@ public class IconUploadHandler : IRequestHandler<IconUploadMessage, Result<Null>
             if (meta == null)
             {
                 logger.LogError("channel not found");
-                
+
                 return Result<Null>.Failure(500, "channel not found");
             }
 
             await UploadChannelIcon(context, meta, iconVariants, token);
-            
+
             // publish to upserting search index
             await publisher.Publish(
-                new SearchIndexUpsertMessage(nameof(Channel), 
+                new SearchIndexUpsertMessage(nameof(Channel),
                     JsonSerializer.Serialize(new ChannelSearchIndex(meta.Channel!, meta))), token);
         }
 
         File.Delete(message.PhotoPath);
-        
+
         logger.LogInformation("icon upload complete: process succeed");
 
         return Result<Null>.Success(200, new Null());

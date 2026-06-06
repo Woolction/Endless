@@ -4,7 +4,7 @@ using Domain.Common.Enums;
 
 namespace Application.Interfaces.Services;
 
-public interface IR2Service
+public interface IStorage
 {
     Task<string> UploadDirectory(string folder, string keyPrefix, string bucketName = "videos", CancellationToken token = default);
     Task<string> SaveFormFileAsync(IFormFile file, string folderName, CancellationToken token = default);

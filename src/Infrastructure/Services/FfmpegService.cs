@@ -12,9 +12,9 @@ namespace Infrastructure.Services;
 public class FfmpegService : IFfmpegService
 {
     private readonly ILogger<FfmpegService> logger;
-    private readonly IR2Service r2Service;
+    private readonly IStorage r2Service;
 
-    public FfmpegService(ILogger<FfmpegService> logger, IR2Service r2Service)
+    public FfmpegService(ILogger<FfmpegService> logger, IStorage r2Service)
     {
         this.r2Service = r2Service;
         this.logger = logger;

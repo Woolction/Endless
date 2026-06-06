@@ -12,7 +12,7 @@ using SixLabors.ImageSharp.Formats.Ico;
 
 namespace Infrastructure.Services;
 
-public class R2Service : IR2Service
+public class R2Service : IStorage
 {
     /*private readonly IAmazonS3 _s3;
 

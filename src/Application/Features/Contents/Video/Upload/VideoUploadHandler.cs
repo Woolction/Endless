@@ -18,9 +18,9 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
 
     private readonly SearchIndexUpsertPublisher publisher;
     private readonly IFfmpegService ffmpegService;
-    private readonly IR2Service r2Service;
-    
-    public VideoUploadHandler(ILogger<VideoUploadHandler> logger, IServiceScopeFactory scopeFactory, SearchIndexUpsertPublisher publisher, IFfmpegService ffmpegService, IR2Service r2Service)
+    private readonly IStorage r2Service;
+
+    public VideoUploadHandler(ILogger<VideoUploadHandler> logger, IServiceScopeFactory scopeFactory, SearchIndexUpsertPublisher publisher, IFfmpegService ffmpegService, IStorage r2Service)
     {
         this.ffmpegService = ffmpegService;
         this.scopeFactory = scopeFactory;
@@ -100,9 +100,9 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
 
         // publish to upserting search index
         await publisher.Publish(
-            new SearchIndexUpsertMessage(nameof(Content), 
+            new SearchIndexUpsertMessage(nameof(Content),
                 JsonSerializer.Serialize(new ContentSearchIndex(content, content.VideoMeta))), token);
-        
+
         // delete the files
         if (!string.IsNullOrEmpty(message.PhotoPath) && File.Exists(message.PhotoPath))
             File.Delete(message.PhotoPath);
@@ -111,7 +111,7 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
             File.Delete(message.VideoPath);
 
         logger.LogInformation("video upload complete: process succeed");
-        
+
         return Result<Null>.Success(200, new Null());
     }
 }

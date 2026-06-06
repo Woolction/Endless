@@ -189,7 +189,7 @@ public static class ProgramPipeline
 
         builder.Services.AddSingleton<IRandomService, RandomService>();
         builder.Services.AddSingleton<IFfmpegService, FfmpegService>();
-        builder.Services.AddSingleton<IR2Service, R2Service>();
+        builder.Services.AddSingleton<IStorage, R2Service>();
 
         builder.Services.AddSingleton<SearchIndexUpsertPublisher>();
         builder.Services.AddSingleton<VideoUploadPublisher>();

@@ -24,9 +24,9 @@ public class ChannelUpdateHandler : IRequestHandler<ChannelUpdateCommand, Result
     private readonly SearchIndexUpsertPublisher indexUpsertPublisher;
     private readonly IconUploadPublisher publisher;
     private readonly IAppDbContext context;
-    private readonly IR2Service r2Service;
+    private readonly IStorage r2Service;
 
-    public ChannelUpdateHandler(IAppDbContext context, SearchIndexUpsertPublisher indexUpsertPublisher, IconUploadPublisher publisher, ILogger<ChannelUpdateHandler> logger, IR2Service r2Service)
+    public ChannelUpdateHandler(IAppDbContext context, SearchIndexUpsertPublisher indexUpsertPublisher, IconUploadPublisher publisher, ILogger<ChannelUpdateHandler> logger, IStorage r2Service)
     {
         this.indexUpsertPublisher = indexUpsertPublisher;
         this.r2Service = r2Service;
@@ -111,7 +111,7 @@ public class ChannelUpdateHandler : IRequestHandler<ChannelUpdateCommand, Result
             {
                 Directory.Delete(channel.meta.IconBase, true);
             }
-        } 
+        }
 
         await context.SaveChangesAsync();
 
@@ -125,7 +125,7 @@ public class ChannelUpdateHandler : IRequestHandler<ChannelUpdateCommand, Result
         else
         {
             await indexUpsertPublisher.Publish(
-                new SearchIndexUpsertMessage(nameof(Channel), 
+                new SearchIndexUpsertMessage(nameof(Channel),
                     JsonSerializer.Serialize(new ChannelSearchIndex(channel.c!, channel.meta))), cancellationToken);
         }
 

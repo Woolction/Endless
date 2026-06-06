@@ -24,12 +24,12 @@ public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Resu
     private readonly SearchIndexUpsertPublisher indexUpsertPublisher;
     private readonly IconUploadPublisher publisher;
     private readonly IAppDbContext context;
-    private readonly IR2Service r2Service;
+    private readonly IStorage r2Service;
 
 
-    public ChannelCreatingHandler(IAppDbContext context, SearchIndexUpsertPublisher indexUpsertPublisher, IconUploadPublisher publisher, ILogger<ChannelCreatingHandler> logger, IR2Service r2Service)
+    public ChannelCreatingHandler(IAppDbContext context, SearchIndexUpsertPublisher indexUpsertPublisher, IconUploadPublisher publisher, ILogger<ChannelCreatingHandler> logger, IStorage r2Service)
     {
-        this.indexUpsertPublisher =  indexUpsertPublisher;
+        this.indexUpsertPublisher = indexUpsertPublisher;
         this.r2Service = r2Service;
         this.publisher = publisher;
         this.context = context;
@@ -98,7 +98,7 @@ public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Resu
         else
         {
             await indexUpsertPublisher.Publish(
-                new SearchIndexUpsertMessage(nameof(Channel), 
+                new SearchIndexUpsertMessage(nameof(Channel),
                     JsonSerializer.Serialize(new ChannelSearchIndex(channel, meta))), cancellationToken);
         }
 

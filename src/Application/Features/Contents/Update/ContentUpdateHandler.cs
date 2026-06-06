@@ -17,9 +17,9 @@ public class ContentUpdateHandler : IRequestHandler<ContentUpdateCommand, Result
     private readonly ILogger<ContentUpdateHandler> logger;
     private readonly VideoUploadPublisher publisher;
     private readonly IAppDbContext context;
-    private readonly IR2Service r2Service;
+    private readonly IStorage r2Service;
 
-    public ContentUpdateHandler(IAppDbContext context, ILogger<ContentUpdateHandler> logger, VideoUploadPublisher publisher, IR2Service r2Service)
+    public ContentUpdateHandler(IAppDbContext context, ILogger<ContentUpdateHandler> logger, VideoUploadPublisher publisher, IStorage r2Service)
     {
         this.context = context;
         this.logger = logger;

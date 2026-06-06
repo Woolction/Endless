@@ -18,9 +18,9 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
     private readonly VideoUploadPublisher publisher;
     private readonly IRandomService randomService;
     private readonly IAppDbContext context;
-    private readonly IR2Service r2Service;
+    private readonly IStorage r2Service;
 
-    public ContentCreateHandler(IAppDbContext context, VideoUploadPublisher publisher, IRandomService randomService, IR2Service r2Service, ILogger<ContentCreateHandler> logger)
+    public ContentCreateHandler(IAppDbContext context, VideoUploadPublisher publisher, IRandomService randomService, IStorage r2Service, ILogger<ContentCreateHandler> logger)
     {
         this.context = context;
 

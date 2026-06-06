@@ -23,14 +23,14 @@ public class UserUpdateHandler : IRequestHandler<UserUpdateCommand, Result<UserD
     private readonly ILogger<UserUpdateHandler> logger;
     private readonly IconUploadPublisher publisher;
     private readonly IAppDbContext context;
-    private readonly IR2Service r2Service;
+    private readonly IStorage r2Service;
 
-    public UserUpdateHandler(IAppDbContext context, ILogger<UserUpdateHandler> logger, SearchIndexUpsertPublisher indexUpsertPublisher, IconUploadPublisher publisher, IR2Service r2Service)
+    public UserUpdateHandler(IAppDbContext context, ILogger<UserUpdateHandler> logger, SearchIndexUpsertPublisher indexUpsertPublisher, IconUploadPublisher publisher, IStorage r2Service)
     {
         this.context = context;
         this.logger = logger;
 
-        this.indexUpsertPublisher =  indexUpsertPublisher;
+        this.indexUpsertPublisher = indexUpsertPublisher;
         this.publisher = publisher;
         this.r2Service = r2Service;
     }
@@ -104,7 +104,7 @@ public class UserUpdateHandler : IRequestHandler<UserUpdateCommand, Result<UserD
         else
         {
             await indexUpsertPublisher.Publish(
-                new SearchIndexUpsertMessage(nameof(User), 
+                new SearchIndexUpsertMessage(nameof(User),
                     JsonSerializer.Serialize(new UserSearchIndex(user.u, user.meta))), cancellationToken);
         }
 
