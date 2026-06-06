@@ -16,7 +16,9 @@ public class IconUploadPublisher
     
     public async Task PublishAsync(IconUploadMessage message, CancellationToken token)
     {
-        await using var channel = await connector.Connection.CreateChannelAsync(cancellationToken: token);
+        var connection = await connector.CreateConnectionAsync(token);
+        
+        await using var channel = await connection.CreateChannelAsync(cancellationToken: token);
 
         await channel.QueueDeclareAsync(
             queue: "icon.upload",

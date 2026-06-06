@@ -19,7 +19,9 @@ public class SearchIndexUpsertPublisher
 
     public async Task Publish(SearchIndexUpsertMessage message, CancellationToken token)
     {
-        await using var channel = await connector.Connection.CreateChannelAsync(cancellationToken: token);
+        var connection = await connector.CreateConnectionAsync(token);
+
+        await using var channel = await connection.CreateChannelAsync(cancellationToken: token);
 
         await channel.QueueDeclareAsync(
             "search_index.upsert", 

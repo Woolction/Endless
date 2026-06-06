@@ -8,15 +8,17 @@ namespace Application.Features.Contents.Video.Upload;
 
 public class VideoUploadPublisher
 {
-    private readonly IRabbitMqConnector connection;
-    public VideoUploadPublisher(IRabbitMqConnector connection)
+    private readonly IRabbitMqConnector connector;
+    public VideoUploadPublisher(IRabbitMqConnector connector)
     {
-        this.connection = connection;
+        this.connector = connector;
     }
 
     public async Task PublishAsync(VideoUploadMessage message, CancellationToken cancellationToken)
     {
-        await using var channel = await connection.Connection.CreateChannelAsync(cancellationToken: cancellationToken);
+        var connection = await connector.CreateConnectionAsync(cancellationToken);
+
+        await using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
         await channel.QueueDeclareAsync(
             queue: "video.upload",
