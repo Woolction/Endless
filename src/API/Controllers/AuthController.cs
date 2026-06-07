@@ -23,7 +23,7 @@ public class AuthController : ControllerBase
         this.logger = logger;
     }
 
-    [HttpGet("token")]
+    [HttpPost("token")]
     [EnableRateLimiting("LoginLimit")]
     public async Task<ActionResult<AuthDto>> Login([FromQuery] AuthCreateCommand cmd)
     {
