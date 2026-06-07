@@ -14,6 +14,7 @@ services:
     volumes:
       - ./storage:/storage
       - ./src/API/wwwroot:/app/wwwroot
+      - uploaded-data:/app/files
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       
@@ -80,8 +81,12 @@ services:
     depends_on:
       rabbitmq:
         condition: service_started
+    volumes:
+      - ./storage:/storage
+      - uploaded-data:/app/files
   
 volumes:
   postgres-data:
   elasticsearch_data:
   rabbitmq-data:
+  uploaded-data:
