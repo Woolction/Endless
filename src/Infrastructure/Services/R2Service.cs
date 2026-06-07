@@ -50,9 +50,6 @@ public class R2Service : IStorage
 
     public async Task<string> SaveFormFileAsync(IFormFile file, string folderName, CancellationToken token = default)
     {
-        /*if (file == null || file.Length == 0)
-            throw new ArgumentException("File is empty");*/
-
         string id = Guid.NewGuid().ToString();
         string projectRoot = Directory.GetCurrentDirectory();
         string folder = Path.Combine(projectRoot, "files", folderName);
