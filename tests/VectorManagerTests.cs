@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Hosting.Internal;
-using Infrastructure.Managers;
+﻿using Recommendation.Managers;
 
 namespace Tests;
 
