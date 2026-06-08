@@ -3,6 +3,7 @@
   <Project Path="src/Workers/Workers.csproj" />
 
   <Project Path="src/Infrastructure/Authentication/Authentication.csproj" /> 
+  <Project Path="src/Infrastructure/Recommendation/Recommendation.csproj" />
   <Project Path="src/Infrastructure/Persistence/Persistence.csproj" />
   <Project Path="src/Infrastructure/Messaging/Messaging.csproj" />
   <Project Path="src/Infrastructure/Storage/Storage.csproj" />
