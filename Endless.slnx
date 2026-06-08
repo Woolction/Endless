@@ -1,10 +1,16 @@
 <Solution>
-  <Project Path="src/API/API.csproj"/>
-  <Project Path="src/Workers/Workers.csproj"/>
+  <Project Path="src/API/API.csproj" />
+  <Project Path="src/Workers/Workers.csproj" />
 
-  <Project Path="src/Infrastructure/Infrastructure.csproj"/>
-  <Project Path="src/Application/Application.csproj"/>
-  <Project Path="src/Domain/Domain.csproj"/>
+  <Project Path="src/Infrastructure/Authentication/Authentication.csproj" /> 
+  <Project Path="src/Infrastructure/Recommendation/Recommendation.csproj" />
+  <Project Path="src/Infrastructure/Persistence/Persistence.csproj" />
+  <Project Path="src/Infrastructure/Messaging/Messaging.csproj" />
+  <Project Path="src/Infrastructure/Storage/Storage.csproj" />
+  <Project Path="src/Infrastructure/Media/Media.csproj" />
+
+  <Project Path="src/Application/Application.csproj" />
+  <Project Path="src/Domain/Domain.csproj" />
   
-  <Project Path="tests/tests.csproj"/>
+  <Project Path="tests/tests.csproj" />
 </Solution>

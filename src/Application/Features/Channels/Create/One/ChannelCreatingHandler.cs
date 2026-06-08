@@ -24,13 +24,13 @@ public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Resu
     private readonly SearchIndexUpsertPublisher indexUpsertPublisher;
     private readonly IconUploadPublisher publisher;
     private readonly IAppDbContext context;
-    private readonly IStorage r2Service;
+    private readonly IStorage Storage;
 
 
-    public ChannelCreatingHandler(IAppDbContext context, SearchIndexUpsertPublisher indexUpsertPublisher, IconUploadPublisher publisher, ILogger<ChannelCreatingHandler> logger, IStorage r2Service)
+    public ChannelCreatingHandler(IAppDbContext context, SearchIndexUpsertPublisher indexUpsertPublisher, IconUploadPublisher publisher, ILogger<ChannelCreatingHandler> logger, IStorage Storage)
     {
         this.indexUpsertPublisher = indexUpsertPublisher;
-        this.r2Service = r2Service;
+        this.Storage = Storage;
         this.publisher = publisher;
         this.context = context;
         this.logger = logger;
@@ -86,7 +86,7 @@ public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Resu
 
         if (cmd.IconPhoto != null && cmd.IconPhoto.Length != 0)
         {
-            photoPath = await r2Service.SaveFormFileAsync(
+            photoPath = await Storage.SaveFormFileAsync(
                 cmd.IconPhoto, "Images", cancellationToken);
 
             if (!string.IsNullOrEmpty(photoPath) && File.Exists(photoPath))

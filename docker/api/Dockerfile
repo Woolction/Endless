@@ -2,7 +2,12 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
 COPY src/API/API.csproj src/API/
-COPY src/Infrastructure/Infrastructure.csproj src/Infrastructure/
+COPY src/Infrastructure/Authentication/Authentication.csproj src/Infrastructure/Authentication/
+COPY src/Infrastructure/Recommendation/Recommendation.csproj src/Infrastructure/Recommendation/
+COPY src/Infrastructure/Persistence/Persistence.csproj src/Infrastructure/Persistence/
+COPY src/Infrastructure/Messaging/Messaging.csproj src/Infrastructure/Messaging/
+COPY src/Infrastructure/Storage/Storage.csproj src/Infrastructure/Storage/
+COPY src/Infrastructure/Media/Media.csproj src/Infrastructure/Media/
 COPY src/Application/Application.csproj src/Application/
 COPY src/Domain/Domain.csproj src/Domain/
 

@@ -18,15 +18,15 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
     private readonly VideoUploadPublisher publisher;
     private readonly IRandomService randomService;
     private readonly IAppDbContext context;
-    private readonly IStorage r2Service;
+    private readonly IStorage Storage;
 
-    public ContentCreateHandler(IAppDbContext context, VideoUploadPublisher publisher, IRandomService randomService, IStorage r2Service, ILogger<ContentCreateHandler> logger)
+    public ContentCreateHandler(IAppDbContext context, VideoUploadPublisher publisher, IRandomService randomService, IStorage Storage, ILogger<ContentCreateHandler> logger)
     {
         this.context = context;
 
         this.randomService = randomService;
         this.publisher = publisher;
-        this.r2Service = r2Service;
+        this.Storage = Storage;
         this.logger = logger;
     }
 
@@ -94,13 +94,13 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
 
         if (cmd.ContentFile != null && cmd.ContentFile.Length != 0)
         {
-            videoPath = await r2Service.SaveFormFileAsync(
+            videoPath = await Storage.SaveFormFileAsync(
                 cmd.ContentFile, "Video", token: cancellationToken);
         }
 
         if (cmd.PrewievPhoto != null && cmd.PrewievPhoto.Length != 0)
         {
-            photoPath = await r2Service.SaveFormFileAsync(
+            photoPath = await Storage.SaveFormFileAsync(
                 cmd.PrewievPhoto, "Images", token: cancellationToken);
         }
 

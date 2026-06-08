@@ -18,14 +18,14 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
 
     private readonly SearchIndexUpsertPublisher publisher;
     private readonly IFfmpegService ffmpegService;
-    private readonly IStorage r2Service;
+    private readonly IStorage Storage;
 
-    public VideoUploadHandler(ILogger<VideoUploadHandler> logger, IServiceScopeFactory scopeFactory, SearchIndexUpsertPublisher publisher, IFfmpegService ffmpegService, IStorage r2Service)
+    public VideoUploadHandler(ILogger<VideoUploadHandler> logger, IServiceScopeFactory scopeFactory, SearchIndexUpsertPublisher publisher, IFfmpegService ffmpegService, IStorage Storage)
     {
         this.ffmpegService = ffmpegService;
         this.scopeFactory = scopeFactory;
         this.publisher = publisher;
-        this.r2Service = r2Service;
+        this.Storage = Storage;
         this.logger = logger;
     }
 
@@ -40,7 +40,7 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
         {
             logger.LogInformation("save photo");
 
-            photoUrl = await r2Service.SavePhotoVariants(
+            photoUrl = await Storage.SavePhotoVariants(
                 message.PhotoPath, message.Slug, token);
         }
 

@@ -1,29 +1,19 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Application.Features.Contents.Video.Upload;
-using Application.Interfaces.Repositories;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.RateLimiting;
 using Application.Features.Icon.Upload;
 using Microsoft.AspNetCore.StaticFiles;
-using Application.Interfaces.Services;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
-using Elastic.Clients.Elasticsearch;
-using Infrastructure.Repositories;
-using Application.Interfaces.Db;
 using Application.Features.Rows;
-using Infrastructure.Connector;
-using Infrastructure.Services;
-using Infrastructure.Context;
-using System.Security.Claims;
-using Domain.Common.Enums;
 using Scalar.AspNetCore;
-using Domain.Entities;
+using Authentication;
 using API.Middleware;
-using System.Text;
+using Recommendation;
 using Application;
+using Persistence;
+using Messaging;
+using Storage;
+using Media;
 
 namespace API;
 
@@ -31,11 +21,6 @@ public static class ProgramPipeline
 {
     public static void ServicesRegistry(this WebApplicationBuilder builder)
     {
-        IConfiguration configuration = builder.Configuration;
-
-        IConfiguration jwtSettings = configuration.GetSection("JwtSettings");
-        string DbKey = configuration.GetConnectionString("DB")!;
-
         builder.Services.AddControllers();
         builder.Services.AddOpenApi();
 
@@ -69,54 +54,6 @@ public static class ProgramPipeline
             });*/
         });
 
-        // Authentication
-        builder.Services.AddAuthentication(options =>
-        {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        }).AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
-        {
-            options.TokenValidationParameters = new TokenValidationParameters()
-            {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                ValidIssuer = jwtSettings["Issuer"],
-                ValidAudience = jwtSettings["Audience"],
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]!)),
-                RoleClaimType = ClaimTypes.Role,
-            };
-
-            options.Events = new JwtBearerEvents()
-            {
-                OnMessageReceived = context =>
-                {
-                    string token = context.Request.Cookies["AccessToken"]!;
-
-                    if (!string.IsNullOrEmpty(token))
-                        context.Token = token;
-
-                    return Task.CompletedTask;
-                }
-            };
-        });
-
-        // Authorization builder.Services
-        builder.Services.AddAuthorizationBuilder()
-            .AddPolicy(nameof(UserRole.Admin), policy =>
-            {
-                policy.RequireRole(nameof(UserRole.Admin));
-            })
-            .AddPolicy(nameof(UserRole.Creator), policy =>
-            {
-                policy.RequireRole(nameof(UserRole.Creator), nameof(UserRole.Admin));
-            })
-            .AddPolicy(nameof(UserRole.User), policy =>
-            {
-                policy.RequireRole(nameof(UserRole.User), nameof(UserRole.Creator), nameof(UserRole.Admin));
-            });
-
         // Rate limiter
         builder.Services.AddRateLimiter(options =>
         {
@@ -142,62 +79,21 @@ public static class ProgramPipeline
             });
         });
 
-        // Custum Services
-
-        // Db context
-        builder.Services.AddDbContext<EndlessContext>(context =>
-            context.UseNpgsql(DbKey));
-
-        builder.Services.AddScoped<IAppDbContext>(provider =>
-            provider.GetRequiredService<EndlessContext>());
-
-        builder.Services.AddSingleton<DbConnectorFactory>();
-
-        // ElasticSearch
-        builder.Services.AddSingleton(sp =>
-        {
-            var settings = new ElasticsearchClientSettings(new Uri("http://search:9200"))
-                .DefaultIndex("users");
-
-            return new ElasticsearchClient(settings);
-        });
+        // Infrastructures
+        builder.Services.AddAuthenticationInfrastructure(builder.Configuration);
+        builder.Services.AddPersistenceInfrastructure(builder.Configuration);
+        builder.Services.AddRecommendationInfrastructure();
+        builder.Services.AddMessagingInfrastructure();
+        builder.Services.AddStorageInfrastructure();
+        builder.Services.AddMediaInfrastructure();
 
         // MediatR
         builder.Services.AddMediatR(cf =>
             cf.RegisterServicesFromAssembly(typeof(AppMaker).Assembly));
 
-        // RabbitMQ
-        builder.Services.AddSingleton<RabbitConnectorFactory>();
-
-        builder.Services.AddSingleton<IRabbitMqConnector>(provider =>
-            provider.GetRequiredService<RabbitConnectorFactory>());
-
-        //      Scoped
-        builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
-        builder.Services.AddScoped<IAuthService, AuthService>();
-
-        // Repositories
-        builder.Services.AddScoped<IUserVectorsRepository, UserVectorsRepository>();
-        builder.Services.AddScoped<IChannelRepository, ChannelRepository>();
-        builder.Services.AddScoped<IContentRepository, ContentRepository>();
-        builder.Services.AddScoped<IGenreRepository, GenreRepository>();
-        builder.Services.AddScoped<IUserRepository, UserRepository>();
-
-        //      Singleton
-        builder.Services.AddSingleton<IRecommendationService, RecommendationService>();
-        builder.Services.AddSingleton<IInteractionService, InteractionService>();
-
-        builder.Services.AddSingleton<IRandomService, RandomService>();
-        builder.Services.AddSingleton<IFfmpegService, FfmpegService>();
-        builder.Services.AddSingleton<IStorage, R2Service>();
-
         builder.Services.AddSingleton<SearchIndexUpsertPublisher>();
         builder.Services.AddSingleton<VideoUploadPublisher>();
         builder.Services.AddSingleton<IconUploadPublisher>();
-
-        //      Transient
-
-        // Background Services
     }
 
     public static void MiddlewareRegistry(this WebApplication app)
@@ -207,11 +103,10 @@ public static class ProgramPipeline
             app.MapOpenApi();
             app.MapScalarApiReference();
 
-            using (var scope = app.Services.CreateScope())
-            {
-                EndlessContext context = scope.ServiceProvider.GetRequiredService<EndlessContext>();
-                context.Database.Migrate();
-            }
+            using var scope = app.Services.CreateScope();
+
+            //EndlessContext context = scope.ServiceProvider.GetRequiredService<EndlessContext>();
+            //context.Database.Migrate();
         }
         else
         {

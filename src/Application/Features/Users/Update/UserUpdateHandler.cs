@@ -23,16 +23,16 @@ public class UserUpdateHandler : IRequestHandler<UserUpdateCommand, Result<UserD
     private readonly ILogger<UserUpdateHandler> logger;
     private readonly IconUploadPublisher publisher;
     private readonly IAppDbContext context;
-    private readonly IStorage r2Service;
+    private readonly IStorage Storage;
 
-    public UserUpdateHandler(IAppDbContext context, ILogger<UserUpdateHandler> logger, SearchIndexUpsertPublisher indexUpsertPublisher, IconUploadPublisher publisher, IStorage r2Service)
+    public UserUpdateHandler(IAppDbContext context, ILogger<UserUpdateHandler> logger, SearchIndexUpsertPublisher indexUpsertPublisher, IconUploadPublisher publisher, IStorage Storage)
     {
         this.context = context;
         this.logger = logger;
 
         this.indexUpsertPublisher = indexUpsertPublisher;
         this.publisher = publisher;
-        this.r2Service = r2Service;
+        this.Storage = Storage;
     }
 
     public async Task<Result<UserDto>> Handle(UserUpdateCommand cmd, CancellationToken cancellationToken)
@@ -81,7 +81,7 @@ public class UserUpdateHandler : IRequestHandler<UserUpdateCommand, Result<UserD
 
         if (cmd.IconPhoto != null && cmd.IconPhoto.Length != 0)
         {
-            photoPath = await r2Service.SaveFormFileAsync(
+            photoPath = await Storage.SaveFormFileAsync(
                 cmd.IconPhoto, "Images", cancellationToken);
 
             // delete old data
