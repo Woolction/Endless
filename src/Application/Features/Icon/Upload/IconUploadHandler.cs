@@ -21,11 +21,11 @@ public class IconUploadHandler : IRequestHandler<IconUploadMessage, Result<Null>
     private readonly ILogger<IconUploadHandler> logger;
     private readonly SearchIndexUpsertPublisher publisher;
     private readonly IServiceScopeFactory factory;
-    private readonly IStorage r2Service;
+    private readonly IStorage Storage;
 
-    public IconUploadHandler(IStorage r2Service, ILogger<IconUploadHandler> logger, SearchIndexUpsertPublisher publisher, IServiceScopeFactory factory)
+    public IconUploadHandler(IStorage Storage, ILogger<IconUploadHandler> logger, SearchIndexUpsertPublisher publisher, IServiceScopeFactory factory)
     {
-        this.r2Service = r2Service;
+        this.Storage = Storage;
         this.publisher = publisher;
         this.factory = factory;
         this.logger = logger;
@@ -33,7 +33,7 @@ public class IconUploadHandler : IRequestHandler<IconUploadMessage, Result<Null>
 
     public async Task<Result<Null>> Handle(IconUploadMessage message, CancellationToken token)
     {
-        PhotoVariants iconVariants = await r2Service.SaveIconVariants(
+        PhotoVariants iconVariants = await Storage.SaveIconVariants(
             message.PhotoPath, message.Slug, message.Type, token);
 
         await using var scope = factory.CreateAsyncScope();

@@ -17,15 +17,15 @@ public class ContentUpdateHandler : IRequestHandler<ContentUpdateCommand, Result
     private readonly ILogger<ContentUpdateHandler> logger;
     private readonly VideoUploadPublisher publisher;
     private readonly IAppDbContext context;
-    private readonly IStorage r2Service;
+    private readonly IStorage Storage;
 
-    public ContentUpdateHandler(IAppDbContext context, ILogger<ContentUpdateHandler> logger, VideoUploadPublisher publisher, IStorage r2Service)
+    public ContentUpdateHandler(IAppDbContext context, ILogger<ContentUpdateHandler> logger, VideoUploadPublisher publisher, IStorage Storage)
     {
         this.context = context;
         this.logger = logger;
 
         this.publisher = publisher;
-        this.r2Service = r2Service;
+        this.Storage = Storage;
     }
 
     public async Task<Result<ContentDto>> Handle(ContentUpdateCommand request, CancellationToken cancellationToken)
@@ -61,7 +61,7 @@ public class ContentUpdateHandler : IRequestHandler<ContentUpdateCommand, Result
 
         if (request.ContentFile != null && request.ContentFile.Length != 0)
         {
-            videoPath = await r2Service.SaveFormFileAsync(
+            videoPath = await Storage.SaveFormFileAsync(
                 request.ContentFile, "Video", token: cancellationToken);
 
             // delete old data
@@ -77,7 +77,7 @@ public class ContentUpdateHandler : IRequestHandler<ContentUpdateCommand, Result
 
         if (request.PrewievPhoto != null && request.PrewievPhoto.Length != 0)
         {
-            photoPath = await r2Service.SaveFormFileAsync(
+            photoPath = await Storage.SaveFormFileAsync(
                 request.PrewievPhoto, "Images", cancellationToken);
 
             // delete old data
