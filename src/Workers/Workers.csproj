@@ -11,8 +11,7 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.3" />
   </ItemGroup>
 
-  <ItemGroup> 
-    <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
+  <ItemGroup>
     <ProjectReference Include="..\Application\Application.csproj" />
     <ProjectReference Include="..\Domain\Domain.csproj" />
   </ItemGroup>
