@@ -1,11 +1,6 @@
 using Application.Features.Rows.Contents;
-using SixLabors.ImageSharp.Formats.Webp;
-using Microsoft.AspNetCore.WebUtilities;
-using SixLabors.ImageSharp.Formats.Ico;
 using Application.Interfaces.Services;
-using SixLabors.ImageSharp.Processing;
 using Microsoft.AspNetCore.Http;
-using SixLabors.ImageSharp;
 using Domain.Common.Enums;
 using Amazon.S3.Transfer;
 using Amazon.S3;
@@ -14,11 +9,14 @@ namespace Storage.Services;
 
 public class R2Storage : IStorage
 {
-    /*private readonly IAmazonS3 _s3;
+    private readonly IImageAnalyzer imageAnalyzer;
+    //private readonly IAmazonS3 _s3;
 
-    public R2Storage()
+    public R2Storage(IImageAnalyzer imageAnalyzer)
     {
-        var config = new AmazonS3Config
+        this.imageAnalyzer = imageAnalyzer;
+
+        /*var config = new AmazonS3Config
         {
             ServiceURL = "https://<account_id>.r2.cloudflarestorage.com",
             ForcePathStyle = true
@@ -29,8 +27,8 @@ public class R2Storage : IStorage
                 "<secret_key>",
             config
 
-        );
-    }*/
+        );*/
+    }
 
     public async Task<string> UploadDirectory(string folder, string keyPrefix, string bucketName = "videos", CancellationToken token = default)
     {
@@ -90,45 +88,8 @@ public class R2Storage : IStorage
         string folder = Path.Combine("/storage/images/content-previews", photoName);
         Directory.CreateDirectory(folder);
 
-        using var image = await Image.LoadAsync(photoPath, token);
-
-        var sizes = new List<(int w, int h)>();
-
-        if (image.Width >= 1280 && image.Height >= 720)
-        {
-            sizes.Add((1280, 720));
-            sizes.Add((960, 540));
-            sizes.Add((640, 360));
-        }
-        else if (image.Width >= 960 && image.Height >= 540)
-        {
-            sizes.Add((960, 540));
-            sizes.Add((640, 360));
-        }
-        else if (image.Width >= 640 && image.Height >= 360)
-        {
-            sizes.Add((640, 360));
-        }
-
-        for (int i = 0; i < sizes.Count; i++)
-        {
-            var (w, h) = sizes[i];
-
-            using var clone = image.Clone(x => x
-                .Resize(new ResizeOptions()
-                {
-                    Size = new Size(w, h),
-                    Mode = ResizeMode.Crop,
-                    Sampler = KnownResamplers.Lanczos3
-                }));
-
-            string output = Path.Combine(folder, $"{w}x{h}.webp");
-
-            await clone.SaveAsWebpAsync(output, new WebpEncoder()
-            {
-                Quality = 80
-            }, cancellationToken: token);
-        }
+        await imageAnalyzer.GenerateImageVariants(
+            photoPath, folder, [(1280, 720), (960, 540), (640, 360)], 80, token);
 
         return new PhotoVariants(
             folder,
@@ -143,45 +104,8 @@ public class R2Storage : IStorage
         string folder = Path.Combine($"/storage/images/{type.ToString().ToLower()}-icons", photoName);
         Directory.CreateDirectory(folder);
 
-        using var image = await Image.LoadAsync(photoPath, token);
-
-        var sizes = new List<(int w, int h)>();
-
-        if (image.Width >= 256 && image.Height >= 256)
-        {
-            sizes.Add((256, 256));
-            sizes.Add((128, 128));
-            sizes.Add((64, 64));
-        }
-        else if (image.Width >= 128 && image.Height >= 128)
-        {
-            sizes.Add((128, 128));
-            sizes.Add((64, 64));
-        }
-        else if (image.Width >= 64 && image.Height >= 64)
-        {
-            sizes.Add((64, 64));
-        }
-
-        for (int i = 0; i < sizes.Count; i++)
-        {
-            var (w, h) = sizes[i];
-
-            using var clone = image.Clone(x => x
-                .Resize(new ResizeOptions()
-                {
-                    Size = new Size(w, h),
-                    Mode = ResizeMode.Crop,
-                    Sampler = KnownResamplers.Lanczos3
-                }));
-
-            string output = Path.Combine(folder, $"{w}x{h}.webp");
-
-            await clone.SaveAsWebpAsync(output, new WebpEncoder()
-            {
-                Quality = 85
-            }, token);
-        }
+        await imageAnalyzer.GenerateImageVariants(
+            photoPath, folder, [(256, 256), (128, 128), (64, 64)], 85, token);
 
         return new PhotoVariants(
             folder, "64x64.webp", "128x128.webp", "256x256.webp"
