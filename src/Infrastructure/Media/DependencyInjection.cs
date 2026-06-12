@@ -9,5 +9,6 @@ public static class DependencyInjection
     public static void AddMediaInfrastructure(this IServiceCollection services)
     {
         services.AddSingleton<IFfmpegService, FfmpegService>();
+        services.AddSingleton<IImageAnalyzer, ImageAnalyzer>();
     }
 }
