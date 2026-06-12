@@ -95,6 +95,12 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
             Path.Combine(photoUrl.BaseUrl, photoUrl.Small), content.VideoMeta.SetColor, token);
 
         // set video
+            // for local storage
+        string? directoryName = Path.GetDirectoryName(content.VideoMeta.VideoUrl);
+
+        if (directoryName != null)
+            Directory.Delete(directoryName, true);
+
         content.VideoMeta.SetVideo(
             videoUrl, (int)duration);
 
