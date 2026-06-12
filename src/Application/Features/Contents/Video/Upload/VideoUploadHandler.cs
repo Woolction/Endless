@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Application.Features.Rows.Contents;
 using Application.Interfaces.Services;
@@ -6,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Application.Features.Rows;
 using Application.Interfaces.Db;
+using System.Text.Json;
 using Domain.Entities;
 using MediatR;
 
@@ -18,11 +18,13 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
 
     private readonly SearchIndexUpsertPublisher publisher;
     private readonly IFfmpegService ffmpegService;
+    private readonly IImageAnalyzer imageAnalyzer;
     private readonly IStorage Storage;
 
-    public VideoUploadHandler(ILogger<VideoUploadHandler> logger, IServiceScopeFactory scopeFactory, SearchIndexUpsertPublisher publisher, IFfmpegService ffmpegService, IStorage Storage)
+    public VideoUploadHandler(ILogger<VideoUploadHandler> logger, IServiceScopeFactory scopeFactory, SearchIndexUpsertPublisher publisher, IFfmpegService ffmpegService, IImageAnalyzer imageAnalyzer, IStorage Storage)
     {
         this.ffmpegService = ffmpegService;
+        this.imageAnalyzer = imageAnalyzer;
         this.scopeFactory = scopeFactory;
         this.publisher = publisher;
         this.Storage = Storage;
@@ -89,8 +91,8 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
         // set photo 
         content.VideoMeta.SetPhoto(
             photoUrl.BaseUrl, photoUrl.Small, photoUrl.Medium, photoUrl.Large);
-        await content.VideoMeta.SetAverageColor(
-            photoUrl.Small, token);
+        await imageAnalyzer.SetAverageColor(
+            Path.Combine(photoUrl.BaseUrl, photoUrl.Small), content.VideoMeta.SetColor, token);
 
         // set video
         content.VideoMeta.SetVideo(

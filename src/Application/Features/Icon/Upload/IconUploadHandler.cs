@@ -1,15 +1,14 @@
-using System.Text.Json;
-using Application.Features.Rows;
-using Application.Features.Rows.Channels;
 using Microsoft.Extensions.DependencyInjection;
-using Application.Interfaces.Repositories;
+using Application.Features.Rows.Channels;
 using Application.Features.Rows.Contents;
 using Application.Features.Rows.Users;
 using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Application.Interfaces.Db;
+using Application.Features.Rows;
 using Domain.Common.Enums;
+using System.Text.Json;
 using Domain.Entities;
 using MediatR;
 
@@ -21,12 +20,14 @@ public class IconUploadHandler : IRequestHandler<IconUploadMessage, Result<Null>
     private readonly ILogger<IconUploadHandler> logger;
     private readonly SearchIndexUpsertPublisher publisher;
     private readonly IServiceScopeFactory factory;
+    private readonly IImageAnalyzer imageAnalyzer;
     private readonly IStorage Storage;
 
-    public IconUploadHandler(IStorage Storage, ILogger<IconUploadHandler> logger, SearchIndexUpsertPublisher publisher, IServiceScopeFactory factory)
+    public IconUploadHandler(IStorage Storage, ILogger<IconUploadHandler> logger, IImageAnalyzer imageAnalyzer, SearchIndexUpsertPublisher publisher, IServiceScopeFactory factory)
     {
-        this.Storage = Storage;
+        this.imageAnalyzer = imageAnalyzer;
         this.publisher = publisher;
+        this.Storage = Storage;
         this.factory = factory;
         this.logger = logger;
     }
@@ -93,8 +94,8 @@ public class IconUploadHandler : IRequestHandler<IconUploadMessage, Result<Null>
     {
         meta.SetPhoto(
             iconVariants.BaseUrl, iconVariants.Small, iconVariants.Medium, iconVariants.Large);
-        await meta.SetAverageColor(
-            iconVariants.Small, token);
+        await imageAnalyzer.SetAverageColor(
+            Path.Combine(iconVariants.BaseUrl, iconVariants.Small), meta.SetColor, token);
 
         await context.SaveChangesAsync();
     }
@@ -103,8 +104,8 @@ public class IconUploadHandler : IRequestHandler<IconUploadMessage, Result<Null>
     {
         meta.SetPhoto(
             iconVariants.BaseUrl, iconVariants.Small, iconVariants.Medium, iconVariants.Large);
-        await meta.SetAverageColor(
-            iconVariants.Small, token);
+        await imageAnalyzer.SetAverageColor(
+            Path.Combine(iconVariants.BaseUrl, iconVariants.Small), meta.SetColor, token);
 
         await context.SaveChangesAsync();
     }
