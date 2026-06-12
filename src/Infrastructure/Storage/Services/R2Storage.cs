@@ -1,5 +1,5 @@
 using Application.Interfaces.Services;
-using Application.Features.Images;
+using Application.Features.Imagess;
 using Microsoft.AspNetCore.Http;
 using Domain.Common.Enums;
 using Amazon.S3.Transfer;

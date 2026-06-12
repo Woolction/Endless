@@ -1,4 +1,4 @@
-using Application.Features.Images;
+using Application.Features.Imagess;
 using Domain.Entities;
 
 namespace Application.Features.Rows.Channels;

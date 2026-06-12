@@ -5,7 +5,7 @@ using Application.Features.Comments.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Application.Features.Users.Dtos;
 using Microsoft.EntityFrameworkCore;
-using Application.Features.Images;
+using Application.Features.Imagess;
 using Application.Interfaces.Db;
 using Microsoft.AspNetCore.Mvc;
 using Application.Features.Dtos;

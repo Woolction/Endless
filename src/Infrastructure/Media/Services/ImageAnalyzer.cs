@@ -4,7 +4,7 @@ using SixLabors.ImageSharp.Processing;
 using Application.Interfaces.Services;
 using SixLabors.ImageSharp.Advanced;
 using Microsoft.Extensions.Logging;
-using Application.Features.Images;
+using Application.Features.Imagess;
 using SixLabors.ImageSharp;
 
 namespace Media.Services;

@@ -1,8 +1,8 @@
-namespace Application.Features.Images;
+namespace Application.Features.Imagess;
 
 public class ImageVariant
 {
+    public required string Url { get; set; }
     public int Width { get; set; }
     public int Height { get; set; }
-    public string Url { get; set; }
 }

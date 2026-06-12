@@ -2,7 +2,7 @@ using Application.Features.Contents.Dtos;
 using Application.Features.Rows.Contents;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Application.Features.Images;
+using Application.Features.Imagess;
 using Application.Interfaces.Db;
 using Application.Features.Dtos;
 using MediatR;

@@ -4,7 +4,7 @@ using Application.Features.Rows.Users;
 using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Application.Features.Images;
+using Application.Features.Imagess;
 using Application.Interfaces.Db;
 using Application.Features.Rows;
 using Domain.Common.Enums;
@@ -13,7 +13,7 @@ using Domain.Entities;
 using MediatR;
 
 
-namespace Application.Features.Image.Upload;
+namespace Application.Features.Images.Upload;
 
 public class ImageUploadHandler : IRequestHandler<ImageUploadMessage, Result<Null>>
 {

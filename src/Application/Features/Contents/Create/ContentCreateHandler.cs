@@ -4,7 +4,7 @@ using Application.Features.Contents.Dtos;
 using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Application.Features.Images;
+using Application.Features.Imagess;
 using Application.Features.Dtos;
 using Application.Interfaces.Db;
 using Domain.Common.Enums;

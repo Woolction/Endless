@@ -3,7 +3,7 @@ using Application.Features.Rows.Contents;
 using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Application.Features.Images;
+using Application.Features.Imagess;
 using Application.Features.Rows;
 using Application.Interfaces.Db;
 using System.Text.Json;

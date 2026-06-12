@@ -2,7 +2,7 @@ using Application.Features.Contents.Video.Upload;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.RateLimiting;
-using Application.Features.Image.Upload;
+using Application.Features.Images.Upload;
 using Microsoft.AspNetCore.StaticFiles;
 using Application.Features.Rows;
 using Scalar.AspNetCore;

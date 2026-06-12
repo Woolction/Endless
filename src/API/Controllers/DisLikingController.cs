@@ -3,7 +3,7 @@ using Application.Features.Contents.Dtos;
 using Application.Features.Comments.Dtos;
 using Application.Features.Rows.Contents;
 using Microsoft.EntityFrameworkCore;
-using Application.Features.Images;
+using Application.Features.Imagess;
 using Application.Interfaces.Db;
 using Microsoft.AspNetCore.Mvc;
 using Application.Features.Dtos;

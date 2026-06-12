@@ -1,4 +1,4 @@
-using Application.Features.Image.Upload;
+using Application.Features.Images.Upload;
 using Application.Interfaces.Services;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client.Events;

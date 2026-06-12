@@ -1,4 +1,4 @@
-using Application.Features.Images;
+using Application.Features.Imagess;
 
 namespace Application.Interfaces.Services;
 

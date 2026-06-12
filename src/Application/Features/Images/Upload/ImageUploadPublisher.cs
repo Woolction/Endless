@@ -3,7 +3,7 @@ using System.Text.Json;
 using RabbitMQ.Client;
 using System.Text;
 
-namespace Application.Features.Image.Upload;
+namespace Application.Features.Images.Upload;
 
 public class ImageUploadPublisher
 {

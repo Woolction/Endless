@@ -2,7 +2,7 @@ using Application.Features.Rows.Contents;
 using Application.Features.Channels.Dtos;
 using Application.Features.Rows.Channels;
 using Microsoft.EntityFrameworkCore;
-using Application.Features.Images;
+using Application.Features.Imagess;
 using Application.Features.Dtos;
 using Application.Features.Rows;
 using Application.Interfaces.Db;

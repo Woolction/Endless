@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Application.Features.Channels.Dtos;
 using Application.Features.Rows.Contents;
 using Microsoft.EntityFrameworkCore;
-using Application.Features.Images;
+using Application.Features.Imagess;
 using Application.Features.Dtos;
 using Application.Interfaces.Db;
 using Microsoft.AspNetCore.Mvc;

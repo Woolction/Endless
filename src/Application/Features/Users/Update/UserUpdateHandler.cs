@@ -1,11 +1,11 @@
 using Application.Features.Rows.Contents;
-using Application.Features.Image.Upload;
+using Application.Features.Images.Upload;
 using Application.Features.Users.Dtos;
 using Application.Features.Rows.Users;
 using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Application.Features.Images;
+using Application.Features.Imagess;
 using Application.Features.Dtos;
 using Application.Features.Rows;
 using Application.Interfaces.Db;

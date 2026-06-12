@@ -3,7 +3,7 @@ using Application.Features.Rows.Users;
 using Application.Features.Users.Dtos;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Application.Features.Images;
+using Application.Features.Imagess;
 using Application.Features.Dtos;
 using Application.Features.Rows;
 using Application.Interfaces.Db;

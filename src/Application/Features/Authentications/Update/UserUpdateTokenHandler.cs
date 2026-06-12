@@ -3,7 +3,7 @@ using Application.Features.Rows.Contents;
 using Application.Interfaces.Services;
 using Application.Features.Users.Dtos;
 using Microsoft.EntityFrameworkCore;
-using Application.Features.Images;
+using Application.Features.Imagess;
 using Application.Features.Dtos;
 using Application.Interfaces.Db;
 using MediatR;

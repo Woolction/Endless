@@ -1,4 +1,4 @@
-namespace Application.Features.Images;
+namespace Application.Features.Imagess;
 
 public class ImageVariants
 {
@@ -6,6 +6,8 @@ public class ImageVariants
     public string Small { get; init; } = string.Empty;
     public string? Medium { get; init; }
     public string? Large { get; init; }
+
+    public List<ImageVariant> Variants { get; set; } = [];
 
     public ImageVariants(string baseUrl, string small, string? medium, string? large)
     {
