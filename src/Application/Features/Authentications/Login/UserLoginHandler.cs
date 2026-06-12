@@ -1,13 +1,14 @@
 using Application.Features.Authentications.Dtos;
-using Application.Features.Dtos;
+using Application.Features.Rows.Contents;
 using Application.Features.Users.Dtos;
+using Application.Interfaces.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Application.Interfaces.Services;
+using Application.Features.Images;
+using Application.Features.Dtos;
 using Application.Interfaces.Db;
 using Domain.Entities;
 using MediatR;
-using Application.Features.Rows.Contents;
 
 namespace Application.Features.Authentications.Login;
 
@@ -27,13 +28,14 @@ public class UserLoginHandler : IRequestHandler<AuthCreateCommand, Result<AuthDt
     public async Task<Result<AuthDto>> Handle(AuthCreateCommand cmd, CancellationToken cancellationToken)
     {
         var user = await context.Users
-            .Select(user => new {
+            .Select(user => new
+            {
                 u = user,
                 dto = new UserDto(
                 user.Id, user.Name, "@" + user.Slug,
                 user.Description ?? "", user.RegistryData, user.Email,
                 user.Role.ToString(), new PhotoDto(
-                    new PhotoVariants(
+                    new ImageVariants(
                         user.UserMeta.IconBase,
                         user.UserMeta.Small,
                         user.UserMeta.Medium,
@@ -41,7 +43,8 @@ public class UserLoginHandler : IRequestHandler<AuthCreateCommand, Result<AuthDt
                     user.UserMeta.R,
                     user.UserMeta.G,
                     user.UserMeta.B), user.TotalLikes,
-                0, 0, 0, 0, 0, 0) })
+                0, 0, 0, 0, 0, 0)
+            })
             .FirstOrDefaultAsync(user =>
                 user.u.Email == cmd.Email, cancellationToken);
 

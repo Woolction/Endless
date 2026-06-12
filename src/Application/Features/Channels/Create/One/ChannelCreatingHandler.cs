@@ -1,20 +1,19 @@
-using System.Text.Json;
-using Application.Features.Dtos;
-using Application.Features.Channels.Dtos;
-using Application.Features.Icon.Upload;
-using Application.Features.Rows;
+using Application.Features.Rows.Contents;
 using Application.Features.Rows.Channels;
-using Application.Interfaces.Repositories;
+using Application.Features.Channels.Dtos;
+using Application.Features.Image.Upload;
 using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Application.Features.Images;
 using Application.Interfaces.Db;
+using Application.Features.Dtos;
+using Application.Features.Rows;
 using Application.Utilities;
-using Application.Features.Rows.Contents;
 using Domain.Common.Enums;
+using System.Text.Json;
 using Domain.Entities;
 using MediatR;
-using Npgsql;
 
 namespace Application.Features.Channels.Create.One;
 
@@ -22,12 +21,12 @@ public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Resu
 {
     private readonly ILogger<ChannelCreatingHandler> logger;
     private readonly SearchIndexUpsertPublisher indexUpsertPublisher;
-    private readonly IconUploadPublisher publisher;
+    private readonly ImageUploadPublisher publisher;
     private readonly IAppDbContext context;
     private readonly IStorage Storage;
 
 
-    public ChannelCreatingHandler(IAppDbContext context, SearchIndexUpsertPublisher indexUpsertPublisher, IconUploadPublisher publisher, ILogger<ChannelCreatingHandler> logger, IStorage Storage)
+    public ChannelCreatingHandler(IAppDbContext context, SearchIndexUpsertPublisher indexUpsertPublisher, ImageUploadPublisher publisher, ILogger<ChannelCreatingHandler> logger, IStorage Storage)
     {
         this.indexUpsertPublisher = indexUpsertPublisher;
         this.Storage = Storage;
@@ -91,7 +90,7 @@ public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Resu
 
             if (!string.IsNullOrEmpty(photoPath) && File.Exists(photoPath))
             {
-                await publisher.PublishAsync(new IconUploadMessage(
+                await publisher.PublishAsync(new ImageUploadMessage(
                     channel.Id, IconType.Channel, channel.Slug, photoPath), cancellationToken);
             }
         }
@@ -111,7 +110,7 @@ public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Resu
             channel.Description ?? "",
             channel.CreatedDate,
             new PhotoDto(
-                new PhotoVariants(
+                new ImageVariants(
                     meta.IconBase,
                     meta.Small,
                     meta.Medium,

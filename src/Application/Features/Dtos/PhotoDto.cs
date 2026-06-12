@@ -1,7 +1,7 @@
-using Application.Features.Rows.Contents;
+using Application.Features.Images;
 
 namespace Application.Features.Dtos;
 
 public record class PhotoDto(
-    PhotoVariants Variants, int R, int G, int B
+    ImageVariants Variants, int R, int G, int B
 );

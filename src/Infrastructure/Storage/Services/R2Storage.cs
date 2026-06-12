@@ -1,5 +1,5 @@
-using Application.Features.Rows.Contents;
 using Application.Interfaces.Services;
+using Application.Features.Images;
 using Microsoft.AspNetCore.Http;
 using Domain.Common.Enums;
 using Amazon.S3.Transfer;
@@ -83,7 +83,7 @@ public class R2Storage : IStorage
         return $"/storage/{keyPrefix}/master.m3u8";
     }
 
-    public async Task<PhotoVariants> SavePhotoVariants(string photoPath, string photoName, CancellationToken token = default)
+    public async Task<ImageVariants> SaveImageVariants(string photoPath, string photoName, CancellationToken token = default)
     {
         string folder = Path.Combine("/storage/images/content-previews", photoName);
         Directory.CreateDirectory(folder);
@@ -91,15 +91,12 @@ public class R2Storage : IStorage
         await imageAnalyzer.GenerateImageVariants(
             photoPath, folder, [(1280, 720), (960, 540), (640, 360)], 80, token);
 
-        return new PhotoVariants(
-            folder,
-            "640x360.webp",
-            "960x540.webp",
-            "1280x720.webp"
+        return new ImageVariants(
+            folder, "640x360.webp", "960x540.webp", "1280x720.webp"
         );
     }
 
-    public async Task<PhotoVariants> SaveIconVariants(string photoPath, string photoName, IconType type, CancellationToken token = default)
+    public async Task<ImageVariants> SaveIconVariants(string photoPath, string photoName, IconType type, CancellationToken token = default)
     {
         string folder = Path.Combine($"/storage/images/{type.ToString().ToLower()}-icons", photoName);
         Directory.CreateDirectory(folder);
@@ -107,7 +104,7 @@ public class R2Storage : IStorage
         await imageAnalyzer.GenerateImageVariants(
             photoPath, folder, [(256, 256), (128, 128), (64, 64)], 85, token);
 
-        return new PhotoVariants(
+        return new ImageVariants(
             folder, "64x64.webp", "128x128.webp", "256x256.webp"
         );
     }

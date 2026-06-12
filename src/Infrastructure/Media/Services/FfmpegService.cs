@@ -1,6 +1,6 @@
-using Application.Features.Rows.Contents;
 using Application.Interfaces.Services;
 using Microsoft.Extensions.Logging;
+using Application.Features.Images;
 using System.Globalization;
 using System.Diagnostics;
 using System.Text;
@@ -178,7 +178,7 @@ public class FfmpegService : IFfmpegService
         return Math.Round(seconds);
     }
 
-    public async Task<PhotoVariants> GetPhotoFromVideo(string videoPath, string photoName, int height, double timeSeconds = 5, CancellationToken token = default)
+    public async Task<ImageVariants> GetPhotoFromVideo(string videoPath, string photoName, int height, double timeSeconds = 5, CancellationToken token = default)
     {
         string folder = Path.Combine("/storage/images/content-previews", photoName);
         Directory.CreateDirectory(folder);
@@ -213,7 +213,7 @@ public class FfmpegService : IFfmpegService
                 $"-frames:v 1 -c:v libwebp -quality 80 \"{output}\"", token: token);
         }
 
-        return new PhotoVariants(
+        return new ImageVariants(
             folder,
             "640x360.webp",
             "960x540.webp",

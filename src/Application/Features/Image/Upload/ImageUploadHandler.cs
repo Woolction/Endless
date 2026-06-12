@@ -1,10 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Application.Features.Rows.Channels;
-using Application.Features.Rows.Contents;
 using Application.Features.Rows.Users;
 using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Application.Features.Images;
 using Application.Interfaces.Db;
 using Application.Features.Rows;
 using Domain.Common.Enums;
@@ -13,17 +13,17 @@ using Domain.Entities;
 using MediatR;
 
 
-namespace Application.Features.Icon.Upload;
+namespace Application.Features.Image.Upload;
 
-public class IconUploadHandler : IRequestHandler<IconUploadMessage, Result<Null>>
+public class ImageUploadHandler : IRequestHandler<ImageUploadMessage, Result<Null>>
 {
-    private readonly ILogger<IconUploadHandler> logger;
+    private readonly ILogger<ImageUploadHandler> logger;
     private readonly SearchIndexUpsertPublisher publisher;
     private readonly IServiceScopeFactory factory;
     private readonly IImageAnalyzer imageAnalyzer;
     private readonly IStorage Storage;
 
-    public IconUploadHandler(IStorage Storage, ILogger<IconUploadHandler> logger, IImageAnalyzer imageAnalyzer, SearchIndexUpsertPublisher publisher, IServiceScopeFactory factory)
+    public ImageUploadHandler(IStorage Storage, ILogger<ImageUploadHandler> logger, IImageAnalyzer imageAnalyzer, SearchIndexUpsertPublisher publisher, IServiceScopeFactory factory)
     {
         this.imageAnalyzer = imageAnalyzer;
         this.publisher = publisher;
@@ -32,9 +32,9 @@ public class IconUploadHandler : IRequestHandler<IconUploadMessage, Result<Null>
         this.logger = logger;
     }
 
-    public async Task<Result<Null>> Handle(IconUploadMessage message, CancellationToken token)
+    public async Task<Result<Null>> Handle(ImageUploadMessage message, CancellationToken token)
     {
-        PhotoVariants iconVariants = await Storage.SaveIconVariants(
+        ImageVariants iconVariants = await Storage.SaveIconVariants(
             message.PhotoPath, message.Slug, message.Type, token);
 
         await using var scope = factory.CreateAsyncScope();
@@ -90,7 +90,7 @@ public class IconUploadHandler : IRequestHandler<IconUploadMessage, Result<Null>
         return Result<Null>.Success(200, new Null());
     }
 
-    private async Task UploadUserIcon(IAppDbContext context, UserMeta meta, PhotoVariants iconVariants, CancellationToken token)
+    private async Task UploadUserIcon(IAppDbContext context, UserMeta meta, ImageVariants iconVariants, CancellationToken token)
     {
         // delete old data
 
@@ -105,7 +105,7 @@ public class IconUploadHandler : IRequestHandler<IconUploadMessage, Result<Null>
         await context.SaveChangesAsync();
     }
 
-    private async Task UploadChannelIcon(IAppDbContext context, ChannelMeta meta, PhotoVariants iconVariants, CancellationToken token)
+    private async Task UploadChannelIcon(IAppDbContext context, ChannelMeta meta, ImageVariants iconVariants, CancellationToken token)
     {
         // delete old data
 

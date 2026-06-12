@@ -1,17 +1,18 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
-using Application.Interfaces.Db;
 using Application.Features.Comments.Create;
+using Application.Features.Comments.Update;
+using Application.Features.Rows.Contents;
 using Application.Features.Comments.Dtos;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Application.Features.Users.Dtos;
+using Microsoft.EntityFrameworkCore;
+using Application.Features.Images;
+using Application.Interfaces.Db;
+using Microsoft.AspNetCore.Mvc;
+using Application.Features.Dtos;
+using Application.Extensions;
 using Application.Utilities;
 using Domain.Common.Enums;
 using Domain.Entities;
-using Application.Extensions;
-using Application.Features.Comments.Update;
-using Application.Features.Dtos;
-using Application.Features.Rows.Contents;
 
 namespace API.Controllers;
 
@@ -50,7 +51,7 @@ public class CommentController : ControllerBase
                     comment.Commentator.Id, comment.Commentator.Name, "@" + comment.Commentator.Slug,
                     comment.Commentator.Description ?? "", comment.Commentator.RegistryData, comment.Commentator.Email,
                     comment.Commentator.Role.ToString(), new PhotoDto(
-                        new PhotoVariants(
+                        new ImageVariants(
                             comment.Commentator.UserMeta.IconBase,
                             comment.Commentator.UserMeta.Small,
                             comment.Commentator.UserMeta.Medium,
@@ -88,7 +89,7 @@ public class CommentController : ControllerBase
                     user.Id, user.Name, "@" + user.Slug,
                     user.Description ?? "", user.RegistryData, user.Email,
                     user.Role.ToString(), new PhotoDto(
-                        new PhotoVariants(
+                        new ImageVariants(
                             user.UserMeta.IconBase,
                             user.UserMeta.Small,
                             user.UserMeta.Medium,

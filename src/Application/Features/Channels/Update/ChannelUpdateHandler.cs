@@ -1,20 +1,19 @@
-using System.Text.Json;
-using Application.Features.Dtos;
 using Application.Features.Channels.Dtos;
-using Application.Features.Icon.Upload;
-using Application.Features.Rows;
 using Application.Features.Rows.Channels;
+using Application.Features.Rows.Contents;
+using Application.Features.Image.Upload;
+using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Application.Features.Images;
+using Application.Features.Rows;
 using Application.Interfaces.Db;
+using Application.Features.Dtos;
 using Application.Utilities;
-using Application.Features.Rows.Contents;
 using Domain.Common.Enums;
+using System.Text.Json;
 using Domain.Entities;
 using MediatR;
-using Npgsql;
-using Application.Interfaces.Repositories;
-using Application.Interfaces.Services;
 
 namespace Application.Features.Channels.Update;
 
@@ -22,11 +21,11 @@ public class ChannelUpdateHandler : IRequestHandler<ChannelUpdateCommand, Result
 {
     private readonly ILogger<ChannelUpdateHandler> logger;
     private readonly SearchIndexUpsertPublisher indexUpsertPublisher;
-    private readonly IconUploadPublisher publisher;
+    private readonly ImageUploadPublisher publisher;
     private readonly IAppDbContext context;
     private readonly IStorage Storage;
 
-    public ChannelUpdateHandler(IAppDbContext context, SearchIndexUpsertPublisher indexUpsertPublisher, IconUploadPublisher publisher, ILogger<ChannelUpdateHandler> logger, IStorage Storage)
+    public ChannelUpdateHandler(IAppDbContext context, SearchIndexUpsertPublisher indexUpsertPublisher, ImageUploadPublisher publisher, ILogger<ChannelUpdateHandler> logger, IStorage Storage)
     {
         this.indexUpsertPublisher = indexUpsertPublisher;
         this.Storage = Storage;
@@ -46,7 +45,7 @@ public class ChannelUpdateHandler : IRequestHandler<ChannelUpdateCommand, Result
                 channel.Id, channel.Name, "@" + channel.Slug,
                 channel.Description ?? "", channel.CreatedDate,
                 new PhotoDto(
-                    new PhotoVariants(
+                    new ImageVariants(
                         channel.ChannelMeta.IconBase,
                         channel.ChannelMeta.Small,
                         channel.ChannelMeta.Medium,
@@ -112,7 +111,7 @@ public class ChannelUpdateHandler : IRequestHandler<ChannelUpdateCommand, Result
 
         if (!string.IsNullOrEmpty(photoPath) && File.Exists(photoPath))
         {
-            await publisher.PublishAsync(new IconUploadMessage(
+            await publisher.PublishAsync(new ImageUploadMessage(
                 channel.c.Id, IconType.Channel, channel.c.Slug, photoPath), cancellationToken);
         }
         else

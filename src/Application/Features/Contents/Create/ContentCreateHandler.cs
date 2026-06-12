@@ -1,14 +1,15 @@
-using Application.Features.Dtos;
-using Application.Features.Contents.Dtos;
 using Application.Features.Contents.Video.Upload;
+using Application.Features.Rows.Contents;
+using Application.Features.Contents.Dtos;
 using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Application.Features.Images;
+using Application.Features.Dtos;
 using Application.Interfaces.Db;
 using Domain.Common.Enums;
 using Domain.Entities;
 using MediatR;
-using Application.Features.Rows.Contents;
 
 namespace Application.Features.Contents.Create;
 
@@ -116,7 +117,7 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
             content.CreatedDate, content.ContentType.ToString(), 0,
             content.VideoMeta.VideoUrl,
             new PhotoDto(
-                new PhotoVariants(
+                new ImageVariants(
                     content.VideoMeta.PhotoBase,
                     content.VideoMeta.Small,
                     content.VideoMeta.Medium,

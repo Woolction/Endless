@@ -1,14 +1,15 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
-using Application.Interfaces.Db;
 using Application.Features.Contents.Dtos;
 using Application.Features.Comments.Dtos;
+using Application.Features.Rows.Contents;
+using Microsoft.EntityFrameworkCore;
+using Application.Features.Images;
+using Application.Interfaces.Db;
 using Microsoft.AspNetCore.Mvc;
+using Application.Features.Dtos;
 using Application.Utilities;
 using Domain.Common.Enums;
 using Domain.Entities;
-using Application.Features.Dtos;
-using Application.Features.Rows.Contents;
 
 namespace API.Controllers;
 
@@ -45,7 +46,7 @@ public class DisLikingController : ControllerBase
                     content.CreatedDate, content.ContentType.ToString(),
                     content.VideoMeta.DurationSeconds, content.VideoMeta.VideoUrl,
                     new PhotoDto(
-                        new PhotoVariants(
+                        new ImageVariants(
                             content.VideoMeta.PhotoBase,
                             content.VideoMeta.Small,
                             content.VideoMeta.Medium,

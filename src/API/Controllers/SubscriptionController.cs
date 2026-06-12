@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
-using Application.Interfaces.Db;
+using Application.Features.Rows.Contents;
 using Application.Features.Channels.Dtos;
+using Microsoft.EntityFrameworkCore;
+using Application.Features.Images;
+using Application.Interfaces.Db;
+using Application.Features.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using Application.Utilities;
 using Domain.Common.Enums;
 using Domain.Entities;
-using Application.Features.Rows.Contents;
-using Application.Features.Dtos;
 
 namespace API.Controllers;
 
@@ -41,7 +42,7 @@ public class SubscriptionController : ControllerBase
                     channel.Id, channel.Name, "@" + channel.Slug,
                     channel.Description ?? "", channel.CreatedDate,
                     new PhotoDto(
-                        new PhotoVariants(
+                        new ImageVariants(
                             channel.ChannelMeta.IconBase,
                             channel.ChannelMeta.Small,
                             channel.ChannelMeta.Medium,
@@ -49,7 +50,7 @@ public class SubscriptionController : ControllerBase
                         channel.ChannelMeta.R,
                         channel.ChannelMeta.G,
                         channel.ChannelMeta.B), channel.Subscribers.Count,
-                    0,0, channel.TotalLikes, channel.TotalViews)
+                    0, 0, channel.TotalLikes, channel.TotalViews)
             })
             .AsNoTracking()
             .FirstOrDefaultAsync(channel => channel.c.Id == ChannelId);

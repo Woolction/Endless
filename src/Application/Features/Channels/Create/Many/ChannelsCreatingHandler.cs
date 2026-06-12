@@ -1,17 +1,17 @@
-using System.Text.Json;
-using Application.Features.Dtos;
+using Application.Features.Rows.Contents;
 using Application.Features.Channels.Dtos;
-using Application.Features.Rows;
 using Application.Features.Rows.Channels;
-using Application.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
-using Application.Utilities;
+using Application.Features.Images;
+using Application.Features.Dtos;
+using Application.Features.Rows;
 using Application.Interfaces.Db;
-using Domain.Entities;
+using Application.Utilities;
 using Domain.Common.Enums;
+using System.Text.Json;
+using Domain.Entities;
 using MediatR;
 using Npgsql;
-using Application.Features.Rows.Contents;
 
 namespace Application.Features.Channels.Create.Many;
 
@@ -92,7 +92,7 @@ public class ChannelsCreatingHandler : IRequestHandler<ChannelsCreateCommand, Re
                     channel.Id, channel.Name, "@" + channel.Slug,
                     channel.Description ?? "", channel.CreatedDate,
                     new PhotoDto(
-                        new PhotoVariants(
+                        new ImageVariants(
                             meta.IconBase,
                             meta.Small,
                             meta.Medium,
@@ -102,7 +102,7 @@ public class ChannelsCreatingHandler : IRequestHandler<ChannelsCreateCommand, Re
                     channel.ChannelMeta.B), 1, 0, 1, 0, 0);
 
                 await indexUpsertPublisher.Publish(
-                    new SearchIndexUpsertMessage(nameof(Channel), 
+                    new SearchIndexUpsertMessage(nameof(Channel),
                         JsonSerializer.Serialize(new ChannelSearchIndex(channel, meta))), cancellationToken);
             }
 

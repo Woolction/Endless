@@ -1,19 +1,19 @@
-using System.Text.Json;
-using Application.Features.Dtos;
-using Application.Features.Icon.Upload;
-using Application.Features.Rows;
+using Application.Features.Rows.Contents;
+using Application.Features.Image.Upload;
 using Application.Features.Users.Dtos;
+using Application.Features.Rows.Users;
+using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Application.Interfaces.Services;
-using Application.Utilities;
+using Application.Features.Images;
+using Application.Features.Dtos;
+using Application.Features.Rows;
 using Application.Interfaces.Db;
-using MediatR;
-using Application.Features.Rows.Contents;
-using Application.Features.Rows.Users;
-using Application.Interfaces.Repositories;
+using Application.Utilities;
 using Domain.Common.Enums;
+using System.Text.Json;
 using Domain.Entities;
+using MediatR;
 
 namespace Application.Features.Users.Update;
 
@@ -21,11 +21,11 @@ public class UserUpdateHandler : IRequestHandler<UserUpdateCommand, Result<UserD
 {
     private readonly SearchIndexUpsertPublisher indexUpsertPublisher;
     private readonly ILogger<UserUpdateHandler> logger;
-    private readonly IconUploadPublisher publisher;
+    private readonly ImageUploadPublisher publisher;
     private readonly IAppDbContext context;
     private readonly IStorage Storage;
 
-    public UserUpdateHandler(IAppDbContext context, ILogger<UserUpdateHandler> logger, SearchIndexUpsertPublisher indexUpsertPublisher, IconUploadPublisher publisher, IStorage Storage)
+    public UserUpdateHandler(IAppDbContext context, ILogger<UserUpdateHandler> logger, SearchIndexUpsertPublisher indexUpsertPublisher, ImageUploadPublisher publisher, IStorage Storage)
     {
         this.context = context;
         this.logger = logger;
@@ -47,7 +47,7 @@ public class UserUpdateHandler : IRequestHandler<UserUpdateCommand, Result<UserD
                 user.Description ?? "", user.RegistryData,
                 user.Email, user.Role.ToString(),
                 new PhotoDto(
-                    new PhotoVariants(
+                    new ImageVariants(
                         user.UserMeta.IconBase,
                         user.UserMeta.Small,
                         user.UserMeta.Medium,
@@ -91,7 +91,7 @@ public class UserUpdateHandler : IRequestHandler<UserUpdateCommand, Result<UserD
 
         if (!string.IsNullOrEmpty(photoPath) && File.Exists(photoPath))
         {
-            await publisher.PublishAsync(new IconUploadMessage(
+            await publisher.PublishAsync(new ImageUploadMessage(
                 cmd.UserId, IconType.User, user.u.Slug, photoPath), cancellationToken);
         }
         else

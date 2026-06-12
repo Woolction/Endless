@@ -1,23 +1,22 @@
 using Application.Interfaces.Db;
-using Application.Features.Icon.Upload;
 using System.Text.Json;
 using RabbitMQ.Client;
 using System.Text;
 
-namespace Application.Features.Icon.Upload;
+namespace Application.Features.Image.Upload;
 
-public class IconUploadPublisher
+public class ImageUploadPublisher
 {
     private readonly IRabbitMqConnector connector;
-    public IconUploadPublisher(IRabbitMqConnector connector)
+    public ImageUploadPublisher(IRabbitMqConnector connector)
     {
         this.connector = connector;
     }
-    
-    public async Task PublishAsync(IconUploadMessage message, CancellationToken token)
+
+    public async Task PublishAsync(ImageUploadMessage message, CancellationToken token)
     {
         var connection = await connector.CreateConnectionAsync(token);
-        
+
         await using var channel = await connection.CreateChannelAsync(cancellationToken: token);
 
         await channel.QueueDeclareAsync(

@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
-using Application.Interfaces.Db;
 using Application.Features.Channels.Dtos;
+using Application.Features.Rows.Contents;
+using Microsoft.EntityFrameworkCore;
+using Application.Features.Images;
+using Application.Features.Dtos;
+using Application.Interfaces.Db;
 using Microsoft.AspNetCore.Mvc;
 using Application.Utilities;
 using Domain.Common.Enums;
 using Domain.Entities;
-using Application.Features.Dtos;
-using Application.Features.Rows.Contents;
 
 namespace API.Controllers;
 
@@ -121,7 +122,7 @@ public class ChannelOwnersController : ControllerBase
                 channel.Id, channel.Name, "@" + channel.Slug,
                 channel.Description ?? "", channel.CreatedDate,
                 new PhotoDto(
-                    new PhotoVariants(
+                    new ImageVariants(
                         channel.ChannelMeta.IconBase,
                         channel.ChannelMeta.Small,
                         channel.ChannelMeta.Medium,
@@ -129,7 +130,7 @@ public class ChannelOwnersController : ControllerBase
                     channel.ChannelMeta.R,
                     channel.ChannelMeta.G,
                     channel.ChannelMeta.B),
-                0,0, channel.Owners.Count,
+                0, 0, channel.Owners.Count,
                 channel.TotalLikes, channel.TotalViews))
             .FirstAsync(Channel => Channel.Id == ChannelId));
     }

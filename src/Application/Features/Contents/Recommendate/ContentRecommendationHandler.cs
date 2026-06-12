@@ -1,12 +1,13 @@
-using Application.Features.Dtos;
+using Application.Features.Rows.Contents;
 using Application.Features.Contents.Dtos;
+using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Application.Interfaces.Services;
+using Application.Features.Images;
+using Application.Features.Dtos;
 using Application.Interfaces.Db;
 using Domain.Entities;
 using MediatR;
-using Application.Features.Rows.Contents;
 
 namespace Application.Features.Contents.Recommendate;
 
@@ -96,7 +97,7 @@ public class ContentRecommendationHandler : IRequestHandler<ContentRecommendatio
                 return new ContentFeedDto(
                     c.Id, c.ChannelId, c.CreatorId, owner.Name, owner.Slug, owner.GetType() == typeof(User) ?
                     new PhotoDto(
-                        new PhotoVariants(
+                        new ImageVariants(
                             owner.UserMeta.IconBase,
                             owner.UserMeta.Small,
                             owner.UserMeta.Medium,
@@ -105,7 +106,7 @@ public class ContentRecommendationHandler : IRequestHandler<ContentRecommendatio
                         owner.UserMeta.G,
                         owner.UserMeta.B) :
                     new PhotoDto(
-                        new PhotoVariants(
+                        new ImageVariants(
                             owner.ChannelMeta.IconBase,
                             owner.ChannelMeta.Small,
                             owner.ChannelMeta.Medium,
@@ -115,7 +116,7 @@ public class ContentRecommendationHandler : IRequestHandler<ContentRecommendatio
                         owner.ChannelMeta.B),
                     c.Title, c.Slug, c.Description, c.CreatedDate, c.ContentType.ToString(),
                     c.VideoMeta.DurationSeconds, c.VideoMeta.VideoUrl, new PhotoDto(
-                        new PhotoVariants(
+                        new ImageVariants(
                             c.VideoMeta.PhotoBase,
                             c.VideoMeta.Small,
                             c.VideoMeta.Medium,

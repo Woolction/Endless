@@ -2,7 +2,7 @@ using Application.Features.Contents.Video.Upload;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.RateLimiting;
-using Application.Features.Icon.Upload;
+using Application.Features.Image.Upload;
 using Microsoft.AspNetCore.StaticFiles;
 using Application.Features.Rows;
 using Scalar.AspNetCore;
@@ -93,7 +93,7 @@ public static class ProgramPipeline
 
         builder.Services.AddSingleton<SearchIndexUpsertPublisher>();
         builder.Services.AddSingleton<VideoUploadPublisher>();
-        builder.Services.AddSingleton<IconUploadPublisher>();
+        builder.Services.AddSingleton<ImageUploadPublisher>();
     }
 
     public static void MiddlewareRegistry(this WebApplication app)

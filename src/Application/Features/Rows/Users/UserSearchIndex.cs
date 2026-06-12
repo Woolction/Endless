@@ -1,5 +1,4 @@
-using Application.Features.Rows.Contents;
-using Domain.Common.Enums;
+using Application.Features.Images;
 using Domain.Entities;
 
 namespace Application.Features.Rows.Users;
@@ -16,7 +15,7 @@ public class UserSearchIndex
     public DateTime RegistryData;
     public int Role;
 
-    public PhotoVariants IconVariants { get; set; } = new();
+    public ImageVariants IconVariants { get; set; } = new();
 
     public int R { get; set; }
     public int G { get; set; }
@@ -33,7 +32,7 @@ public class UserSearchIndex
         Description = user.Description;
         TotalLikes = user.TotalLikes;
 
-        IconVariants = new PhotoVariants(
+        IconVariants = new ImageVariants(
             userMeta.IconBase,
             userMeta.Small,
             userMeta.Medium,

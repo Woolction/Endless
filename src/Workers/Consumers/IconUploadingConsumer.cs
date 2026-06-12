@@ -1,4 +1,4 @@
-using Application.Features.Icon.Upload;
+using Application.Features.Image.Upload;
 using Application.Interfaces.Services;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client.Events;
@@ -47,7 +47,7 @@ public class IconUploadingConsumer : IConsumer
             {
                 var body = Encoding.UTF8.GetString(ea.Body.ToArray());
 
-                var message = JsonSerializer.Deserialize<IconUploadMessage>(body);
+                var message = JsonSerializer.Deserialize<ImageUploadMessage>(body);
 
                 if (message == null)
                 {
@@ -64,13 +64,13 @@ public class IconUploadingConsumer : IConsumer
                 if (!result.IsSuccess)
                 {
                     logger.LogError("failed to upload icon");
-                    
+
                     await channel.BasicNackAsync(
                         ea.DeliveryTag, false, false, token);
 
                     return;
                 }
-                
+
                 logger.LogInformation("icon upload completed: send asc");
 
                 await channel.BasicAckAsync(

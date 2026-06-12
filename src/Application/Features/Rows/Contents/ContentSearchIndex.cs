@@ -1,3 +1,4 @@
+using Application.Features.Images;
 using Domain.Entities;
 
 namespace Application.Features.Rows.Contents;
@@ -19,7 +20,7 @@ public class ContentSearchIndex
     public int AverageWatchTimeSeconds { get; set; }
 
     public string ContentUrl { get; set; } = string.Empty;
-    public PhotoVariants PreviewPhotoUrl { get; set; } = new();
+    public ImageVariants PreviewPhotoUrl { get; set; } = new();
 
     public int R { get; set; }
     public int G { get; set; }
@@ -44,7 +45,7 @@ public class ContentSearchIndex
         if (content.ContentType == Domain.Common.Enums.ContentType.Video)
         {
             ContentUrl = videoMeta.VideoUrl;
-            PreviewPhotoUrl = new PhotoVariants(
+            PreviewPhotoUrl = new ImageVariants(
                 videoMeta.PhotoBase,
                 videoMeta.Small,
                 videoMeta.Medium,

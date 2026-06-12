@@ -1,12 +1,12 @@
 using Application.Features.Authentications.Dtos;
-using Application.Features.Dtos;
+using Application.Features.Rows.Contents;
+using Application.Interfaces.Services;
 using Application.Features.Users.Dtos;
 using Microsoft.EntityFrameworkCore;
-using Application.Interfaces.Services;
+using Application.Features.Images;
+using Application.Features.Dtos;
 using Application.Interfaces.Db;
-using Domain.Entities;
 using MediatR;
-using Application.Features.Rows.Contents;
 
 namespace Application.Features.Authentications.Update;
 
@@ -24,13 +24,14 @@ public class UserUpdateTokenHandler : IRequestHandler<RefreshTokenCommand, Resul
     public async Task<Result<AuthDto>> Handle(RefreshTokenCommand cmd, CancellationToken cancellationToken)
     {
         var user = await context.Users
-            .Select(user => new {
+            .Select(user => new
+            {
                 u = user,
                 dto = new UserDto(
                 user.Id, user.Name, "@" + user.Slug,
                 user.Description ?? "", user.RegistryData, user.Email,
                 user.Role.ToString(), new PhotoDto(
-                    new PhotoVariants(
+                    new ImageVariants(
                         user.UserMeta.IconBase,
                         user.UserMeta.Small,
                         user.UserMeta.Medium,
@@ -38,7 +39,8 @@ public class UserUpdateTokenHandler : IRequestHandler<RefreshTokenCommand, Resul
                     user.UserMeta.R,
                     user.UserMeta.G,
                     user.UserMeta.B), user.TotalLikes,
-                0, 0, 0, 0, 0, 0)})
+                0, 0, 0, 0, 0, 0)
+            })
             .FirstOrDefaultAsync(user =>
                 user.u.RefreshToken != null && user.u.RefreshToken.Token == cmd.Token, cancellationToken);
 

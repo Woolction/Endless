@@ -1,4 +1,4 @@
-using Application.Features.Rows.Contents;
+using Application.Features.Images;
 using Domain.Entities;
 
 namespace Application.Features.Rows.Channels;
@@ -13,7 +13,7 @@ public class ChannelSearchIndex
     public long TotalViews { get; set; }
     public long TotalLikes { get; set; }
 
-    public PhotoVariants IconVariants { get; set; } = new();
+    public ImageVariants IconVariants { get; set; } = new();
 
     public int R { get; set; }
     public int G { get; set; }
@@ -30,7 +30,7 @@ public class ChannelSearchIndex
         Description = channel.Description;
         CreatedDate = channel.CreatedDate;
 
-        IconVariants = new PhotoVariants(
+        IconVariants = new ImageVariants(
             channelMeta.IconBase,
             channelMeta.Small,
             channelMeta.Medium,

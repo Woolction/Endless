@@ -1,12 +1,11 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Application.Interfaces.Db;
-using MediatR;
-using System.Globalization;
-using System.Threading.Channels;
-using Application.Features.Dtos;
 using Application.Features.Contents.Dtos;
 using Application.Features.Rows.Contents;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Application.Features.Images;
+using Application.Interfaces.Db;
+using Application.Features.Dtos;
+using MediatR;
 
 namespace Application.Features.Contents.Random;
 
@@ -34,7 +33,7 @@ public class ContentRandomHandler : IRequestHandler<ContentRandomQuery, Result<C
                 c.Channel == null ? c.Creator!.Slug : c.Channel.Slug,
                 c.Channel == null ?
                 new PhotoDto(
-                    new PhotoVariants(
+                    new ImageVariants(
                         c.Creator!.UserMeta.IconBase,
                         c.Creator!.UserMeta.Small,
                         c.Creator!.UserMeta.Medium,
@@ -43,7 +42,7 @@ public class ContentRandomHandler : IRequestHandler<ContentRandomQuery, Result<C
                     c.Creator!.UserMeta.G,
                     c.Creator!.UserMeta.B) :
                 new PhotoDto(
-                    new PhotoVariants(
+                    new ImageVariants(
                         c.Channel.ChannelMeta.IconBase,
                         c.Channel.ChannelMeta.Small,
                         c.Channel.ChannelMeta.Medium,
@@ -53,7 +52,7 @@ public class ContentRandomHandler : IRequestHandler<ContentRandomQuery, Result<C
                     c.Channel.ChannelMeta.B),
                 c.Title, c.Slug, c.Description, c.CreatedDate, c.ContentType.ToString(),
                 c.VideoMeta.DurationSeconds, c.VideoMeta.VideoUrl, new PhotoDto(
-                    new PhotoVariants(
+                    new ImageVariants(
                         c.VideoMeta.PhotoBase,
                         c.VideoMeta.Small,
                         c.VideoMeta.Medium,

@@ -3,6 +3,7 @@ using Application.Features.Rows.Contents;
 using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Application.Features.Images;
 using Application.Features.Rows;
 using Application.Interfaces.Db;
 using System.Text.Json;
@@ -33,7 +34,7 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
 
     public async Task<Result<Null>> Handle(VideoUploadMessage message, CancellationToken token)
     {
-        PhotoVariants photoUrl = new();
+        ImageVariants photoUrl = new();
 
         string videoUrl = string.Empty;
         double duration = 0;
@@ -42,7 +43,7 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
         {
             logger.LogInformation("save photo");
 
-            photoUrl = await Storage.SavePhotoVariants(
+            photoUrl = await Storage.SaveImageVariants(
                 message.PhotoPath, message.Slug, token);
         }
 
@@ -89,7 +90,7 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
             .FirstAsync(c => c.Id == message.ContentId);
 
         // set photo 
-            // for local storage
+        // for local storage
         if (Directory.Exists(content.VideoMeta.PhotoBase))
         {
             Directory.Delete(content.VideoMeta.PhotoBase, true);
@@ -101,7 +102,7 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
             Path.Combine(photoUrl.BaseUrl, photoUrl.Small), content.VideoMeta.SetColor, token);
 
         // set video
-            // for local storage
+        // for local storage
         string? directoryName = Path.GetDirectoryName(content.VideoMeta.VideoUrl);
 
         if (directoryName != null)

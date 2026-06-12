@@ -1,10 +1,11 @@
-using Application.Features.Dtos;
+using Application.Features.Rows.Contents;
 using Application.Features.Contents.Dtos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Application.Features.Images;
+using Application.Features.Dtos;
 using Application.Interfaces.Db;
 using MediatR;
-using Application.Features.Rows.Contents;
 
 namespace Application.Features.Contents.Choose;
 
@@ -28,7 +29,7 @@ public class ContentChooseHandler : IRequestHandler<ContentChooseQuery, Result<C
                     content.Title, content.Slug, content.Description,
                     content.CreatedDate, content.ContentType.ToString(),
                     content.VideoMeta.DurationSeconds, content.VideoMeta.VideoUrl, new PhotoDto(
-                        new PhotoVariants(
+                        new ImageVariants(
                             content.VideoMeta.PhotoBase,
                             content.VideoMeta.Small,
                             content.VideoMeta.Medium,

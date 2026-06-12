@@ -4,6 +4,7 @@ using SixLabors.ImageSharp.Processing;
 using Application.Interfaces.Services;
 using SixLabors.ImageSharp.Advanced;
 using Microsoft.Extensions.Logging;
+using Application.Features.Images;
 using SixLabors.ImageSharp;
 
 namespace Media.Services;
@@ -57,7 +58,7 @@ public class ImageAnalyzer : IImageAnalyzer
             R, G, B, Path.GetFileNameWithoutExtension(photoUrl));
     }
 
-    public async Task GenerateImageVariants(string photoPath, string folder, (int w, int h)[] sizes, int quality = 80, CancellationToken token = default)
+    public async Task<ImageVariants> GenerateImageVariants(string photoPath, string folder, (int w, int h)[] sizes, int quality = 80, CancellationToken token = default)
     {
         using var image = await Image.LoadAsync(photoPath, token);
 
@@ -92,5 +93,9 @@ public class ImageAnalyzer : IImageAnalyzer
                 Quality = quality
             }, token);
         }
+
+        return new ImageVariants(
+            folder, "640x360.webp", "960x540.webp", "1280x720.webp"
+        );
     }
 }

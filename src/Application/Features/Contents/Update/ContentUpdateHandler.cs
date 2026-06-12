@@ -1,12 +1,12 @@
-using Application.Features.Dtos;
-using Application.Features.Contents.Dtos;
 using Application.Features.Contents.Video.Upload;
-using Application.Interfaces.Repositories;
+using Application.Features.Contents.Dtos;
+using Application.Features.Rows.Contents;
 using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Application.Features.Images;
+using Application.Features.Dtos;
 using Application.Interfaces.Db;
-using Application.Features.Rows.Contents;
 using Domain.Entities;
 using MediatR;
 
@@ -89,7 +89,7 @@ public class ContentUpdateHandler : IRequestHandler<ContentUpdateCommand, Result
             content.c.CreatedDate, content.c.ContentType.ToString(),
             content.c.VideoMeta.DurationSeconds, content.c.VideoMeta.VideoUrl,
             new PhotoDto(
-                new PhotoVariants(
+                new ImageVariants(
                     content.c.VideoMeta.PhotoBase,
                     content.c.VideoMeta.Small,
                     content.c.VideoMeta.Medium,

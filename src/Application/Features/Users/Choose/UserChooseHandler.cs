@@ -1,10 +1,11 @@
-using Application.Features.Dtos;
+using Application.Features.Rows.Contents;
 using Application.Features.Users.Dtos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Application.Features.Images;
+using Application.Features.Dtos;
 using Application.Interfaces.Db;
 using MediatR;
-using Application.Features.Rows.Contents;
 
 namespace Application.Features.Users.Choose;
 
@@ -26,7 +27,7 @@ public class UserChooseHandler : IRequestHandler<UserChooseQuery, Result<UserDto
                 user.Id, user.Name, "@" + user.Slug,
                 user.Description ?? "", user.RegistryData, user.Email,
                 user.Role.ToString(), new PhotoDto(
-                    new PhotoVariants(
+                    new ImageVariants(
                         user.UserMeta.IconBase,
                         user.UserMeta.Small,
                         user.UserMeta.Medium,

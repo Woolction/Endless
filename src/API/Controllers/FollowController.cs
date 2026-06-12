@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
-using Application.Interfaces.Db;
-using Microsoft.AspNetCore.Mvc;
+using Application.Features.Rows.Contents;
 using Application.Features.Users.Dtos;
+using Microsoft.EntityFrameworkCore;
+using Application.Features.Images;
+using Application.Interfaces.Db;
+using Application.Features.Dtos;
+using Microsoft.AspNetCore.Mvc;
 using Application.Utilities;
 using Domain.Common.Enums;
 using Domain.Entities;
-using Application.Features.Dtos;
-using Application.Features.Rows.Contents;
 
 namespace API.Controllers;
 
@@ -48,7 +49,7 @@ public class FollowController : ControllerBase
                     user.Id, user.Name, "@" + user.Slug,
                     user.Description ?? "", user.RegistryData, user.Email,
                     user.Role.ToString(), new PhotoDto(
-                        new PhotoVariants(
+                        new ImageVariants(
                             user.UserMeta.IconBase,
                             user.UserMeta.Small,
                             user.UserMeta.Medium,

@@ -1,13 +1,13 @@
-namespace Application.Features.Rows.Contents;
+namespace Application.Features.Images;
 
-public class PhotoVariants
+public class ImageVariants
 {
     public string BaseUrl { get; init; } = string.Empty;
     public string Small { get; init; } = string.Empty;
     public string? Medium { get; init; }
     public string? Large { get; init; }
 
-    public PhotoVariants(string baseUrl, string small, string? medium, string? large)
+    public ImageVariants(string baseUrl, string small, string? medium, string? large)
     {
         BaseUrl = baseUrl;
         Small = small;
@@ -15,7 +15,7 @@ public class PhotoVariants
         Large = large;
     }
 
-    public PhotoVariants()
+    public ImageVariants()
     {
 
     }
