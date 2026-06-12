@@ -63,29 +63,12 @@ public class ContentUpdateHandler : IRequestHandler<ContentUpdateCommand, Result
         {
             videoPath = await Storage.SaveFormFileAsync(
                 request.ContentFile, "Video", token: cancellationToken);
-
-            // delete old data
-
-            if (!string.IsNullOrEmpty(content.c.VideoMeta.VideoUrl))
-            {
-                string? directoryName = Path.GetDirectoryName(content.c.VideoMeta.VideoUrl);
-
-                if (directoryName != null)
-                    Directory.Delete(directoryName, true);
-            }
         }
 
         if (request.PrewievPhoto != null && request.PrewievPhoto.Length != 0)
         {
             photoPath = await Storage.SaveFormFileAsync(
                 request.PrewievPhoto, "Images", cancellationToken);
-
-            // delete old data
-
-            if (Directory.Exists(content.c.VideoMeta.PhotoBase))
-            {
-                Directory.Delete(content.c.VideoMeta.PhotoBase, true);
-            }
         }
 
         await context.SaveChangesAsync();

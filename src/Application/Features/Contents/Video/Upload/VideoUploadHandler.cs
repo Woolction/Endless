@@ -89,6 +89,12 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
             .FirstAsync(c => c.Id == message.ContentId);
 
         // set photo 
+            // for local storage
+        if (Directory.Exists(content.VideoMeta.PhotoBase))
+        {
+            Directory.Delete(content.VideoMeta.PhotoBase, true);
+        }
+
         content.VideoMeta.SetPhoto(
             photoUrl.BaseUrl, photoUrl.Small, photoUrl.Medium, photoUrl.Large);
         await imageAnalyzer.SetAverageColor(

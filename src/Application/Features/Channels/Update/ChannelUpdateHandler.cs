@@ -104,13 +104,6 @@ public class ChannelUpdateHandler : IRequestHandler<ChannelUpdateCommand, Result
         {
             photoPath = await Storage.SaveFormFileAsync(
                 cmd.IconPhoto, "Images", cancellationToken);
-
-            // delete old data
-
-            if (Directory.Exists(channel.meta.IconBase))
-            {
-                Directory.Delete(channel.meta.IconBase, true);
-            }
         }
 
         await context.SaveChangesAsync();
