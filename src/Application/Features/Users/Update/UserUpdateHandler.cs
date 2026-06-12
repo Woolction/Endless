@@ -83,13 +83,6 @@ public class UserUpdateHandler : IRequestHandler<UserUpdateCommand, Result<UserD
         {
             photoPath = await Storage.SaveFormFileAsync(
                 cmd.IconPhoto, "Images", cancellationToken);
-
-            // delete old data
-
-            if (Directory.Exists(user.meta.IconBase))
-            {
-                Directory.Delete(user.meta.IconBase, true);
-            }
         }
 
         await context.SaveChangesAsync();

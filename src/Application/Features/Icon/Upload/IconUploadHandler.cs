@@ -92,6 +92,11 @@ public class IconUploadHandler : IRequestHandler<IconUploadMessage, Result<Null>
 
     private async Task UploadUserIcon(IAppDbContext context, UserMeta meta, PhotoVariants iconVariants, CancellationToken token)
     {
+        // delete old data
+
+        if (Directory.Exists(meta.IconBase))
+            Directory.Delete(meta.IconBase, true);
+
         meta.SetPhoto(
             iconVariants.BaseUrl, iconVariants.Small, iconVariants.Medium, iconVariants.Large);
         await imageAnalyzer.SetAverageColor(
@@ -102,6 +107,11 @@ public class IconUploadHandler : IRequestHandler<IconUploadMessage, Result<Null>
 
     private async Task UploadChannelIcon(IAppDbContext context, ChannelMeta meta, PhotoVariants iconVariants, CancellationToken token)
     {
+        // delete old data
+
+        if (Directory.Exists(meta.IconBase))
+            Directory.Delete(meta.IconBase, true);
+
         meta.SetPhoto(
             iconVariants.BaseUrl, iconVariants.Small, iconVariants.Medium, iconVariants.Large);
         await imageAnalyzer.SetAverageColor(
