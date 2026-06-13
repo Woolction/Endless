@@ -92,14 +92,25 @@ public class ImageUploadHandler : IRequestHandler<ImageUploadMessage, Result<Nul
     private async Task UploadUserIcon(IAppDbContext context, UserMeta meta, ImageVariantsDto iconVariants, CancellationToken token)
     {
         // delete old data
+ 
+        Image image = new() { BaseUrl = "/storage/images/user" };
 
+        if (Directory.Exists(image.BaseUrl))
+            Directory.Delete(image.BaseUrl, true);
+
+        await SetImageSettings(image, iconVariants, token);
+
+        meta.SetImage(image);
+
+        /* old
         if (Directory.Exists(meta.IconBase))
             Directory.Delete(meta.IconBase, true);
 
         meta.SetPhoto(
             iconVariants.BaseUrl, iconVariants.Small, iconVariants.Medium, iconVariants.Large);
+
         await imageAnalyzer.SetAverageColor(
-            Path.Combine(iconVariants.BaseUrl, iconVariants.Small), meta.SetColor, token);
+            Path.Combine(iconVariants.BaseUrl, iconVariants.Small), meta.SetColor, token);*/
 
         await context.SaveChangesAsync();
     }
@@ -108,6 +119,16 @@ public class ImageUploadHandler : IRequestHandler<ImageUploadMessage, Result<Nul
     {
         // delete old data
 
+        Image image = new() { BaseUrl = "/storage/images/channels" };
+
+        if (Directory.Exists(image.BaseUrl))
+            Directory.Delete(image.BaseUrl, true);
+
+        await SetImageSettings(image, iconVariants, token);
+
+        meta.SetImage(image);
+
+        /* old 
         if (Directory.Exists(meta.IconBase))
             Directory.Delete(meta.IconBase, true);
 
@@ -115,7 +136,32 @@ public class ImageUploadHandler : IRequestHandler<ImageUploadMessage, Result<Nul
             iconVariants.BaseUrl, iconVariants.Small, iconVariants.Medium, iconVariants.Large);
         await imageAnalyzer.SetAverageColor(
             Path.Combine(iconVariants.BaseUrl, iconVariants.Small), meta.SetColor, token);
+        */
 
         await context.SaveChangesAsync();
+    }
+
+    private async Task SetImageSettings(Image image, ImageVariantsDto variantsDto, CancellationToken token)
+    {
+        List<ImageVariant> variants = [];
+
+        for (int i = 0; i < variantsDto.Variants.Count; i++)
+        {
+            var variantDto = variantsDto.Variants[i];
+
+            if (i == 0)
+                await imageAnalyzer.SetAverageColor(
+                    variantDto.Url, image.SetColor, token);
+
+            variants.Add(new ImageVariant()
+            {
+                Image = image,
+                Url = variantDto.Url,
+                Width = variantDto.Width,
+                Height = variantDto.Height
+            });
+        }
+
+        image.SetVariants(variants);
     }
 }

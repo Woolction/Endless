@@ -34,7 +34,7 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
 
     public async Task<Result<Null>> Handle(VideoUploadMessage message, CancellationToken token)
     {
-        ImageVariantsDto photoUrl = new();
+        ImageVariantsDto imageVariants = new();
 
         string videoUrl = string.Empty;
         double duration = 0;
@@ -43,7 +43,7 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
         {
             logger.LogInformation("save photo");
 
-            photoUrl = await Storage.SaveImageVariantsDto(
+            imageVariants = await Storage.SaveImageVariantsDto(
                 message.PhotoPath, message.Slug, token);
         }
 
@@ -65,7 +65,7 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
             {
                 logger.LogInformation("get photo from video:");
 
-                photoUrl = await ffmpegService.GetPhotoFromVideo(
+                imageVariants = await ffmpegService.GetPhotoFromVideo(
                     message.VideoPath, message.Slug, height, timeSeconds: timeSeconds, token: token);
             }
 
@@ -87,19 +87,29 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
 
         Content content = await context.Contents
             .Include(c => c.VideoMeta)
-            .FirstAsync(c => c.Id == message.ContentId);
+            .FirstAsync(c => c.Id == message.ContentId, cancellationToken: token);
 
         // set photo 
+
+        Image image = new() { BaseUrl = "/storage/images/content" };
+
         // for local storage
+
+        if (Directory.Exists(image.BaseUrl))
+            Directory.Delete(image.BaseUrl, true);
+
+        await SetImageSettings(image, imageVariants, token);
+
+        content.VideoMeta.SetImage(image);
+
+        /* old
         if (Directory.Exists(content.VideoMeta.PhotoBase))
-        {
             Directory.Delete(content.VideoMeta.PhotoBase, true);
-        }
 
         content.VideoMeta.SetPhoto(
-            photoUrl.BaseUrl, photoUrl.Small, photoUrl.Medium, photoUrl.Large);
+            imageVariants.BaseUrl, imageVariants.Small, imageVariants.Medium, imageVariants.Large);
         await imageAnalyzer.SetAverageColor(
-            Path.Combine(photoUrl.BaseUrl, photoUrl.Small), content.VideoMeta.SetColor, token);
+            Path.Combine(imageVariants.BaseUrl, imageVariants.Small), content.VideoMeta.SetColor, token);*/
 
         // set video
         // for local storage
@@ -128,5 +138,30 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
         logger.LogInformation("video upload complete: process succeed");
 
         return Result<Null>.Success(200, new Null());
+    }
+
+
+    private async Task SetImageSettings(Image image, ImageVariantsDto variantsDto, CancellationToken token)
+    {
+        List<ImageVariant> variants = [];
+
+        for (int i = 0; i < variantsDto.Variants.Count; i++)
+        {
+            var variantDto = variantsDto.Variants[i];
+
+            if (i == 0)
+                await imageAnalyzer.SetAverageColor(
+                    variantDto.Url, image.SetColor, token);
+
+            variants.Add(new ImageVariant()
+            {
+                Image = image,
+                Url = variantDto.Url,
+                Width = variantDto.Width,
+                Height = variantDto.Height
+            });
+        }
+
+        image.SetVariants(variants);
     }
 }

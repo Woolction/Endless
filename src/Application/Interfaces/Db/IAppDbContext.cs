@@ -31,5 +31,8 @@ public interface IAppDbContext
     DbSet<LikedComment> LikedComments { get; set; }
     DbSet<DisLikedComment> DisLikedComments { get; set; }
 
+    DbSet<Image> Images { get; set; }
+    DbSet<ImageVariant> ImageVariants { get; set; }
+
     Task<int> SaveChangesAsync();
 }
