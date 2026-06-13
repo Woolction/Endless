@@ -139,14 +139,19 @@ public class UsersController : ControllerBase
 
     [Authorize]
     [HttpPut("current")]
-    public async Task<ActionResult<UserDto>> UpdateCurrentUser([FromForm] UserUpdateRequest request)
+    public async Task<ActionResult<UserUpdateDto>> UpdateCurrentUser([FromForm] UserUpdateRequest request)
     {
+        string? refreshToken = Request.Cookies["RefreshToken"];
+
+        if (string.IsNullOrEmpty(refreshToken))
+            return BadRequest("There is no refresh token");
+            
         UserUpdateCommand cmd = new(
             this.GetIDFromClaim(), request.Name,
             request.Description, request.Role,
             request.IconPhoto);
 
-        Result<UserDto> result = await mediator.Send(cmd);
+        Result<UserUpdateDto> result = await mediator.Send(cmd);
 
         if (!result.IsSuccess || result.Data == null)
         {
@@ -157,11 +162,6 @@ public class UsersController : ControllerBase
                 _ => StatusCode(500, "unknown error")
             };
         }
-
-        string? refreshToken = Request.Cookies["RefreshToken"];
-
-        if (string.IsNullOrEmpty(refreshToken))
-            return BadRequest("There is no refresh token");
 
         Result<AuthDto> authResult = await mediator.Send(new RefreshTokenCommand(refreshToken));
 

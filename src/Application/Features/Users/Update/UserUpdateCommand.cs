@@ -6,4 +6,4 @@ using MediatR;
 namespace Application.Features.Users.Update;
 
 public record class UserUpdateCommand(
-    Guid UserId, string? Name, string? Description, UserRole Role, IFormFile? IconPhoto) : IRequest<Result<UserDto>>;
+    Guid UserId, string? Name, string? Description, UserRole Role, IFormFile? IconPhoto) : IRequest<Result<UserUpdateDto>>;

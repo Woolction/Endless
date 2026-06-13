@@ -17,7 +17,7 @@ using MediatR;
 
 namespace Application.Features.Users.Update;
 
-public class UserUpdateHandler : IRequestHandler<UserUpdateCommand, Result<UserDto>>
+public class UserUpdateHandler : IRequestHandler<UserUpdateCommand, Result<UserUpdateDto>>
 {
     private readonly SearchIndexUpsertPublisher indexUpsertPublisher;
     private readonly ILogger<UserUpdateHandler> logger;
@@ -35,34 +35,22 @@ public class UserUpdateHandler : IRequestHandler<UserUpdateCommand, Result<UserD
         this.Storage = Storage;
     }
 
-    public async Task<Result<UserDto>> Handle(UserUpdateCommand cmd, CancellationToken cancellationToken)
+    public async Task<Result<UserUpdateDto>> Handle(UserUpdateCommand cmd, CancellationToken cancellationToken)
     {
         var user = await context.Users
             .Select(user => new
             {
                 u = user,
                 meta = user.UserMeta,
-                dto = new UserDto(
-                user.Id, user.Name, "@" + user.Slug,
-                user.Description ?? "", user.RegistryData,
-                user.Email, user.Role.ToString(),
-                new ImageDto(
-                    new ImageVariantsDto(
-                        user.UserMeta.IconBase,
-                        user.UserMeta.Small,
-                        user.UserMeta.Medium,
-                        user.UserMeta.Large),
-                    user.UserMeta.R,
-                    user.UserMeta.G,
-                    user.UserMeta.B), user.TotalLikes,
-                user.Comments.Count, user.Contents.Count,
-                user.Followers.Count, user.Following.Count,
-                user.OwnedChannels.Count, user.SubscripedChannels.Count)
+                dto = new UserUpdateDto(
+                    user.Id, user.Name, "@" + user.Slug,
+                    user.Description ?? "", user.RegistryData,
+                    user.Email, user.Role.ToString(), "processing...")
             })
             .FirstOrDefaultAsync(user => user.u.Id == cmd.UserId, cancellationToken);
 
         if (user == null || user.u == null)
-            return Result<UserDto>.Failure(404, "User not found");
+            return Result<UserUpdateDto>.Failure(404, "User not found");
 
         if (!string.IsNullOrEmpty(cmd.Name))
         {
@@ -103,6 +91,6 @@ public class UserUpdateHandler : IRequestHandler<UserUpdateCommand, Result<UserD
 
         logger.LogInformation("User {UserId} updated", cmd.UserId);
 
-        return Result<UserDto>.Success(200, user.dto);
+        return Result<UserUpdateDto>.Success(200, user.dto);
     }
 }
