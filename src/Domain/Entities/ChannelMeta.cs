@@ -5,6 +5,9 @@ public class ChannelMeta
     public Guid ChannelId { get; set; }
     public Channel? Channel { get; set; }
 
+    public Guid ImageId { get; set; }
+    public Image? Image { get; set; }
+
     public string IconBase { get; set; } = "/storage/images/channel-icons";
     public string Small { get; set; } = string.Empty;
     public string? Medium { get; set; }
@@ -14,18 +17,8 @@ public class ChannelMeta
     public int G { get; set; }
     public int B { get; set; }
 
-    public void SetPhoto(string iconBase, string small, string? medium, string? large)
+    public void SetImage(Image image)
     {
-        IconBase = iconBase;
-        Small = small;
-        Medium = medium;
-        Large = large;
-    }
-
-    public void SetColor(int r, int g, int b)
-    {
-        R = r;
-        G = g;
-        B = b;
+        Image = image;
     }
 }

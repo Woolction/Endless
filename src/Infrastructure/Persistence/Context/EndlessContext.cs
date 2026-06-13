@@ -35,6 +35,9 @@ public class EndlessContext : DbContext, IAppDbContext
     public DbSet<LikedComment> LikedComments { get; set; }
     public DbSet<DisLikedComment> DisLikedComments { get; set; }
 
+    public DbSet<Image> Images { get; set; }
+    public DbSet<ImageVariant> ImageVariants { get; set; }
+
     public async Task<int> SaveChangesAsync()
     {
         return await base.SaveChangesAsync();
@@ -58,12 +61,16 @@ public class EndlessContext : DbContext, IAppDbContext
         userBuilder
             .OwnsOne(u => u.RefreshToken);
 
-        EntityTypeBuilder<UserMeta> UserMetaBuilder = builder.Entity<UserMeta>();
-        UserMetaBuilder
+        EntityTypeBuilder<UserMeta> userMetaBuilder = builder.Entity<UserMeta>();
+        userMetaBuilder
             .HasOne(c => c.User)
             .WithOne(c => c.UserMeta)
             .HasForeignKey<UserMeta>(c => c.UserId);
-        UserMetaBuilder
+        userMetaBuilder
+            .HasOne(u => u.Image)
+            .WithOne()
+            .HasForeignKey<UserMeta>(u => u.ImageId);
+        userMetaBuilder
             .HasKey(v => v.UserId);
 
         EntityTypeBuilder<UserFollowing> userSubBuilder = builder.Entity<UserFollowing>();
@@ -108,6 +115,10 @@ public class EndlessContext : DbContext, IAppDbContext
             .HasOne(c => c.Channel)
             .WithOne(c => c.ChannelMeta)
             .HasForeignKey<ChannelMeta>(c => c.ChannelId);
+        ChannelMetaBuilder
+            .HasOne(c => c.Image)
+            .WithOne()
+            .HasForeignKey<ChannelMeta>(c => c.ImageId);
         ChannelMetaBuilder
             .HasKey(v => v.ChannelId);
 
@@ -257,6 +268,10 @@ public class EndlessContext : DbContext, IAppDbContext
             .WithOne(c => c.VideoMeta)
             .HasForeignKey<VideoMeta>(v => v.ContentId);
         videoMetaBuilder
+            .HasOne(v => v.Image)
+            .WithOne()
+            .HasForeignKey<VideoMeta>(v => v.ImageId);
+        videoMetaBuilder
             .HasKey(v => v.ContentId);
 
         // Comment
@@ -308,5 +323,15 @@ public class EndlessContext : DbContext, IAppDbContext
             .HasKey(cl => new { cl.UserId, cl.CommentId });
         commentDisLikedBuilder
             .HasIndex(cl => cl.CommentId);
+
+        EntityTypeBuilder<Image> imageBuilder = builder.Entity<Image>();
+        imageBuilder
+            .HasMany(i => i.Variants)
+            .WithOne(v => v.Image)
+            .HasForeignKey(v => v.ImageId);
+
+        EntityTypeBuilder<ImageVariant> imageVariantBuilder = builder.Entity<ImageVariant>();
+        imageVariantBuilder
+            .HasKey(v => v.ImageId);
     }
 }
