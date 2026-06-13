@@ -37,7 +37,7 @@ public class UserSearchingHandler : IRequestHandler<UserSearchQuery, Result<Sear
             u.SearchedUser.UserId, u.SearchedUser.Name, "@" + u.SearchedUser.Slug, u.SearchedUser.Description,
             u.SearchedUser.RegistryData, u.SearchedUser.Email, u.SearchedUser.Role.ToString(),
             new ImageDto(
-                u.SearchedUser.IconVariants,
+                u.SearchedUser.Avatar,
                 u.SearchedUser.R,
                 u.SearchedUser.G,
                 u.SearchedUser.B),

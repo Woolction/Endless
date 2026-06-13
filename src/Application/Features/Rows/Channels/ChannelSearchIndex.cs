@@ -13,7 +13,7 @@ public class ChannelSearchIndex
     public long TotalViews { get; set; }
     public long TotalLikes { get; set; }
 
-    public ImageVariantsDto IconVariants { get; set; } = new();
+    public ImageVariantsDto Icon { get; set; } = new ();
 
     public int R { get; set; }
     public int G { get; set; }
@@ -21,7 +21,7 @@ public class ChannelSearchIndex
 
     public ChannelSearchIndex() { }
 
-    public ChannelSearchIndex(Channel channel, ChannelMeta channelMeta)
+    public ChannelSearchIndex(Channel channel, ChannelMeta channelMeta, Image? image)
     {
         ChannelId = channel.Id;
 
@@ -30,16 +30,24 @@ public class ChannelSearchIndex
         Description = channel.Description;
         CreatedDate = channel.CreatedDate;
 
-        IconVariants = new ImageVariantsDto(
-            channelMeta.IconBase,
-            channelMeta.Small,
-            channelMeta.Medium,
-            channelMeta.Large
-        );
+        if (image != null)
+        {
+            for (int i = 0; i < image.Variants.Count; i++)
+            {
+                var variant = image.Variants[i];
 
-        R = channelMeta.R;
-        G = channelMeta.G;
-        B = channelMeta.B;
+                Icon.Variants.Add(new ImageVariantDto()
+                {
+                    Url = variant.Url,
+                    Width = variant.Width,
+                    Height = variant.Height
+                });
+            }
+
+            R = image.R;
+            G = image.G;
+            B = image.B;
+        }
 
         TotalLikes = channel.TotalLikes;
         TotalViews = channel.TotalViews;

@@ -15,7 +15,7 @@ public class UserSearchIndex
     public DateTime RegistryData;
     public int Role;
 
-    public ImageVariantsDto IconVariants { get; set; } = new();
+    public ImageVariantsDto Avatar { get; set; } = new ();
 
     public int R { get; set; }
     public int G { get; set; }
@@ -23,7 +23,7 @@ public class UserSearchIndex
 
     public UserSearchIndex() { }
 
-    public UserSearchIndex(User user, UserMeta userMeta)
+    public UserSearchIndex(User user, UserMeta userMeta, Image? image)
     {
         UserId = user.Id;
         Name = user.Name;
@@ -32,16 +32,24 @@ public class UserSearchIndex
         Description = user.Description;
         TotalLikes = user.TotalLikes;
 
-        IconVariants = new ImageVariantsDto(
-            userMeta.IconBase,
-            userMeta.Small,
-            userMeta.Medium,
-            userMeta.Large
-        );
+        if (image != null)
+        {
+            for (int i = 0; i < image.Variants.Count; i++)
+            {
+                var variant = image.Variants[i];
 
-        R = userMeta.R;
-        G = userMeta.G;
-        B = userMeta.B;
+                Avatar.Variants.Add(new ImageVariantDto()
+                {
+                    Url = variant.Url,
+                    Width = variant.Width,
+                    Height = variant.Height
+                });
+            }
+
+            R = image.R;
+            G = image.G;
+            B = image.B;
+        }
 
         RegistryData = user.RegistryData;
         Role = (int)user.Role;

@@ -33,7 +33,7 @@ public class ChannelSearchingHandler : IRequestHandler<ChannelSearchQuery, Resul
             c.SearchedChannel.ChannelId, c.SearchedChannel.Name, c.SearchedChannel.Slug,
             c.SearchedChannel.Description, c.SearchedChannel.CreatedDate,
             new ImageDto(
-                c.SearchedChannel.IconVariants,
+                c.SearchedChannel.Icon,
                 c.SearchedChannel.R,
                 c.SearchedChannel.G,
                 c.SearchedChannel.B),

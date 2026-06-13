@@ -50,12 +50,12 @@ public class UsersController : ControllerBase
 
     [HttpPost("many")]
     [Authorize(Policy = nameof(UserRole.Admin))]
-    public async Task<ActionResult<UserDto[]>> CreateUsers(UsersCreateCommand cmd)
+    public async Task<ActionResult<UserUpdateDto[]>> CreateUsers(UsersCreateCommand cmd)
     {
         if (cmd.Names.Length < 1)
             return BadRequest($"you must write at least one name: {cmd.Names.Length}");
 
-        Result<UserDto[]> result = await mediator.Send(cmd);
+        Result<UserUpdateDto[]> result = await mediator.Send(cmd);
 
         if (!result.IsSuccess || result.Data == null)
         {

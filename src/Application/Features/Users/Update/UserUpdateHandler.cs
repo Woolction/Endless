@@ -42,6 +42,7 @@ public class UserUpdateHandler : IRequestHandler<UserUpdateCommand, Result<UserU
             {
                 u = user,
                 meta = user.UserMeta,
+                image = user.UserMeta.Image,
                 dto = new UserUpdateDto(
                     user.Id, user.Name, "@" + user.Slug,
                     user.Description ?? "", user.RegistryData,
@@ -86,7 +87,7 @@ public class UserUpdateHandler : IRequestHandler<UserUpdateCommand, Result<UserU
         {
             await indexUpsertPublisher.Publish(
                 new SearchIndexUpsertMessage(nameof(User),
-                    JsonSerializer.Serialize(new UserSearchIndex(user.u, user.meta))), cancellationToken);
+                    JsonSerializer.Serialize(new UserSearchIndex(user.u, user.meta, user.image))), cancellationToken);
         }
 
         logger.LogInformation("User {UserId} updated", cmd.UserId);

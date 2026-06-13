@@ -36,7 +36,7 @@ public class ContentSearchingHandler : IRequestHandler<ContentSearchQuery, Resul
                 c.SearchedContent.Title, c.SearchedContent.Slug, c.SearchedContent.Description,
                 c.SearchedContent.CreatedDate, c.SearchedContent.ContentType.ToString(),
                 c.SearchedContent.DurationSeconds, c.SearchedContent.ContentUrl,
-                new ImageDto(c.SearchedContent.PreviewPhotoUrl, c.SearchedContent.R, c.SearchedContent.G, c.SearchedContent.B),
+                new ImageDto(c.SearchedContent.Preview, c.SearchedContent.R, c.SearchedContent.G, c.SearchedContent.B),
                 0, 0, 0, 0, c.SearchedContent.ViewsCount), c.Score)).ToArray();
 
         if (contentDtos.Length < 1)

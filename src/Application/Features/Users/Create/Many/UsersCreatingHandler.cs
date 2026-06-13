@@ -12,10 +12,11 @@ using System.Text.Json;
 using Domain.Entities;
 using MediatR;
 using Npgsql;
+using Application.Features.Users.Update;
 
 namespace Application.Features.Users.Create.Many;
 
-public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<UserDto[]>>
+public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<UserUpdateDto[]>>
 {
     private readonly IPasswordHasher<User> passwordHasher;
     private readonly SearchIndexUpsertPublisher indexUpsertPublisher;
@@ -28,7 +29,7 @@ public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<U
         this.context = context;
     }
 
-    public async Task<Result<UserDto[]>> Handle(UsersCreateCommand cmd, CancellationToken cancellationToken)
+    public async Task<Result<UserUpdateDto[]>> Handle(UsersCreateCommand cmd, CancellationToken cancellationToken)
     {
         List<User> users = new();
         List<UserGenreVector> vectors = new();
@@ -71,7 +72,7 @@ public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<U
         {
             await context.SaveChangesAsync();
 
-            var dtos = new UserDto[users.Count];
+            var dtos = new UserUpdateDto[users.Count];
 
             for (int i = 0; i < users.Count; i++)
             {
@@ -79,31 +80,22 @@ public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<U
 
                 var meta = await context.UserMetas
                     .AsNoTracking()
+                    .Include(u => u.Image)
                     .FirstAsync(u => u
                         .UserId == user.Id,
                         cancellationToken);
 
-                dtos[i] = new UserDto(
+                dtos[i] = new UserUpdateDto(
                     user.Id, user.Name, "@" + user.Slug,
                     user.Description ?? "", user.RegistryData,
-                    user.Email, user.Role.ToString(),
-                    new ImageDto(
-                        new ImageVariantsDto(
-                            meta.IconBase,
-                            meta.Small,
-                            meta.Medium,
-                            meta.Large),
-                        meta.R,
-                        meta.G,
-                        meta.B),
-                    0, 0, 0, 0, 0, 0, 0);
+                    user.Email, user.Role.ToString(), "Created...");
 
                 await indexUpsertPublisher.Publish(
                     new SearchIndexUpsertMessage(nameof(User),
-                        JsonSerializer.Serialize(new UserSearchIndex(user, meta))), cancellationToken);
+                        JsonSerializer.Serialize(new UserSearchIndex(user, meta, meta.Image))), cancellationToken);
             }
 
-            return Result<UserDto[]>.Success(201, dtos);
+            return Result<UserUpdateDto[]>.Success(201, dtos);
         }
         catch (DbUpdateException ex)
         {
