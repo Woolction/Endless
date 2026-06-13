@@ -83,29 +83,16 @@ public class R2Storage : IStorage
         return $"/storage/{keyPrefix}/master.m3u8";
     }
 
-    public async Task<ImageVariantsDto> SaveImageVariantsDto(string photoPath, string photoName, CancellationToken token = default)
+    public Task<ImageVariantsDto> SaveImageVariants(string photoPath, string photoName, (int w, int h)[] sizes, int quality, ImageOwner imageOwner, ImageType imageType = ImageType.Preview, CancellationToken token = default)
     {
-        string folder = Path.Combine("/storage/images/content-previews", photoName);
+        string folder = Path.Combine($"/storage/images/{imageOwner.ToString().ToLower()}-{imageType.ToString().ToLower()}", photoName);
         Directory.CreateDirectory(folder);
 
-        await imageAnalyzer.GenerateImageVariantsDto(
-            photoPath, folder, [(1280, 720), (960, 540), (640, 360)], 80, token);
+        return imageAnalyzer.GenerateImageVariantsDto(
+            photoPath, folder, sizes, quality, token);
 
-        return new ImageVariantsDto(
+        /*new ImageVariantsDto(
             folder, "640x360.webp", "960x540.webp", "1280x720.webp"
-        );
-    }
-
-    public async Task<ImageVariantsDto> SaveIconVariants(string photoPath, string photoName, IconType type, CancellationToken token = default)
-    {
-        string folder = Path.Combine($"/storage/images/{type.ToString().ToLower()}-icons", photoName);
-        Directory.CreateDirectory(folder);
-
-        await imageAnalyzer.GenerateImageVariantsDto(
-            photoPath, folder, [(256, 256), (128, 128), (64, 64)], 85, token);
-
-        return new ImageVariantsDto(
-            folder, "64x64.webp", "128x128.webp", "256x256.webp"
-        );
+        );*/
     }
 }

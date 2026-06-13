@@ -17,6 +17,30 @@ public class ImageAnalyzer : IImageAnalyzer
         this.logger = logger;
     }
 
+    public async Task SetImageVariants(Domain.Entities.Image image, ImageVariantsDto variantsDto, CancellationToken token)
+    {
+        List<Domain.Entities.ImageVariant> variants = [];
+
+        for (int i = 0; i < variantsDto.Variants.Count; i++)
+        {
+            var variantDto = variantsDto.Variants[i];
+
+            if (i == 0)
+                await SetAverageColor(
+                    variantDto.Url, image.SetColor, token);
+
+            variants.Add(new Domain.Entities.ImageVariant()
+            {
+                Image = image,
+                Url = variantDto.Url,
+                Width = variantDto.Width,
+                Height = variantDto.Height
+            });
+        }
+
+        image.SetVariants(variants);
+    }
+
     public async Task SetAverageColor(string photoUrl, Action<int, int, int> setColor, CancellationToken token = default)
     {
         photoUrl = Path.Combine(photoUrl);
@@ -58,9 +82,11 @@ public class ImageAnalyzer : IImageAnalyzer
             R, G, B, Path.GetFileNameWithoutExtension(photoUrl));
     }
 
-    public async Task<ImageVariantsDto> GenerateImageVariantsDto(string photoPath, string folder, (int w, int h)[] sizes, int quality = 80, CancellationToken token = default)
+    public async Task<ImageVariantsDto> GenerateImageVariantsDto(string imagePath, string folder, (int w, int h)[] sizes, int quality = 80, CancellationToken token = default)
     {
-        using var image = await Image.LoadAsync(photoPath, token);
+        using var image = await Image.LoadAsync(imagePath, token);
+
+        var variants = new List<ImageVariantDto>();
 
         var useableSizes = new List<(int w, int h)>();
 
@@ -92,10 +118,12 @@ public class ImageAnalyzer : IImageAnalyzer
             {
                 Quality = quality
             }, token);
+
+            variants.Add(
+                new ImageVariantDto() { Url = output, Width = w, Height = h });
         }
 
         return new ImageVariantsDto(
-            folder, "640x360.webp", "960x540.webp", "1280x720.webp"
-        );
+            folder, variants);
     }
 }

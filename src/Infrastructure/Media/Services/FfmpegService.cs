@@ -4,6 +4,7 @@ using Application.Features.Images;
 using System.Globalization;
 using System.Diagnostics;
 using System.Text;
+using Domain.Common.Enums;
 
 namespace Media.Services;
 
@@ -178,30 +179,26 @@ public class FfmpegService : IFfmpegService
         return Math.Round(seconds);
     }
 
-    public async Task<ImageVariantsDto> GetPhotoFromVideo(string videoPath, string photoName, int height, double timeSeconds = 5, CancellationToken token = default)
+    public async Task<ImageVariantsDto> GetPhotoFromVideo(string videoPath, int height, double timeSeconds, string imageName, (int w, int h)[] sizes, int quality, ImageOwner imageOwner, ImageType imageType, CancellationToken token = default)
     {
-        string folder = Path.Combine("/storage/images/content-previews", photoName);
+        string folder = Path.Combine($"/storage/images/{imageOwner.ToString().ToLower()}-{imageType.ToString().ToLower()}", imageName);
         Directory.CreateDirectory(folder);
 
-        var sizes = new List<(int w, int h)>();
+        var variants = new List<ImageVariantDto>();
 
-        if (height >= 720)
+        var useableSizes = new List<(int w, int h)>();
+
+        for (int i = 0; i < sizes.Length; i++)
         {
-            sizes.Add((1280, 720));
-            sizes.Add((960, 540));
-            sizes.Add((640, 360));
-        }
-        else if (height >= 540)
-        {
-            sizes.Add((960, 540));
-            sizes.Add((640, 360));
-        }
-        else if (height >= 360)
-        {
-            sizes.Add((640, 360));
+            var (w, h) = sizes[i];
+
+            if (height >= h)
+            {
+                useableSizes.Add((w, h));
+            }
         }
 
-        for (int i = 0; i < sizes.Count; i++)
+        for (int i = 0; i < sizes.Length; i++)
         {
             var (w, h) = sizes[i];
 
@@ -210,15 +207,14 @@ public class FfmpegService : IFfmpegService
             await RunProcess(
                 $"-ss {timeSeconds} -i \"{videoPath}\" " +
                 $"-vf \"scale={w}:{h}:force_original_aspect_ratio=increase:flags=lanczos,crop={w}:{h}\" " +
-                $"-frames:v 1 -c:v libwebp -quality 80 \"{output}\"", token: token);
+                $"-frames:v 1 -c:v libwebp -quality {quality} \"{output}\"", token: token);
+
+            variants.Add(
+                new ImageVariantDto() { Url = output, Width = w, Height = h });
         }
 
         return new ImageVariantsDto(
-            folder,
-            "640x360.webp",
-            "960x540.webp",
-            "1280x720.webp"
-        );
+            folder, variants);
     }
 
     private string GetBitrate(int height, int fps)

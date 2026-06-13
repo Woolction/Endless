@@ -1,4 +1,5 @@
 using Application.Features.Images;
+using Domain.Common.Enums;
 
 namespace Application.Interfaces.Services;
 
@@ -9,5 +10,5 @@ public interface IFfmpegService
     Task<double> GetVideoDuration(string videoPath, CancellationToken token = default);
     Task<int> GetVideoHeight(string videoPath, CancellationToken token = default);
     Task<int> GetVideoFps(string videoPath, CancellationToken token = default);
-    Task<ImageVariantsDto> GetPhotoFromVideo(string videoPath, string photoName, int height, double timeSeconds = 5, CancellationToken token = default);
+    Task<ImageVariantsDto> GetPhotoFromVideo(string videoPath, int height, double timeSeconds, string imageName, (int w, int h)[] sizes, int quality, ImageOwner imageOwner, ImageType imageType, CancellationToken token = default);
 }
