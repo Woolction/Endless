@@ -92,7 +92,7 @@ public class ChannelsCreatingHandler : IRequestHandler<ChannelsCreateCommand, Re
                     channel.Id, channel.Name, "@" + channel.Slug,
                     channel.Description ?? "", channel.CreatedDate,
                     new ImageDto(
-                        new ImageVariants(
+                        new ImageVariantsDto(
                             meta.IconBase,
                             meta.Small,
                             meta.Medium,

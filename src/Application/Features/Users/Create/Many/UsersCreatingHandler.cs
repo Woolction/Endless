@@ -88,7 +88,7 @@ public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<U
                     user.Description ?? "", user.RegistryData,
                     user.Email, user.Role.ToString(),
                     new ImageDto(
-                        new ImageVariants(
+                        new ImageVariantsDto(
                             meta.IconBase,
                             meta.Small,
                             meta.Medium,

@@ -29,7 +29,7 @@ public class ContentChooseHandler : IRequestHandler<ContentChooseQuery, Result<C
                     content.Title, content.Slug, content.Description,
                     content.CreatedDate, content.ContentType.ToString(),
                     content.VideoMeta.DurationSeconds, content.VideoMeta.VideoUrl, new ImageDto(
-                        new ImageVariants(
+                        new ImageVariantsDto(
                             content.VideoMeta.PhotoBase,
                             content.VideoMeta.Small,
                             content.VideoMeta.Medium,

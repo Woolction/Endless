@@ -46,7 +46,7 @@ public class DisLikingController : ControllerBase
                     content.CreatedDate, content.ContentType.ToString(),
                     content.VideoMeta.DurationSeconds, content.VideoMeta.VideoUrl,
                     new ImageDto(
-                        new ImageVariants(
+                        new ImageVariantsDto(
                             content.VideoMeta.PhotoBase,
                             content.VideoMeta.Small,
                             content.VideoMeta.Medium,

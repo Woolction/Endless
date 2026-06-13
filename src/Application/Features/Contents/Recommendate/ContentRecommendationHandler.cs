@@ -97,7 +97,7 @@ public class ContentRecommendationHandler : IRequestHandler<ContentRecommendatio
                 return new ContentFeedDto(
                     c.Id, c.ChannelId, c.CreatorId, owner.Name, owner.Slug, owner.GetType() == typeof(User) ?
                     new ImageDto(
-                        new ImageVariants(
+                        new ImageVariantsDto(
                             owner.UserMeta.IconBase,
                             owner.UserMeta.Small,
                             owner.UserMeta.Medium,
@@ -106,7 +106,7 @@ public class ContentRecommendationHandler : IRequestHandler<ContentRecommendatio
                         owner.UserMeta.G,
                         owner.UserMeta.B) :
                     new ImageDto(
-                        new ImageVariants(
+                        new ImageVariantsDto(
                             owner.ChannelMeta.IconBase,
                             owner.ChannelMeta.Small,
                             owner.ChannelMeta.Medium,
@@ -116,7 +116,7 @@ public class ContentRecommendationHandler : IRequestHandler<ContentRecommendatio
                         owner.ChannelMeta.B),
                     c.Title, c.Slug, c.Description, c.CreatedDate, c.ContentType.ToString(),
                     c.VideoMeta.DurationSeconds, c.VideoMeta.VideoUrl, new ImageDto(
-                        new ImageVariants(
+                        new ImageVariantsDto(
                             c.VideoMeta.PhotoBase,
                             c.VideoMeta.Small,
                             c.VideoMeta.Medium,

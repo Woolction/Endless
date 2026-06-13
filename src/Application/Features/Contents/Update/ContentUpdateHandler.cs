@@ -89,7 +89,7 @@ public class ContentUpdateHandler : IRequestHandler<ContentUpdateCommand, Result
             content.c.CreatedDate, content.c.ContentType.ToString(),
             content.c.VideoMeta.DurationSeconds, content.c.VideoMeta.VideoUrl,
             new ImageDto(
-                new ImageVariants(
+                new ImageVariantsDto(
                     content.c.VideoMeta.PhotoBase,
                     content.c.VideoMeta.Small,
                     content.c.VideoMeta.Medium,

@@ -122,7 +122,7 @@ public class ChannelOwnersController : ControllerBase
                 channel.Id, channel.Name, "@" + channel.Slug,
                 channel.Description ?? "", channel.CreatedDate,
                 new ImageDto(
-                    new ImageVariants(
+                    new ImageVariantsDto(
                         channel.ChannelMeta.IconBase,
                         channel.ChannelMeta.Small,
                         channel.ChannelMeta.Medium,

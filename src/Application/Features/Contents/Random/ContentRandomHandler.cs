@@ -33,7 +33,7 @@ public class ContentRandomHandler : IRequestHandler<ContentRandomQuery, Result<C
                 c.Channel == null ? c.Creator!.Slug : c.Channel.Slug,
                 c.Channel == null ?
                 new ImageDto(
-                    new ImageVariants(
+                    new ImageVariantsDto(
                         c.Creator!.UserMeta.IconBase,
                         c.Creator!.UserMeta.Small,
                         c.Creator!.UserMeta.Medium,
@@ -42,7 +42,7 @@ public class ContentRandomHandler : IRequestHandler<ContentRandomQuery, Result<C
                     c.Creator!.UserMeta.G,
                     c.Creator!.UserMeta.B) :
                 new ImageDto(
-                    new ImageVariants(
+                    new ImageVariantsDto(
                         c.Channel.ChannelMeta.IconBase,
                         c.Channel.ChannelMeta.Small,
                         c.Channel.ChannelMeta.Medium,
@@ -52,7 +52,7 @@ public class ContentRandomHandler : IRequestHandler<ContentRandomQuery, Result<C
                     c.Channel.ChannelMeta.B),
                 c.Title, c.Slug, c.Description, c.CreatedDate, c.ContentType.ToString(),
                 c.VideoMeta.DurationSeconds, c.VideoMeta.VideoUrl, new ImageDto(
-                    new ImageVariants(
+                    new ImageVariantsDto(
                         c.VideoMeta.PhotoBase,
                         c.VideoMeta.Small,
                         c.VideoMeta.Medium,

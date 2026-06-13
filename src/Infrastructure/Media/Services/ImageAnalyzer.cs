@@ -58,7 +58,7 @@ public class ImageAnalyzer : IImageAnalyzer
             R, G, B, Path.GetFileNameWithoutExtension(photoUrl));
     }
 
-    public async Task<ImageVariants> GenerateImageVariants(string photoPath, string folder, (int w, int h)[] sizes, int quality = 80, CancellationToken token = default)
+    public async Task<ImageVariantsDto> GenerateImageVariantsDto(string photoPath, string folder, (int w, int h)[] sizes, int quality = 80, CancellationToken token = default)
     {
         using var image = await Image.LoadAsync(photoPath, token);
 
@@ -94,7 +94,7 @@ public class ImageAnalyzer : IImageAnalyzer
             }, token);
         }
 
-        return new ImageVariants(
+        return new ImageVariantsDto(
             folder, "640x360.webp", "960x540.webp", "1280x720.webp"
         );
     }

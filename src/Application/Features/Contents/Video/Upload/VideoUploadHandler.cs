@@ -34,7 +34,7 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
 
     public async Task<Result<Null>> Handle(VideoUploadMessage message, CancellationToken token)
     {
-        ImageVariants photoUrl = new();
+        ImageVariantsDto photoUrl = new();
 
         string videoUrl = string.Empty;
         double duration = 0;
@@ -43,7 +43,7 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
         {
             logger.LogInformation("save photo");
 
-            photoUrl = await Storage.SaveImageVariants(
+            photoUrl = await Storage.SaveImageVariantsDto(
                 message.PhotoPath, message.Slug, token);
         }
 

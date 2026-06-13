@@ -1,6 +1,6 @@
 namespace Application.Features.Images;
 
-public class ImageVariant
+public class ImageVariantDto
 {
     public required string Url { get; set; }
     public int Width { get; set; }

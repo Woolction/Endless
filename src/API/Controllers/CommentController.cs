@@ -51,7 +51,7 @@ public class CommentController : ControllerBase
                     comment.Commentator.Id, comment.Commentator.Name, "@" + comment.Commentator.Slug,
                     comment.Commentator.Description ?? "", comment.Commentator.RegistryData, comment.Commentator.Email,
                     comment.Commentator.Role.ToString(), new ImageDto(
-                        new ImageVariants(
+                        new ImageVariantsDto(
                             comment.Commentator.UserMeta.IconBase,
                             comment.Commentator.UserMeta.Small,
                             comment.Commentator.UserMeta.Medium,
@@ -89,7 +89,7 @@ public class CommentController : ControllerBase
                     user.Id, user.Name, "@" + user.Slug,
                     user.Description ?? "", user.RegistryData, user.Email,
                     user.Role.ToString(), new ImageDto(
-                        new ImageVariants(
+                        new ImageVariantsDto(
                             user.UserMeta.IconBase,
                             user.UserMeta.Small,
                             user.UserMeta.Medium,

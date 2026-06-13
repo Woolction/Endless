@@ -13,7 +13,7 @@ public class ChannelSearchIndex
     public long TotalViews { get; set; }
     public long TotalLikes { get; set; }
 
-    public ImageVariants IconVariants { get; set; } = new();
+    public ImageVariantsDto IconVariants { get; set; } = new();
 
     public int R { get; set; }
     public int G { get; set; }
@@ -30,7 +30,7 @@ public class ChannelSearchIndex
         Description = channel.Description;
         CreatedDate = channel.CreatedDate;
 
-        IconVariants = new ImageVariants(
+        IconVariants = new ImageVariantsDto(
             channelMeta.IconBase,
             channelMeta.Small,
             channelMeta.Medium,

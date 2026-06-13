@@ -15,7 +15,7 @@ public class UserSearchIndex
     public DateTime RegistryData;
     public int Role;
 
-    public ImageVariants IconVariants { get; set; } = new();
+    public ImageVariantsDto IconVariants { get; set; } = new();
 
     public int R { get; set; }
     public int G { get; set; }
@@ -32,7 +32,7 @@ public class UserSearchIndex
         Description = user.Description;
         TotalLikes = user.TotalLikes;
 
-        IconVariants = new ImageVariants(
+        IconVariants = new ImageVariantsDto(
             userMeta.IconBase,
             userMeta.Small,
             userMeta.Medium,

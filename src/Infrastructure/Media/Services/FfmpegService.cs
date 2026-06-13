@@ -178,7 +178,7 @@ public class FfmpegService : IFfmpegService
         return Math.Round(seconds);
     }
 
-    public async Task<ImageVariants> GetPhotoFromVideo(string videoPath, string photoName, int height, double timeSeconds = 5, CancellationToken token = default)
+    public async Task<ImageVariantsDto> GetPhotoFromVideo(string videoPath, string photoName, int height, double timeSeconds = 5, CancellationToken token = default)
     {
         string folder = Path.Combine("/storage/images/content-previews", photoName);
         Directory.CreateDirectory(folder);
@@ -213,7 +213,7 @@ public class FfmpegService : IFfmpegService
                 $"-frames:v 1 -c:v libwebp -quality 80 \"{output}\"", token: token);
         }
 
-        return new ImageVariants(
+        return new ImageVariantsDto(
             folder,
             "640x360.webp",
             "960x540.webp",

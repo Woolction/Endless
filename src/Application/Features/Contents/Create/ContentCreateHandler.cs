@@ -117,7 +117,7 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
             content.CreatedDate, content.ContentType.ToString(), 0,
             content.VideoMeta.VideoUrl,
             new ImageDto(
-                new ImageVariants(
+                new ImageVariantsDto(
                     content.VideoMeta.PhotoBase,
                     content.VideoMeta.Small,
                     content.VideoMeta.Medium,

@@ -31,7 +31,7 @@ public class UserUpdateTokenHandler : IRequestHandler<RefreshTokenCommand, Resul
                 user.Id, user.Name, "@" + user.Slug,
                 user.Description ?? "", user.RegistryData, user.Email,
                 user.Role.ToString(), new ImageDto(
-                    new ImageVariants(
+                    new ImageVariantsDto(
                         user.UserMeta.IconBase,
                         user.UserMeta.Small,
                         user.UserMeta.Medium,
