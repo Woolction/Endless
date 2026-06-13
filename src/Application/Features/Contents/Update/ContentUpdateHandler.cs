@@ -9,6 +9,7 @@ using Application.Features.Images;
 using Application.Interfaces.Db;
 using Domain.Entities;
 using MediatR;
+using Domain.Common.Enums;
 
 namespace Application.Features.Contents.Update;
 
@@ -57,7 +58,7 @@ public class ContentUpdateHandler : IRequestHandler<ContentUpdateCommand, Result
         content.c.ContentType = request.ContentType;
 
         string? videoPath = null;
-        string? photoPath = null;
+        string? imagePath = null;
 
         if (request.ContentFile != null && request.ContentFile.Length != 0)
         {
@@ -67,7 +68,7 @@ public class ContentUpdateHandler : IRequestHandler<ContentUpdateCommand, Result
 
         if (request.PrewievPhoto != null && request.PrewievPhoto.Length != 0)
         {
-            photoPath = await Storage.SaveFormFileAsync(
+            imagePath = await Storage.SaveFormFileAsync(
                 request.PrewievPhoto, "Images", cancellationToken);
         }
 
@@ -76,7 +77,7 @@ public class ContentUpdateHandler : IRequestHandler<ContentUpdateCommand, Result
         // publishing to rabbit queue
 
         var message = new VideoUploadMessage(
-            request.ContentId, content.c.Slug, videoPath, photoPath);
+            request.ContentId, content.c.Slug, videoPath, imagePath, ImageOwner.Content, ImageType.Preview);
 
         await publisher.PublishAsync(message, cancellationToken);
 

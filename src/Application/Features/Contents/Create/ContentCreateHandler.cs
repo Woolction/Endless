@@ -91,7 +91,7 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
         // publishing to rabbit queue
 
         string? videoPath = null;
-        string? photoPath = null;
+        string? imagePath = null;
 
         if (cmd.ContentFile != null && cmd.ContentFile.Length != 0)
         {
@@ -101,12 +101,12 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
 
         if (cmd.PrewievPhoto != null && cmd.PrewievPhoto.Length != 0)
         {
-            photoPath = await Storage.SaveFormFileAsync(
+            imagePath = await Storage.SaveFormFileAsync(
                 cmd.PrewievPhoto, "Images", token: cancellationToken);
         }
 
         await publisher.PublishAsync(new VideoUploadMessage(
-            content.Id, content.Slug, videoPath, photoPath), cancellationToken);
+            content.Id, content.Slug, videoPath, imagePath, ImageOwner.Content, ImageType.Preview), cancellationToken);
 
         logger.LogInformation("Content {ContentId} created for user {UserId}",
             content.Id, cmd.UserId);

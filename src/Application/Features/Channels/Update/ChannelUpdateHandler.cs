@@ -112,7 +112,7 @@ public class ChannelUpdateHandler : IRequestHandler<ChannelUpdateCommand, Result
         if (!string.IsNullOrEmpty(photoPath) && File.Exists(photoPath))
         {
             await publisher.PublishAsync(new ImageUploadMessage(
-                channel.c.Id, IconType.Channel, channel.c.Slug, photoPath), cancellationToken);
+                channel.c.Id, ImageOwner.Channel, ImageType.Icon, channel.c.Slug, photoPath), cancellationToken);
         }
         else
         {

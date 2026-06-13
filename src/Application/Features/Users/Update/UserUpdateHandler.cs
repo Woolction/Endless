@@ -92,7 +92,7 @@ public class UserUpdateHandler : IRequestHandler<UserUpdateCommand, Result<UserD
         if (!string.IsNullOrEmpty(photoPath) && File.Exists(photoPath))
         {
             await publisher.PublishAsync(new ImageUploadMessage(
-                cmd.UserId, IconType.User, user.u.Slug, photoPath), cancellationToken);
+                cmd.UserId, ImageOwner.User, ImageType.Avatar, user.u.Slug, photoPath), cancellationToken);
         }
         else
         {

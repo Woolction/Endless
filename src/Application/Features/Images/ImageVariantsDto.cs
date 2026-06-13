@@ -17,8 +17,9 @@ public class ImageVariantsDto
         Large = large;
     }
 
-    public ImageVariantsDto(List<ImageVariantDto> variants)
+    public ImageVariantsDto(string baseUrl, List<ImageVariantDto> variants)
     {
+        BaseUrl = baseUrl;
         Variants = variants;
     }
 

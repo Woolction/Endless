@@ -9,6 +9,7 @@ using Application.Interfaces.Db;
 using System.Text.Json;
 using Domain.Entities;
 using MediatR;
+using Domain.Common.Enums;
 
 namespace Application.Features.Contents.Video.Upload;
 
@@ -39,12 +40,13 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
         string videoUrl = string.Empty;
         double duration = 0;
 
-        if (message.PhotoPath != null)
+        if (message.ImagePath != null)
         {
             logger.LogInformation("save photo");
 
-            imageVariants = await Storage.SaveImageVariantsDto(
-                message.PhotoPath, message.Slug, token);
+            imageVariants = await Storage.SaveImageVariants(
+                message.ImagePath, message.Slug, [(1280, 720), (960, 540), (640, 360)],
+                80, message.ImageOwner, message.ImageType, token);
         }
 
         if (message.VideoPath != null)
@@ -61,12 +63,14 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
             int height = await ffmpegService.GetVideoHeight(
                 message.VideoPath, token);
 
-            if (message.PhotoPath == null)
+            if (message.ImagePath == null)
             {
                 logger.LogInformation("get photo from video:");
 
                 imageVariants = await ffmpegService.GetPhotoFromVideo(
-                    message.VideoPath, message.Slug, height, timeSeconds: timeSeconds, token: token);
+                    message.VideoPath, height, timeSeconds, message.Slug,
+                    [(640, 360), (960, 540), (1280, 720)], 80, ImageOwner.Content,
+                    ImageType.Preview, token: token);
             }
 
             logger.LogInformation("get video fps:");
@@ -98,7 +102,8 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
         if (Directory.Exists(image.BaseUrl))
             Directory.Delete(image.BaseUrl, true);
 
-        await SetImageSettings(image, imageVariants, token);
+        await imageAnalyzer.SetImageVariants(
+            image, imageVariants, token);
 
         content.VideoMeta.SetImage(image);
 
@@ -129,8 +134,8 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
                 JsonSerializer.Serialize(new ContentSearchIndex(content, content.VideoMeta))), token);
 
         // delete the files
-        if (!string.IsNullOrEmpty(message.PhotoPath) && File.Exists(message.PhotoPath))
-            File.Delete(message.PhotoPath);
+        if (!string.IsNullOrEmpty(message.ImagePath) && File.Exists(message.ImagePath))
+            File.Delete(message.ImagePath);
 
         if (!string.IsNullOrEmpty(message.VideoPath) && File.Exists(message.VideoPath))
             File.Delete(message.VideoPath);
@@ -138,30 +143,5 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
         logger.LogInformation("video upload complete: process succeed");
 
         return Result<Null>.Success(200, new Null());
-    }
-
-
-    private async Task SetImageSettings(Image image, ImageVariantsDto variantsDto, CancellationToken token)
-    {
-        List<ImageVariant> variants = [];
-
-        for (int i = 0; i < variantsDto.Variants.Count; i++)
-        {
-            var variantDto = variantsDto.Variants[i];
-
-            if (i == 0)
-                await imageAnalyzer.SetAverageColor(
-                    variantDto.Url, image.SetColor, token);
-
-            variants.Add(new ImageVariant()
-            {
-                Image = image,
-                Url = variantDto.Url,
-                Width = variantDto.Width,
-                Height = variantDto.Height
-            });
-        }
-
-        image.SetVariants(variants);
     }
 }

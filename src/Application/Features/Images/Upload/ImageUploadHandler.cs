@@ -33,14 +33,15 @@ public class ImageUploadHandler : IRequestHandler<ImageUploadMessage, Result<Nul
 
     public async Task<Result<Null>> Handle(ImageUploadMessage message, CancellationToken token)
     {
-        ImageVariantsDto iconVariants = await Storage.SaveIconVariants(
-            message.PhotoPath, message.Slug, message.Type, token);
+        ImageVariantsDto iconVariants = await Storage.SaveImageVariants(
+            message.PhotoPath, message.Slug, [(256, 256), (128, 128), (64, 64)],
+            85, message.Owner, message.Type, token);
 
         await using var scope = factory.CreateAsyncScope();
 
         var context = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
-        if (message.Type == IconType.User)
+        if (message.Owner == ImageOwner.User)
         {
             UserMeta? meta = await context.UserMetas
                 .Include(u => u.User)
@@ -60,7 +61,7 @@ public class ImageUploadHandler : IRequestHandler<ImageUploadMessage, Result<Nul
                 new SearchIndexUpsertMessage(nameof(User),
                     JsonSerializer.Serialize(new UserSearchIndex(meta.User!, meta))), token);
         }
-        else if (message.Type == IconType.Channel)
+        else if (message.Owner == ImageOwner.Channel)
         {
             ChannelMeta? meta = await context.ChannelMetas
                 .Include(c => c.Channel)
@@ -92,13 +93,14 @@ public class ImageUploadHandler : IRequestHandler<ImageUploadMessage, Result<Nul
     private async Task UploadUserIcon(IAppDbContext context, UserMeta meta, ImageVariantsDto iconVariants, CancellationToken token)
     {
         // delete old data
- 
+
         Image image = new() { BaseUrl = "/storage/images/user" };
 
         if (Directory.Exists(image.BaseUrl))
             Directory.Delete(image.BaseUrl, true);
 
-        await SetImageSettings(image, iconVariants, token);
+        await imageAnalyzer.SetImageVariants(
+            image, iconVariants, token);
 
         meta.SetImage(image);
 
@@ -124,7 +126,8 @@ public class ImageUploadHandler : IRequestHandler<ImageUploadMessage, Result<Nul
         if (Directory.Exists(image.BaseUrl))
             Directory.Delete(image.BaseUrl, true);
 
-        await SetImageSettings(image, iconVariants, token);
+        await imageAnalyzer.SetImageVariants(
+            image, iconVariants, token);
 
         meta.SetImage(image);
 
@@ -139,29 +142,5 @@ public class ImageUploadHandler : IRequestHandler<ImageUploadMessage, Result<Nul
         */
 
         await context.SaveChangesAsync();
-    }
-
-    private async Task SetImageSettings(Image image, ImageVariantsDto variantsDto, CancellationToken token)
-    {
-        List<ImageVariant> variants = [];
-
-        for (int i = 0; i < variantsDto.Variants.Count; i++)
-        {
-            var variantDto = variantsDto.Variants[i];
-
-            if (i == 0)
-                await imageAnalyzer.SetAverageColor(
-                    variantDto.Url, image.SetColor, token);
-
-            variants.Add(new ImageVariant()
-            {
-                Image = image,
-                Url = variantDto.Url,
-                Width = variantDto.Width,
-                Height = variantDto.Height
-            });
-        }
-
-        image.SetVariants(variants);
     }
 }
