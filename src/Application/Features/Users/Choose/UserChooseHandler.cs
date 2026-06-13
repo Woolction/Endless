@@ -2,8 +2,8 @@ using Application.Features.Rows.Contents;
 using Application.Features.Users.Dtos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Application.Features.Imagess;
-using Application.Features.Dtos;
+using Application.Features.Images;
+using Application.Features.Images;
 using Application.Interfaces.Db;
 using MediatR;
 
@@ -26,7 +26,7 @@ public class UserChooseHandler : IRequestHandler<UserChooseQuery, Result<UserDto
             .Select(user => new UserDto(
                 user.Id, user.Name, "@" + user.Slug,
                 user.Description ?? "", user.RegistryData, user.Email,
-                user.Role.ToString(), new PhotoDto(
+                user.Role.ToString(), new ImageDto(
                     new ImageVariants(
                         user.UserMeta.IconBase,
                         user.UserMeta.Small,

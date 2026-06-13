@@ -4,8 +4,8 @@ using Application.Features.Rows.Contents;
 using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Application.Features.Imagess;
-using Application.Features.Dtos;
+using Application.Features.Images;
+using Application.Features.Images;
 using Application.Interfaces.Db;
 using Domain.Entities;
 using MediatR;
@@ -88,7 +88,7 @@ public class ContentUpdateHandler : IRequestHandler<ContentUpdateCommand, Result
             content.c.Title, content.c.Slug, content.c.Description,
             content.c.CreatedDate, content.c.ContentType.ToString(),
             content.c.VideoMeta.DurationSeconds, content.c.VideoMeta.VideoUrl,
-            new PhotoDto(
+            new ImageDto(
                 new ImageVariants(
                     content.c.VideoMeta.PhotoBase,
                     content.c.VideoMeta.Small,

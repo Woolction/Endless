@@ -5,10 +5,10 @@ using Application.Features.Comments.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Application.Features.Users.Dtos;
 using Microsoft.EntityFrameworkCore;
-using Application.Features.Imagess;
+using Application.Features.Images;
 using Application.Interfaces.Db;
 using Microsoft.AspNetCore.Mvc;
-using Application.Features.Dtos;
+using Application.Features.Images;
 using Application.Extensions;
 using Application.Utilities;
 using Domain.Common.Enums;
@@ -50,7 +50,7 @@ public class CommentController : ControllerBase
                 new UserDto(
                     comment.Commentator.Id, comment.Commentator.Name, "@" + comment.Commentator.Slug,
                     comment.Commentator.Description ?? "", comment.Commentator.RegistryData, comment.Commentator.Email,
-                    comment.Commentator.Role.ToString(), new PhotoDto(
+                    comment.Commentator.Role.ToString(), new ImageDto(
                         new ImageVariants(
                             comment.Commentator.UserMeta.IconBase,
                             comment.Commentator.UserMeta.Small,
@@ -88,7 +88,7 @@ public class CommentController : ControllerBase
                 uResponse = new UserDto(
                     user.Id, user.Name, "@" + user.Slug,
                     user.Description ?? "", user.RegistryData, user.Email,
-                    user.Role.ToString(), new PhotoDto(
+                    user.Role.ToString(), new ImageDto(
                         new ImageVariants(
                             user.UserMeta.IconBase,
                             user.UserMeta.Small,

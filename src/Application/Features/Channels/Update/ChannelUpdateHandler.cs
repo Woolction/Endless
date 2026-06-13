@@ -5,10 +5,10 @@ using Application.Features.Images.Upload;
 using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Application.Features.Imagess;
+using Application.Features.Images;
 using Application.Features.Rows;
 using Application.Interfaces.Db;
-using Application.Features.Dtos;
+using Application.Features.Images;
 using Application.Utilities;
 using Domain.Common.Enums;
 using System.Text.Json;
@@ -44,7 +44,7 @@ public class ChannelUpdateHandler : IRequestHandler<ChannelUpdateCommand, Result
                 dto = new ChannelDto(
                 channel.Id, channel.Name, "@" + channel.Slug,
                 channel.Description ?? "", channel.CreatedDate,
-                new PhotoDto(
+                new ImageDto(
                     new ImageVariants(
                         channel.ChannelMeta.IconBase,
                         channel.ChannelMeta.Small,

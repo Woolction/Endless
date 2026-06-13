@@ -1,4 +1,4 @@
-namespace Application.Features.Imagess;
+namespace Application.Features.Images;
 
 public class ImageVariants
 {
@@ -15,6 +15,11 @@ public class ImageVariants
         Small = small;
         Medium = medium;
         Large = large;
+    }
+
+    public ImageVariants(List<ImageVariant> variants)
+    {
+        Variants = variants;
     }
 
     public ImageVariants()

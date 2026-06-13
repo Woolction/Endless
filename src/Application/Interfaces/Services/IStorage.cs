@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Http;
-using Application.Features.Imagess;
+using Application.Features.Images;
 using Domain.Common.Enums;
 
 namespace Application.Interfaces.Services;

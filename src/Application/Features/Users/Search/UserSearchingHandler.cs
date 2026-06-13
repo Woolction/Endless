@@ -1,4 +1,4 @@
-using Application.Features.Dtos;
+using Application.Features.Images;
 using Application.Features.Users.Dtos;
 using Application.Interfaces.Repositories;
 using Elastic.Clients.Elasticsearch;
@@ -36,7 +36,7 @@ public class UserSearchingHandler : IRequestHandler<UserSearchQuery, Result<Sear
         SearchedUserDto[] userDtos = result.SearchedUsers.Select(u => new SearchedUserDto(new UserDto(
             u.SearchedUser.UserId, u.SearchedUser.Name, "@" + u.SearchedUser.Slug, u.SearchedUser.Description,
             u.SearchedUser.RegistryData, u.SearchedUser.Email, u.SearchedUser.Role.ToString(),
-            new PhotoDto(
+            new ImageDto(
                 u.SearchedUser.IconVariants,
                 u.SearchedUser.R,
                 u.SearchedUser.G,

@@ -4,8 +4,8 @@ using Application.Features.Contents.Dtos;
 using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Application.Features.Imagess;
-using Application.Features.Dtos;
+using Application.Features.Images;
+using Application.Features.Images;
 using Application.Interfaces.Db;
 using Domain.Common.Enums;
 using Domain.Entities;
@@ -116,7 +116,7 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
             content.Title, content.Slug, content.Description,
             content.CreatedDate, content.ContentType.ToString(), 0,
             content.VideoMeta.VideoUrl,
-            new PhotoDto(
+            new ImageDto(
                 new ImageVariants(
                     content.VideoMeta.PhotoBase,
                     content.VideoMeta.Small,

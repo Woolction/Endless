@@ -2,8 +2,8 @@ using Application.Features.Rows.Contents;
 using Application.Features.Channels.Dtos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Application.Features.Imagess;
-using Application.Features.Dtos;
+using Application.Features.Images;
+using Application.Features.Images;
 using Application.Interfaces.Db;
 using MediatR;
 
@@ -26,7 +26,7 @@ public class ChannelChooseManyHandler : IRequestHandler<ChannelChooseManyQuery, 
             .Select(channel => new ChannelDto(
                 channel.Id, channel.Name, "@" + channel.Slug,
                 channel.Description ?? "", channel.CreatedDate,
-                new PhotoDto(
+                new ImageDto(
                     new ImageVariants(
                         channel.ChannelMeta.IconBase,
                         channel.ChannelMeta.Small,

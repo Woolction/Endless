@@ -2,8 +2,8 @@ using Application.Features.Rows.Contents;
 using Application.Features.Channels.Dtos;
 using Application.Features.Rows.Channels;
 using Microsoft.EntityFrameworkCore;
-using Application.Features.Imagess;
-using Application.Features.Dtos;
+using Application.Features.Images;
+using Application.Features.Images;
 using Application.Features.Rows;
 using Application.Interfaces.Db;
 using Application.Utilities;
@@ -91,7 +91,7 @@ public class ChannelsCreatingHandler : IRequestHandler<ChannelsCreateCommand, Re
                 dtos[i] = new ChannelDto(
                     channel.Id, channel.Name, "@" + channel.Slug,
                     channel.Description ?? "", channel.CreatedDate,
-                    new PhotoDto(
+                    new ImageDto(
                         new ImageVariants(
                             meta.IconBase,
                             meta.Small,

@@ -5,8 +5,8 @@ using Application.Features.Rows.Users;
 using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Application.Features.Imagess;
-using Application.Features.Dtos;
+using Application.Features.Images;
+using Application.Features.Images;
 using Application.Features.Rows;
 using Application.Interfaces.Db;
 using Application.Utilities;
@@ -46,7 +46,7 @@ public class UserUpdateHandler : IRequestHandler<UserUpdateCommand, Result<UserD
                 user.Id, user.Name, "@" + user.Slug,
                 user.Description ?? "", user.RegistryData,
                 user.Email, user.Role.ToString(),
-                new PhotoDto(
+                new ImageDto(
                     new ImageVariants(
                         user.UserMeta.IconBase,
                         user.UserMeta.Small,

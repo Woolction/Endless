@@ -1,4 +1,4 @@
-namespace Application.Features.Imagess;
+namespace Application.Features.Images;
 
 public class ImageVariant
 {

@@ -2,8 +2,8 @@ using Application.Features.Rows.Contents;
 using Microsoft.AspNetCore.Authorization;
 using Application.Features.Contents.Dtos;
 using Microsoft.EntityFrameworkCore;
-using Application.Features.Imagess;
-using Application.Features.Dtos;
+using Application.Features.Images;
+using Application.Features.Images;
 using Application.Interfaces.Db;
 using Microsoft.AspNetCore.Mvc;
 using Application.Utilities;
@@ -44,7 +44,7 @@ public class SavingController : ControllerBase
                     content.Title, content.Slug, content.Description,
                     content.CreatedDate, content.ContentType.ToString(),
                     content.VideoMeta.DurationSeconds, content.VideoMeta.VideoUrl,
-                    new PhotoDto(
+                    new ImageDto(
                         new ImageVariants(
                             content.VideoMeta.PhotoBase,
                             content.VideoMeta.Small,

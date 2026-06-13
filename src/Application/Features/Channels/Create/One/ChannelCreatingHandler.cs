@@ -5,9 +5,9 @@ using Application.Features.Images.Upload;
 using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Application.Features.Imagess;
+using Application.Features.Images;
 using Application.Interfaces.Db;
-using Application.Features.Dtos;
+using Application.Features.Images;
 using Application.Features.Rows;
 using Application.Utilities;
 using Domain.Common.Enums;
@@ -109,7 +109,7 @@ public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Resu
             "@" + channel.Slug,
             channel.Description ?? "",
             channel.CreatedDate,
-            new PhotoDto(
+            new ImageDto(
                 new ImageVariants(
                     meta.IconBase,
                     meta.Small,

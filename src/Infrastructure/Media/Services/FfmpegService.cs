@@ -1,6 +1,6 @@
 using Application.Interfaces.Services;
 using Microsoft.Extensions.Logging;
-using Application.Features.Imagess;
+using Application.Features.Images;
 using System.Globalization;
 using System.Diagnostics;
 using System.Text;

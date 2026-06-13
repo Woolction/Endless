@@ -2,9 +2,9 @@ using Microsoft.AspNetCore.Authorization;
 using Application.Features.Rows.Contents;
 using Application.Features.Channels.Dtos;
 using Microsoft.EntityFrameworkCore;
-using Application.Features.Imagess;
+using Application.Features.Images;
 using Application.Interfaces.Db;
-using Application.Features.Dtos;
+using Application.Features.Images;
 using Microsoft.AspNetCore.Mvc;
 using Application.Utilities;
 using Domain.Common.Enums;
@@ -41,7 +41,7 @@ public class SubscriptionController : ControllerBase
                 dto = new ChannelDto(
                     channel.Id, channel.Name, "@" + channel.Slug,
                     channel.Description ?? "", channel.CreatedDate,
-                    new PhotoDto(
+                    new ImageDto(
                         new ImageVariants(
                             channel.ChannelMeta.IconBase,
                             channel.ChannelMeta.Small,

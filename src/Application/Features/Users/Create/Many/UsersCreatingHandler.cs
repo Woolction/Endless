@@ -3,8 +3,8 @@ using Application.Features.Rows.Users;
 using Application.Features.Users.Dtos;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Application.Features.Imagess;
-using Application.Features.Dtos;
+using Application.Features.Images;
+using Application.Features.Images;
 using Application.Features.Rows;
 using Application.Interfaces.Db;
 using Application.Utilities;
@@ -87,7 +87,7 @@ public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<U
                     user.Id, user.Name, "@" + user.Slug,
                     user.Description ?? "", user.RegistryData,
                     user.Email, user.Role.ToString(),
-                    new PhotoDto(
+                    new ImageDto(
                         new ImageVariants(
                             meta.IconBase,
                             meta.Small,

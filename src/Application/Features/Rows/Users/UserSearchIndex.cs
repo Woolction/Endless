@@ -1,4 +1,4 @@
-using Application.Features.Imagess;
+using Application.Features.Images;
 using Domain.Entities;
 
 namespace Application.Features.Rows.Users;

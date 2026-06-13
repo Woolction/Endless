@@ -1,4 +1,4 @@
-using Application.Features.Dtos;
+using Application.Features.Images;
 using Application.Features.Channels.Dtos;
 using Application.Interfaces.Repositories;
 using Elastic.Clients.Elasticsearch;
@@ -32,7 +32,7 @@ public class ChannelSearchingHandler : IRequestHandler<ChannelSearchQuery, Resul
         SearchedChannelDto[] channelDtos = result.SearchedChannels.Select(c => new SearchedChannelDto(new ChannelDto(
             c.SearchedChannel.ChannelId, c.SearchedChannel.Name, c.SearchedChannel.Slug,
             c.SearchedChannel.Description, c.SearchedChannel.CreatedDate,
-            new PhotoDto(
+            new ImageDto(
                 c.SearchedChannel.IconVariants,
                 c.SearchedChannel.R,
                 c.SearchedChannel.G,
