@@ -1,9 +1,7 @@
-using Application.Features.Rows.Contents;
+using Application.Features.Channels.Update;
 using Application.Features.Channels.Dtos;
 using Application.Features.Rows.Channels;
 using Microsoft.EntityFrameworkCore;
-using Application.Features.Images;
-using Application.Features.Images;
 using Application.Features.Rows;
 using Application.Interfaces.Db;
 using Application.Utilities;
@@ -15,7 +13,7 @@ using Npgsql;
 
 namespace Application.Features.Channels.Create.Many;
 
-public class ChannelsCreatingHandler : IRequestHandler<ChannelsCreateCommand, Result<ChannelDto[]>>
+public class ChannelsCreatingHandler : IRequestHandler<ChannelsCreateCommand, Result<ChannelUpdateDto[]>>
 {
     private readonly SearchIndexUpsertPublisher indexUpsertPublisher;
     private readonly IAppDbContext context;
@@ -26,9 +24,9 @@ public class ChannelsCreatingHandler : IRequestHandler<ChannelsCreateCommand, Re
         this.context = context;
     }
 
-    public async Task<Result<ChannelDto[]>> Handle(ChannelsCreateCommand cmd, CancellationToken cancellationToken)
+    public async Task<Result<ChannelUpdateDto[]>> Handle(ChannelsCreateCommand cmd, CancellationToken cancellationToken)
     {
-        User? user = await context.Users.FindAsync(cmd.UserId);
+        User? user = await context.Users.FindAsync(cmd.UserId, cancellationToken);
 
         if (user == null)
             Result<ChannelDto[]>.Failure(404, "User not found");
@@ -76,7 +74,7 @@ public class ChannelsCreatingHandler : IRequestHandler<ChannelsCreateCommand, Re
         {
             await context.SaveChangesAsync();
 
-            var dtos = new ChannelDto[channels.Count];
+            var dtos = new ChannelUpdateDto[channels.Count];
 
             for (int i = 0; i < channels.Count; i++)
             {
@@ -84,29 +82,22 @@ public class ChannelsCreatingHandler : IRequestHandler<ChannelsCreateCommand, Re
 
                 var meta = await context.ChannelMetas
                     .AsNoTracking()
+                    .Include(c => c.Image)
                     .FirstAsync(c => c
                         .ChannelId == channel.Id,
                         cancellationToken);
 
-                dtos[i] = new ChannelDto(
+                dtos[i] = new ChannelUpdateDto(
                     channel.Id, channel.Name, "@" + channel.Slug,
                     channel.Description ?? "", channel.CreatedDate,
-                    new ImageDto(
-                        new ImageVariantsDto(
-                            meta.IconBase,
-                            meta.Small,
-                            meta.Medium,
-                            meta.Large),
-                    channel.ChannelMeta.R,
-                    channel.ChannelMeta.G,
-                    channel.ChannelMeta.B), 1, 0, 1, 0, 0);
+                    "Created");
 
                 await indexUpsertPublisher.Publish(
                     new SearchIndexUpsertMessage(nameof(Channel),
-                        JsonSerializer.Serialize(new ChannelSearchIndex(channel, meta))), cancellationToken);
+                        JsonSerializer.Serialize(new ChannelSearchIndex(channel, meta, meta.Image))), cancellationToken);
             }
 
-            return Result<ChannelDto[]>.Success(201, dtos);
+            return Result<ChannelUpdateDto[]>.Success(201, dtos);
         }
         catch (DbUpdateException ex)
         {

@@ -1,11 +1,7 @@
 using Application.Features.Contents.Video.Upload;
-using Application.Features.Contents.Dtos;
-using Application.Features.Rows.Contents;
 using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Application.Features.Images;
-using Application.Features.Images;
 using Application.Interfaces.Db;
 using Domain.Entities;
 using MediatR;
@@ -13,7 +9,7 @@ using Domain.Common.Enums;
 
 namespace Application.Features.Contents.Update;
 
-public class ContentUpdateHandler : IRequestHandler<ContentUpdateCommand, Result<ContentDto>>
+public class ContentUpdateHandler : IRequestHandler<ContentUpdateCommand, Result<ContentUpdateDto>>
 {
     private readonly ILogger<ContentUpdateHandler> logger;
     private readonly VideoUploadPublisher publisher;
@@ -29,12 +25,12 @@ public class ContentUpdateHandler : IRequestHandler<ContentUpdateCommand, Result
         this.Storage = Storage;
     }
 
-    public async Task<Result<ContentDto>> Handle(ContentUpdateCommand request, CancellationToken cancellationToken)
+    public async Task<Result<ContentUpdateDto>> Handle(ContentUpdateCommand request, CancellationToken cancellationToken)
     {
         User? user = await context.Users.FindAsync(request.UserId, cancellationToken);
 
         if (user == null)
-            return Result<ContentDto>.Failure(404, "User not found");
+            return Result<ContentUpdateDto>.Failure(404, "User not found");
 
         var content = await context.Contents
             .Where(content =>
@@ -52,7 +48,7 @@ public class ContentUpdateHandler : IRequestHandler<ContentUpdateCommand, Result
             .FirstOrDefaultAsync(cancellationToken);
 
         if (content == null)
-            return Result<ContentDto>.Failure(404, "Content not found");
+            return Result<ContentUpdateDto>.Failure(404, "Content not found");
 
         content.c.Title = request.Title;
         content.c.ContentType = request.ContentType;
@@ -84,22 +80,12 @@ public class ContentUpdateHandler : IRequestHandler<ContentUpdateCommand, Result
         logger.LogInformation("Content {ContentId} updated successfully",
             request.ContentId);
 
-        ContentDto contentDto = new(
+        ContentUpdateDto contentDto = new(
             content.c.Id, content.c.ChannelId, content.c.CreatorId,
             content.c.Title, content.c.Slug, content.c.Description,
             content.c.CreatedDate, content.c.ContentType.ToString(),
-            content.c.VideoMeta.DurationSeconds, content.c.VideoMeta.VideoUrl,
-            new ImageDto(
-                new ImageVariantsDto(
-                    content.c.VideoMeta.PhotoBase,
-                    content.c.VideoMeta.Small,
-                    content.c.VideoMeta.Medium,
-                    content.c.VideoMeta.Large),
-                content.c.VideoMeta.R,
-                content.c.VideoMeta.G,
-                content.c.VideoMeta.B),
-            content.SaversCount, content.LikersCount, content.CommentsCount, content.DisLikersCount, content.c.ViewsCount);
+            content.c.VideoMeta.DurationSeconds, content.c.VideoMeta.VideoUrl, "Process...");
 
-        return Result<ContentDto>.Success(200, contentDto);
+        return Result<ContentUpdateDto>.Success(200, contentDto);
     }
 }

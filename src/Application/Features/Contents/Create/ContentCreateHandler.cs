@@ -1,11 +1,8 @@
 using Application.Features.Contents.Video.Upload;
-using Application.Features.Rows.Contents;
-using Application.Features.Contents.Dtos;
+using Application.Features.Contents.Update;
 using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Application.Features.Images;
-using Application.Features.Images;
 using Application.Interfaces.Db;
 using Domain.Common.Enums;
 using Domain.Entities;
@@ -13,7 +10,7 @@ using MediatR;
 
 namespace Application.Features.Contents.Create;
 
-public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result<ContentDto>>
+public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result<ContentUpdateDto>>
 {
     private readonly ILogger<ContentCreateHandler> logger;
     private readonly VideoUploadPublisher publisher;
@@ -31,7 +28,7 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
         this.logger = logger;
     }
 
-    public async Task<Result<ContentDto>> Handle(ContentCreateCommand cmd, CancellationToken cancellationToken)
+    public async Task<Result<ContentUpdateDto>> Handle(ContentCreateCommand cmd, CancellationToken cancellationToken)
     {
         if (cmd.ChannelId != null)
         {
@@ -45,14 +42,14 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
             {
                 logger.LogWarning("User {UserId} tried to create content without permission",
                    cmd.UserId);
-                return Result<ContentDto>.Failure(404, "User not found");
+                return Result<ContentUpdateDto>.Failure(404, "User not found");
             }
 
             if (channelOwner.OwnerRole <= ChannelOwnerRole.ContentEditor)
             {
                 logger.LogWarning("User {UserId} tried to create content without permission",
                    cmd.UserId);
-                return Result<ContentDto>.Failure(403, "You do not have sufficient rights");
+                return Result<ContentUpdateDto>.Failure(403, "You do not have sufficient rights");
             }
         }
         else
@@ -61,7 +58,7 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
                 cmd.UserId, cancellationToken);
 
             if (user == null)
-                return Result<ContentDto>.Failure(404, "User not found");
+                return Result<ContentUpdateDto>.Failure(404, "User not found");
         }
 
         Content content = new()
@@ -111,20 +108,10 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
         logger.LogInformation("Content {ContentId} created for user {UserId}",
             content.Id, cmd.UserId);
 
-        return Result<ContentDto>.Success(201, new ContentDto(
+        return Result<ContentUpdateDto>.Success(201, new ContentUpdateDto(
             content.Id, content.ChannelId, content.CreatorId,
             content.Title, content.Slug, content.Description,
             content.CreatedDate, content.ContentType.ToString(), 0,
-            content.VideoMeta.VideoUrl,
-            new ImageDto(
-                new ImageVariantsDto(
-                    content.VideoMeta.PhotoBase,
-                    content.VideoMeta.Small,
-                    content.VideoMeta.Medium,
-                    content.VideoMeta.Large),
-                content.VideoMeta.R,
-                content.VideoMeta.G,
-                content.VideoMeta.B),
-            0, 0, 0, 0, 0));
+            content.VideoMeta.VideoUrl, "Created"));
     }
 }

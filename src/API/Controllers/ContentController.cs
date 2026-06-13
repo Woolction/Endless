@@ -43,7 +43,7 @@ public class ContentController : ControllerBase
             request.ContentType
         );
 
-        Result<ContentDto> result = await mediator.Send(cmd);
+        Result<ContentUpdateDto> result = await mediator.Send(cmd);
 
         if (!result.IsSuccess || result.Data == null)
         {
@@ -176,7 +176,7 @@ public class ContentController : ControllerBase
 
     [HttpPut("{ContentId}")]
     [Authorize(Policy = nameof(UserRole.Creator))]
-    public async Task<ActionResult<ContentDto>> UpdateContent(Guid ContentId, ContentCreateRequest request)
+    public async Task<ActionResult<ContentUpdateDto>> UpdateContent(Guid ContentId, ContentCreateRequest request)
     {
         Guid currentUserId = this.GetIDFromClaim();
 
@@ -188,7 +188,7 @@ public class ContentController : ControllerBase
             request.Description,
             request.ContentType);
 
-        Result<ContentDto> result = await mediator.Send(cmd);
+        Result<ContentUpdateDto> result = await mediator.Send(cmd);
 
         if (!result.IsSuccess || result.Data == null)
         {

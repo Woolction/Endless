@@ -1,11 +1,8 @@
 using Application.Features.Authentications.Dtos;
-using Application.Features.Rows.Contents;
-using Application.Features.Users.Dtos;
+using Application.Features.Users.Update;
 using Application.Interfaces.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Application.Features.Images;
-using Application.Features.Images;
 using Application.Interfaces.Db;
 using Domain.Entities;
 using MediatR;
@@ -31,19 +28,10 @@ public class UserLoginHandler : IRequestHandler<AuthCreateCommand, Result<AuthDt
             .Select(user => new
             {
                 u = user,
-                dto = new UserDto(
+                dto = new UserUpdateDto(
                 user.Id, user.Name, "@" + user.Slug,
                 user.Description ?? "", user.RegistryData, user.Email,
-                user.Role.ToString(), new ImageDto(
-                    new ImageVariantsDto(
-                        user.UserMeta.IconBase,
-                        user.UserMeta.Small,
-                        user.UserMeta.Medium,
-                        user.UserMeta.Large),
-                    user.UserMeta.R,
-                    user.UserMeta.G,
-                    user.UserMeta.B), user.TotalLikes,
-                0, 0, 0, 0, 0, 0)
+                user.Role.ToString(), "Logined")
             })
             .FirstOrDefaultAsync(user =>
                 user.u.Email == cmd.Email, cancellationToken);

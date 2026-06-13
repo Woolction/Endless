@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Application.Features.Channels.Choose.Many;
 using Application.Features.Channels.Create.Many;
 using Application.Features.Channels.Create.One;
@@ -6,6 +5,7 @@ using Application.Features.Channels.Choose.One;
 using Application.Features.Channels.Delete;
 using Application.Features.Channels.Update;
 using Application.Features.Channels.Search;
+using Microsoft.AspNetCore.Authorization;
 using Application.Features.Channels.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using Application.Utilities;
@@ -28,12 +28,12 @@ public class ChannelController : ControllerBase
 
     [HttpPost]
     [Authorize(Policy = nameof(UserRole.Creator))]
-    public async Task<ActionResult<ChannelDto>> CreateChannel([FromForm] ChannelCreateRequest request)
+    public async Task<ActionResult<ChannelUpdateDto>> CreateChannel([FromForm] ChannelCreateRequest request)
     {
         ChannelCreateCommand cmd = new(
             this.GetIDFromClaim(), request.Name, request.IconPhoto);
 
-        Result<ChannelDto> result = await mediator.Send(cmd);
+        Result<ChannelUpdateDto> result = await mediator.Send(cmd);
 
         if (!result.IsSuccess || result.Data == null)
         {
@@ -50,7 +50,7 @@ public class ChannelController : ControllerBase
 
     [HttpPost("many")]
     [Authorize(Policy = nameof(UserRole.Admin))]
-    public async Task<ActionResult<ChannelDto[]>> CreateChannels(ChannelsCreateRequest request)
+    public async Task<ActionResult<ChannelUpdateDto[]>> CreateChannels(ChannelsCreateRequest request)
     {
         if (request.Count < 1)
             return BadRequest($"Count < 1: {request.Count}");
@@ -58,7 +58,7 @@ public class ChannelController : ControllerBase
         ChannelsCreateCommand cmd = new(
             this.GetIDFromClaim(), request.Count);
 
-        Result<ChannelDto[]> result = await mediator.Send(cmd);
+        Result<ChannelUpdateDto[]> result = await mediator.Send(cmd);
 
         if (!result.IsSuccess)
         {
@@ -125,12 +125,12 @@ public class ChannelController : ControllerBase
 
     [HttpPut("{ChannelId}")]
     [Authorize(Policy = nameof(UserRole.Creator))]
-    public async Task<ActionResult<ChannelDto>> UpdateChannel([FromRoute] Guid ChannelId, [FromForm] ChannelUpdateRequest request)
+    public async Task<ActionResult<ChannelUpdateDto>> UpdateChannel([FromRoute] Guid ChannelId, [FromForm] ChannelUpdateRequest request)
     {
         ChannelUpdateCommand cmd = new(
             this.GetIDFromClaim(), ChannelId, request.Name, request.Description, request.IconPhoto);
 
-        Result<ChannelDto> result = await mediator.Send(cmd);
+        Result<ChannelUpdateDto> result = await mediator.Send(cmd);
 
         if (!result.IsSuccess || result.Data == null)
         {

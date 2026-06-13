@@ -1,13 +1,10 @@
-using Application.Features.Rows.Contents;
+using Application.Features.Channels.Update;
 using Application.Features.Rows.Channels;
-using Application.Features.Channels.Dtos;
 using Application.Features.Images.Upload;
 using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Application.Features.Images;
 using Application.Interfaces.Db;
-using Application.Features.Images;
 using Application.Features.Rows;
 using Application.Utilities;
 using Domain.Common.Enums;
@@ -17,7 +14,7 @@ using MediatR;
 
 namespace Application.Features.Channels.Create.One;
 
-public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Result<ChannelDto>>
+public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Result<ChannelUpdateDto>>
 {
     private readonly ILogger<ChannelCreatingHandler> logger;
     private readonly SearchIndexUpsertPublisher indexUpsertPublisher;
@@ -34,12 +31,12 @@ public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Resu
         this.context = context;
         this.logger = logger;
     }
-    public async Task<Result<ChannelDto>> Handle(ChannelCreateCommand cmd, CancellationToken cancellationToken)
+    public async Task<Result<ChannelUpdateDto>> Handle(ChannelCreateCommand cmd, CancellationToken cancellationToken)
     {
         User? user = await context.Users.FindAsync(cmd.UserId, cancellationToken);
 
         if (user == null)
-            return Result<ChannelDto>.Failure(404, "User not found");
+            return Result<ChannelUpdateDto>.Failure(404, "User not found");
 
         string slug = cmd.Name.GenerateSlug();
 
@@ -75,6 +72,7 @@ public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Resu
 
         var meta = await context.ChannelMetas
             .AsNoTracking()
+            .Include(c => c.Image)
             .FirstAsync(c => c
                 .ChannelId == channel.Id,
                 cancellationToken);
@@ -98,26 +96,17 @@ public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Resu
         {
             await indexUpsertPublisher.Publish(
                 new SearchIndexUpsertMessage(nameof(Channel),
-                    JsonSerializer.Serialize(new ChannelSearchIndex(channel, meta))), cancellationToken);
+                    JsonSerializer.Serialize(new ChannelSearchIndex(channel, meta, meta.Image))), cancellationToken);
         }
 
         logger.LogInformation("Channel {ChannelId} created with slug {Slug}",
             channel.Id, slug);
 
-        return Result<ChannelDto>.Success(201, new ChannelDto(
+        return Result<ChannelUpdateDto>.Success(201, new ChannelUpdateDto(
             channel.Id, channel.Name,
             "@" + channel.Slug,
             channel.Description ?? "",
             channel.CreatedDate,
-            new ImageDto(
-                new ImageVariantsDto(
-                    meta.IconBase,
-                    meta.Small,
-                    meta.Medium,
-                    meta.Large),
-                meta.R,
-                meta.G,
-                meta.B),
-            1, 0, 1, 0, 0));
+            "Created"));
     }
 }
