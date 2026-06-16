@@ -96,17 +96,13 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
 
         // set photo 
 
-        Image image = new() { BaseUrl = "/storage/images/content" };
-
         // for local storage
 
-        if (Directory.Exists(image.BaseUrl))
-            Directory.Delete(image.BaseUrl, true);
+        if (Directory.Exists(content.VideoMeta.Image.BaseUrl))
+            Directory.Delete(content.VideoMeta.Image.BaseUrl, true);
 
         await imageAnalyzer.SetImageVariants(
-            image, imageVariants, token);
-
-        content.VideoMeta.SetImage(image);
+            content.VideoMeta.Image, imageVariants, token);
 
         /* old
         if (Directory.Exists(content.VideoMeta.PhotoBase))

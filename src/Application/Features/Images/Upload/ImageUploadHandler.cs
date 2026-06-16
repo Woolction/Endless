@@ -96,15 +96,11 @@ public class ImageUploadHandler : IRequestHandler<ImageUploadMessage, Result<Nul
     {
         // delete old data
 
-        Image image = new() { BaseUrl = "/storage/images/user" };
-
-        if (Directory.Exists(image.BaseUrl))
-            Directory.Delete(image.BaseUrl, true);
+        if (Directory.Exists(meta.Image.BaseUrl))
+            Directory.Delete(meta.Image.BaseUrl, true);
 
         await imageAnalyzer.SetImageVariants(
-            image, iconVariants, token);
-
-        meta.SetImage(image);
+            meta.Image, iconVariants, token);
 
         /* old
         if (Directory.Exists(meta.IconBase))
@@ -123,15 +119,11 @@ public class ImageUploadHandler : IRequestHandler<ImageUploadMessage, Result<Nul
     {
         // delete old data
 
-        Image image = new() { BaseUrl = "/storage/images/channels" };
-
-        if (Directory.Exists(image.BaseUrl))
-            Directory.Delete(image.BaseUrl, true);
+        if (Directory.Exists(meta.Image.BaseUrl))
+            Directory.Delete(meta.Image.BaseUrl, true);
 
         await imageAnalyzer.SetImageVariants(
-            image, iconVariants, token);
-
-        meta.SetImage(image);
+            meta.Image, iconVariants, token);
 
         /* old 
         if (Directory.Exists(meta.IconBase))
