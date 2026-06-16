@@ -23,7 +23,7 @@ public class UserSearchIndex
 
     public UserSearchIndex() { }
 
-    public UserSearchIndex(User user, UserMeta userMeta, Image? image)
+    public UserSearchIndex(User user, Image image, List<ImageVariant> variants)
     {
         UserId = user.Id;
         Name = user.Name;
@@ -32,20 +32,17 @@ public class UserSearchIndex
         Description = user.Description;
         TotalLikes = user.TotalLikes;
 
-        if (image != null)
+        for (int i = 0; i < variants.Count; i++)
         {
-            for (int i = 0; i < image.Variants.Count; i++)
-            {
-                var variant = image.Variants[i];
+            var variant = variants[i];
 
-                Avatar.Variants.Add(new ImageVariantDto(
-                        variant.Url, variant.Width, variant.Height));
-            }
-
-            R = image.R;
-            G = image.G;
-            B = image.B;
+            Avatar.Variants.Add(new ImageVariantDto(
+                    variant.Url, variant.Width, variant.Height));
         }
+
+        R = image.R;
+        G = image.G;
+        B = image.B;
 
         RegistryData = user.RegistryData;
         Role = (int)user.Role;

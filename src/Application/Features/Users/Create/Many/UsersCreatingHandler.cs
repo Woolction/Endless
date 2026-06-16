@@ -1,10 +1,7 @@
-using Application.Features.Rows.Contents;
 using Application.Features.Rows.Users;
 using Application.Features.Users.Dtos;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Application.Features.Images;
-using Application.Features.Images;
 using Application.Features.Rows;
 using Application.Interfaces.Db;
 using Application.Utilities;
@@ -81,6 +78,7 @@ public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<U
                 var meta = await context.UserMetas
                     .AsNoTracking()
                     .Include(u => u.Image)
+                        .ThenInclude(i => i.Variants)
                     .FirstAsync(u => u
                         .UserId == user.Id,
                         cancellationToken);
@@ -92,7 +90,7 @@ public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<U
 
                 await indexUpsertPublisher.Publish(
                     new SearchIndexUpsertMessage(nameof(User),
-                        JsonSerializer.Serialize(new UserSearchIndex(user, meta, meta.Image))), cancellationToken);
+                        JsonSerializer.Serialize(new UserSearchIndex(user, meta.Image, meta.Image.Variants))), cancellationToken);
             }
 
             return Result<UserUpdateDto[]>.Success(201, dtos);

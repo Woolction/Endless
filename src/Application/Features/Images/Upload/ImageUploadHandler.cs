@@ -46,6 +46,7 @@ public class ImageUploadHandler : IRequestHandler<ImageUploadMessage, Result<Nul
             UserMeta? meta = await context.UserMetas
                 .Include(u => u.User)
                 .Include(u => u.Image)
+                    .ThenInclude(i => i.Variants)
                 .FirstOrDefaultAsync(u => u
                     .UserId == message.Id, token);
 
@@ -60,13 +61,14 @@ public class ImageUploadHandler : IRequestHandler<ImageUploadMessage, Result<Nul
 
             await publisher.Publish(
                 new SearchIndexUpsertMessage(nameof(User),
-                    JsonSerializer.Serialize(new UserSearchIndex(meta.User!, meta, meta.Image))), token);
+                    JsonSerializer.Serialize(new UserSearchIndex(meta.User!, meta.Image, meta.Image.Variants))), token);
         }
         else if (message.Owner == ImageOwner.Channel)
         {
             ChannelMeta? meta = await context.ChannelMetas
                 .Include(c => c.Channel)
                 .Include(c => c.Image)
+                    .ThenInclude(i => i.Variants)
                 .FirstOrDefaultAsync(c => c
                     .ChannelId == message.Id, token);
 
@@ -82,7 +84,7 @@ public class ImageUploadHandler : IRequestHandler<ImageUploadMessage, Result<Nul
             // publish to upserting search index
             await publisher.Publish(
                 new SearchIndexUpsertMessage(nameof(Channel),
-                    JsonSerializer.Serialize(new ChannelSearchIndex(meta.Channel!, meta, meta.Image))), token);
+                    JsonSerializer.Serialize(new ChannelSearchIndex(meta.Channel!, meta.Image, meta.Image.Variants))), token);
         }
 
         File.Delete(message.PhotoPath);

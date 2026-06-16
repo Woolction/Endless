@@ -33,16 +33,20 @@ public class UserSearchingHandler : IRequestHandler<UserSearchQuery, Result<Sear
         if (result.SearchedUsers.Count < 1)
             return Result<SearchedUserDto[]>.Failure(404, $"User with name: {query.Name} not found: returned: {result.SearchedUsers.Count}");
 
-        SearchedUserDto[] userDtos = result.SearchedUsers.Select(u => new SearchedUserDto(new UserDto(
-            u.SearchedUser.UserId, u.SearchedUser.Name, "@" + u.SearchedUser.Slug, u.SearchedUser.Description,
-            u.SearchedUser.RegistryData, u.SearchedUser.Email, u.SearchedUser.Role.ToString(),
-            new ImageDto(
-                u.SearchedUser.Avatar,
-                u.SearchedUser.R,
-                u.SearchedUser.G,
-                u.SearchedUser.B),
-            u.SearchedUser.TotalLikes, 0, 0, 0, 0, 0, 0
-        ), u.Score)).ToArray();
+        SearchedUserDto[] userDtos = result.SearchedUsers
+            .Select(u => new SearchedUserDto(
+                new UserDto(
+                    u.SearchedUser.UserId, u.SearchedUser.Name,
+                    "@" + u.SearchedUser.Slug, u.SearchedUser.Description,
+                    u.SearchedUser.RegistryData, u.SearchedUser.Email,
+                    u.SearchedUser.Role.ToString(),
+                    new ImageDto(
+                        u.SearchedUser.Avatar,
+                        u.SearchedUser.R,
+                        u.SearchedUser.G,
+                        u.SearchedUser.B),
+                    u.SearchedUser.TotalLikes, 0, 0, 0, 0, 0, 0
+                ), u.Score)).ToArray();
 
         logger.LogInformation("Search returned users: {Count} results for {Query}",
             userDtos.Length, query.Name);

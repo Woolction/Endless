@@ -92,6 +92,7 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
         Content content = await context.Contents
             .Include(c => c.VideoMeta)
                 .ThenInclude(m => m.Image)
+                    .ThenInclude(i => i.Variants)
             .FirstAsync(c => c.Id == message.ContentId, cancellationToken: token);
 
         // set photo 
@@ -128,7 +129,7 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
         // publish to upserting search index
         await publisher.Publish(
             new SearchIndexUpsertMessage(nameof(Content),
-                JsonSerializer.Serialize(new ContentSearchIndex(content, content.VideoMeta, content.VideoMeta.Image))), token);
+                JsonSerializer.Serialize(new ContentSearchIndex(content, content.VideoMeta, content.VideoMeta.Image, content.VideoMeta.Image.Variants))), token);
 
         // delete the files
         if (!string.IsNullOrEmpty(message.ImagePath) && File.Exists(message.ImagePath))

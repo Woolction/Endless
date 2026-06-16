@@ -73,6 +73,7 @@ public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Resu
         var meta = await context.ChannelMetas
             .AsNoTracking()
             .Include(c => c.Image)
+                .ThenInclude(i => i.Variants)
             .FirstAsync(c => c
                 .ChannelId == channel.Id,
                 cancellationToken);
@@ -96,7 +97,7 @@ public class ChannelCreatingHandler : IRequestHandler<ChannelCreateCommand, Resu
         {
             await indexUpsertPublisher.Publish(
                 new SearchIndexUpsertMessage(nameof(Channel),
-                    JsonSerializer.Serialize(new ChannelSearchIndex(channel, meta, meta.Image))), cancellationToken);
+                    JsonSerializer.Serialize(new ChannelSearchIndex(channel, meta.Image, meta.Image.Variants))), cancellationToken);
         }
 
         logger.LogInformation("Channel {ChannelId} created with slug {Slug}",

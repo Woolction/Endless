@@ -30,7 +30,7 @@ public class ContentSearchIndex
 
     public ContentSearchIndex() { }
 
-    public ContentSearchIndex(Content content, VideoMeta videoMeta, Image? image)
+    public ContentSearchIndex(Content content, VideoMeta videoMeta, Image image, List<ImageVariant> variants)
     {
         ContentId = content.Id;
         ChannelId = content.ChannelId;
@@ -46,20 +46,18 @@ public class ContentSearchIndex
         {
             ContentUrl = videoMeta.VideoUrl;
 
-            if (image != null)
+
+            for (int i = 0; i < variants.Count; i++)
             {
-                for (int i = 0; i < image.Variants.Count; i++)
-                {
-                    var variant = image.Variants[i];
+                var variant = variants[i];
 
-                    Preview.Variants.Add(new ImageVariantDto(
-                        variant.Url, variant.Width, variant.Height));
-                }
-
-                R = image.R;
-                G = image.G;
-                B = image.B;
+                Preview.Variants.Add(new ImageVariantDto(
+                    variant.Url, variant.Width, variant.Height));
             }
+
+            R = image.R;
+            G = image.G;
+            B = image.B;
 
             DurationSeconds = videoMeta.DurationSeconds;
             AverageWatchRatio = videoMeta.AverageWatchRatio;

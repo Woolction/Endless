@@ -77,11 +77,12 @@ public class UserRegistryHandler : IRequestHandler<UserRegistryCommand, Result<R
         var meta = await context.UserMetas
             .AsNoTracking()
             .Include(u => u.Image)
+                .ThenInclude(i => i.Variants)
             .FirstAsync(u => u.UserId == user.Id, cancellationToken);
 
         await indexUpsertPublisher.Publish(
             new SearchIndexUpsertMessage(nameof(User), 
-                JsonSerializer.Serialize(new UserSearchIndex(user, meta, meta.Image))), 
+                JsonSerializer.Serialize(new UserSearchIndex(user, meta.Image, meta.Image.Variants))), 
             cancellationToken);
 
         return Result<RegistryDto>.Success(201, new RegistryDto(user.Id, tokens[0], tokens[1]));

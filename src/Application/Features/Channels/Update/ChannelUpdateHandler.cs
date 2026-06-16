@@ -36,11 +36,11 @@ public class ChannelUpdateHandler : IRequestHandler<ChannelUpdateCommand, Result
             .Select(channel => new
             {
                 c = channel,
-                meta = channel.ChannelMeta,
                 image = channel.ChannelMeta.Image,
+                variants = channel.ChannelMeta.Image.Variants,
                 dto = new ChannelUpdateDto(
-                channel.Id, channel.Name, "@" + channel.Slug,
-                channel.Description ?? "", channel.CreatedDate, "Processing...")
+                    channel.Id, channel.Name, "@" + channel.Slug,
+                    channel.Description ?? "", channel.CreatedDate, "Processing...")
             })
             .FirstOrDefaultAsync(
                 channel => channel.c.Id == cmd.ChannelId,
@@ -105,7 +105,7 @@ public class ChannelUpdateHandler : IRequestHandler<ChannelUpdateCommand, Result
         {
             await indexUpsertPublisher.Publish(
                 new SearchIndexUpsertMessage(nameof(Channel),
-                    JsonSerializer.Serialize(new ChannelSearchIndex(channel.c!, channel.meta, channel.image))), cancellationToken);
+                    JsonSerializer.Serialize(new ChannelSearchIndex(channel.c!, channel.image, channel.variants))), cancellationToken);
         }
 
         logger.LogInformation(

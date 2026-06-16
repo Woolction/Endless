@@ -36,17 +36,18 @@ public class UserUpdateHandler : IRequestHandler<UserUpdateCommand, Result<UserU
     public async Task<Result<UserUpdateDto>> Handle(UserUpdateCommand cmd, CancellationToken cancellationToken)
     {
         var user = await context.Users
+            .Where(user => user.Id == cmd.UserId)
             .Select(user => new
             {
                 u = user,
-                meta = user.UserMeta,
                 image = user.UserMeta.Image,
+                variants = user.UserMeta.Image.Variants,
                 dto = new UserUpdateDto(
                     user.Id, user.Name, "@" + user.Slug,
                     user.Description ?? "", user.RegistryData,
                     user.Email, user.Role.ToString(), "processing...")
             })
-            .FirstOrDefaultAsync(user => user.u.Id == cmd.UserId, cancellationToken);
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (user == null || user.u == null)
             return Result<UserUpdateDto>.Failure(404, "User not found");
@@ -85,7 +86,7 @@ public class UserUpdateHandler : IRequestHandler<UserUpdateCommand, Result<UserU
         {
             await indexUpsertPublisher.Publish(
                 new SearchIndexUpsertMessage(nameof(User),
-                    JsonSerializer.Serialize(new UserSearchIndex(user.u, user.meta, user.image))), cancellationToken);
+                    JsonSerializer.Serialize(new UserSearchIndex(user.u, user.image, user.variants))), cancellationToken);
         }
 
         logger.LogInformation("User {UserId} updated", cmd.UserId);
