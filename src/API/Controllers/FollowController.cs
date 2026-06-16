@@ -1,10 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
-using Application.Features.Rows.Contents;
 using Application.Features.Users.Dtos;
 using Microsoft.EntityFrameworkCore;
 using Application.Features.Images;
 using Application.Interfaces.Db;
-using Application.Features.Images;
 using Microsoft.AspNetCore.Mvc;
 using Application.Utilities;
 using Domain.Common.Enums;
@@ -41,31 +39,31 @@ public class FollowController : ControllerBase
         }
 
         User? currentUser = await context.Users.FindAsync(currentUserId);
-        var user = await context.Users
-            .Select(user => new
-            {
-                u = user,
-                uResponse = new UserDto(
-                    user.Id, user.Name, "@" + user.Slug,
-                    user.Description ?? "", user.RegistryData, user.Email,
-                    user.Role.ToString(), new ImageDto(
-                        new ImageVariantsDto(
-                            user.UserMeta.IconBase,
-                            user.UserMeta.Small,
-                            user.UserMeta.Medium,
-                            user.UserMeta.Large),
-                        user.UserMeta.R,
-                        user.UserMeta.G,
-                        user.UserMeta.B),
-                    user.TotalLikes, user.Comments.Count, user.Contents.Count, user.Followers.Count,
-                    user.Following.Count, user.OwnedChannels.Count, user.SubscripedChannels.Count)
-            })
-            .AsNoTracking()
-            .FirstOrDefaultAsync(user => user.u.Id == UserId);
 
         if (currentUser is null)
             return NotFound("Current user not found");
-        if (user is null || user.u is null)
+
+        var userDto = await context.Users
+            .Where(user => user.Id == UserId)
+            .Select(user => new UserDto(
+                    user.Id, user.Name, "@" + user.Slug,
+                    user.Description ?? "", user.RegistryData,
+                    user.Email, user.Role.ToString(),
+                    new ImageDto(
+                        new ImageVariantsDto(
+                            user.UserMeta.Image.BaseUrl,
+                            user.UserMeta.Image.Variants
+                                .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
+                                .ToList()),
+                        user.UserMeta.Image.R,
+                        user.UserMeta.Image.G,
+                        user.UserMeta.Image.B),
+                    user.TotalLikes, user.Comments.Count, user.Contents.Count, user.Followers.Count,
+                    user.Following.Count, user.OwnedChannels.Count, user.SubscripedChannels.Count))
+            .AsNoTracking()
+            .FirstOrDefaultAsync();
+
+        if (userDto is null)
             return NotFound("User not found");
 
         UserFollowing userFollowing = new()
@@ -83,7 +81,7 @@ public class FollowController : ControllerBase
             currentUserId, UserId);
 
         return Created($"api/follow/follower/{userFollowing.FollowerId}/followed/{userFollowing.FollowedUserId}",
-            user.uResponse);
+            userDto);
     }
 
     [HttpGet("follower/{FollowerId}/followed/{FollowedId}")]

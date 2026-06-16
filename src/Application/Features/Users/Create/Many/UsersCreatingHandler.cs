@@ -98,7 +98,7 @@ public class UsersCreatingHandler : IRequestHandler<UsersCreateCommand, Result<U
         catch (DbUpdateException ex)
         {
             if (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
-                Result<UserDto[]>.Failure(409, "User name already exists");
+                Result<UserUpdateDto[]>.Failure(409, "User name already exists");
 
             throw;
         }

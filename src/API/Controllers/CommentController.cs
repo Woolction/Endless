@@ -1,6 +1,5 @@
 using Application.Features.Comments.Create;
 using Application.Features.Comments.Update;
-using Application.Features.Rows.Contents;
 using Application.Features.Comments.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Application.Features.Users.Dtos;
@@ -8,7 +7,6 @@ using Microsoft.EntityFrameworkCore;
 using Application.Features.Images;
 using Application.Interfaces.Db;
 using Microsoft.AspNetCore.Mvc;
-using Application.Features.Images;
 using Application.Extensions;
 using Application.Utilities;
 using Domain.Common.Enums;
@@ -48,19 +46,23 @@ public class CommentController : ControllerBase
                     comment.PublicatedDate, comment.Likers.Count,
                     comment.DisLikers.Count, comment.ViewsCount),
                 new UserDto(
-                    comment.Commentator.Id, comment.Commentator.Name, "@" + comment.Commentator.Slug,
-                    comment.Commentator.Description ?? "", comment.Commentator.RegistryData, comment.Commentator.Email,
-                    comment.Commentator.Role.ToString(), new ImageDto(
+                    comment.Commentator.Id, comment.Commentator.Name,
+                    "@" + comment.Commentator.Slug, comment.Commentator.Description ?? "",
+                    comment.Commentator.RegistryData, comment.Commentator.Email,
+                    comment.Commentator.Role.ToString(),
+                    new ImageDto(
                         new ImageVariantsDto(
-                            comment.Commentator.UserMeta.IconBase,
-                            comment.Commentator.UserMeta.Small,
-                            comment.Commentator.UserMeta.Medium,
-                            comment.Commentator.UserMeta.Large),
-                        comment.Commentator.UserMeta.R,
-                        comment.Commentator.UserMeta.G,
-                        comment.Commentator.UserMeta.B), comment.Commentator.TotalLikes,
-                    comment.Commentator.Comments.Count, comment.Commentator.Contents.Count, comment.Commentator.Followers.Count,
-                    comment.Commentator.Following.Count, comment.Commentator.OwnedChannels.Count, comment.Commentator.SubscripedChannels.Count)))
+                            comment.Commentator.UserMeta.Image.BaseUrl,
+                            comment.Commentator.UserMeta.Image.Variants
+                                .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
+                                .ToList()),
+                        comment.Commentator.UserMeta.Image.R,
+                        comment.Commentator.UserMeta.Image.G,
+                        comment.Commentator.UserMeta.Image.B),
+                    comment.Commentator.TotalLikes,
+                    comment.Commentator.Comments.Count, comment.Commentator.Contents.Count,
+                    comment.Commentator.Followers.Count, comment.Commentator.Following.Count,
+                    comment.Commentator.OwnedChannels.Count, comment.Commentator.SubscripedChannels.Count)))
             .ToArrayAsync();
 
         logger.LogInformation("Returned {Count} comment in content {ContentId}",
