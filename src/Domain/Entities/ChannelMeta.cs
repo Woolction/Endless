@@ -6,7 +6,7 @@ public class ChannelMeta
     public Channel? Channel { get; set; }
 
     public Guid ImageId { get; set; }
-    public Image? Image { get; set; }
+    public Image Image { get; set; } = new() { BaseUrl = "/storage/images/channel" };
 
     public string IconBase { get; set; } = "/storage/images/channel-icons";
     public string Small { get; set; } = string.Empty;
@@ -16,9 +16,4 @@ public class ChannelMeta
     public int R { get; set; }
     public int G { get; set; }
     public int B { get; set; }
-
-    public void SetImage(Image image)
-    {
-        Image = image;
-    }
 }

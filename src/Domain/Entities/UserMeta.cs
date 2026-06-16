@@ -6,7 +6,7 @@ public class UserMeta
     public User? User { get; set; }
 
     public Guid ImageId { get; set; }
-    public Image? Image { get; set; }
+    public Image Image { get; set; } = new() { BaseUrl = "/storage/images/user" };
 
     public string IconBase { get; set; } = "/storage/images/user-icons";
     public string Small { get; set; } = string.Empty;
@@ -16,9 +16,4 @@ public class UserMeta
     public int R { get; set; }
     public int G { get; set; }
     public int B { get; set; }
-
-    public void SetImage(Image image)
-    {
-        Image = image;
-    }
 }

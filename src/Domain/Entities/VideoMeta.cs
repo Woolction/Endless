@@ -14,8 +14,9 @@ public class VideoMeta
 
     // Image
     public Guid ImageId { get; set; }
-    public Image? Image { get; set; }
-    
+    public Image Image { get; set; } = new() { BaseUrl = "/storage/images/content" };
+
+
     public string PhotoBase { get; set; } = "/storage/content-previews";
     public string Small { get; set; } = string.Empty;
     public string? Medium { get; set; }
@@ -29,10 +30,5 @@ public class VideoMeta
     {
         VideoUrl = videoUrl;
         DurationSeconds = durationSeconds;
-    }
-    
-    public void SetImage(Image image)
-    {
-        Image = image;
     }
 }
