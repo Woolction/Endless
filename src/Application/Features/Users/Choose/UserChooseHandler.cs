@@ -3,7 +3,6 @@ using Application.Features.Users.Dtos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Application.Features.Images;
-using Application.Features.Images;
 using Application.Interfaces.Db;
 using MediatR;
 
@@ -21,22 +20,23 @@ public class UserChooseHandler : IRequestHandler<UserChooseQuery, Result<UserDto
 
     public async Task<Result<UserDto>> Handle(UserChooseQuery query, CancellationToken cancellationToken)
     {
-        UserDto? userDto = await context.Users
-            .Where(user => user.Id == query.UserId)
-            .Select(user => new UserDto(
-                user.Id, user.Name, "@" + user.Slug,
-                user.Description ?? "", user.RegistryData, user.Email,
-                user.Role.ToString(), new ImageDto(
+        var userDto = await context.Users
+            .Where(userDto => userDto.Id == query.UserId)
+            .Select(userDto => new UserDto(
+                userDto.Id, userDto.Name, "@" + userDto.Slug,
+                userDto.Description ?? "", userDto.RegistryData, userDto.Email,
+                userDto.Role.ToString(),
+                new ImageDto(
                     new ImageVariantsDto(
-                        user.UserMeta.IconBase,
-                        user.UserMeta.Small,
-                        user.UserMeta.Medium,
-                        user.UserMeta.Large),
-                    user.UserMeta.R,
-                    user.UserMeta.G,
-                    user.UserMeta.B), user.TotalLikes,
-                user.Comments.Count, user.Contents.Count, user.Followers.Count,
-                user.Following.Count, user.OwnedChannels.Count, user.SubscripedChannels.Count))
+                        userDto.UserMeta.Image.BaseUrl,
+                        userDto.UserMeta.Image.Variants
+                            .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
+                            .ToList()),
+                    userDto.UserMeta.Image.R,
+                    userDto.UserMeta.Image.G,
+                    userDto.UserMeta.Image.B),
+                userDto.TotalLikes, userDto.Comments.Count, userDto.Contents.Count, userDto.Followers.Count,
+                userDto.Following.Count, userDto.OwnedChannels.Count, userDto.SubscripedChannels.Count))
             .AsNoTracking()
             .FirstOrDefaultAsync(cancellationToken);
 
