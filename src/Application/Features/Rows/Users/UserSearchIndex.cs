@@ -38,12 +38,8 @@ public class UserSearchIndex
             {
                 var variant = image.Variants[i];
 
-                Avatar.Variants.Add(new ImageVariantDto()
-                {
-                    Url = variant.Url,
-                    Width = variant.Width,
-                    Height = variant.Height
-                });
+                Avatar.Variants.Add(new ImageVariantDto(
+                        variant.Url, variant.Width, variant.Height));
             }
 
             R = image.R;

@@ -36,12 +36,8 @@ public class ChannelSearchIndex
             {
                 var variant = image.Variants[i];
 
-                Icon.Variants.Add(new ImageVariantDto()
-                {
-                    Url = variant.Url,
-                    Width = variant.Width,
-                    Height = variant.Height
-                });
+                Icon.Variants.Add(new ImageVariantDto(
+                    variant.Url, variant.Width, variant.Height));
             }
 
             R = image.R;

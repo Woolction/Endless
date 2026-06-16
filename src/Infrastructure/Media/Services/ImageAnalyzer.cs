@@ -120,7 +120,7 @@ public class ImageAnalyzer : IImageAnalyzer
             }, token);
 
             variants.Add(
-                new ImageVariantDto() { Url = output, Width = w, Height = h });
+                new ImageVariantDto(output, w, h));
         }
 
         return new ImageVariantsDto(

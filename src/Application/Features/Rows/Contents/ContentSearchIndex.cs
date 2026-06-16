@@ -52,12 +52,8 @@ public class ContentSearchIndex
                 {
                     var variant = image.Variants[i];
 
-                    Preview.Variants.Add(new ImageVariantDto()
-                    {
-                        Url = variant.Url,
-                        Width = variant.Width,
-                        Height = variant.Height
-                    });
+                    Preview.Variants.Add(new ImageVariantDto(
+                        variant.Url, variant.Width, variant.Height));
                 }
 
                 R = image.R;
