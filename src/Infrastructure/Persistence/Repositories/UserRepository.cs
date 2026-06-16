@@ -63,12 +63,6 @@ public class UserRepository : IUserRepository
                 .Date(d => d.RegistryData)
                 .IntegerNumber(k => k.Role)
                 .LongNumber(k => k.TotalLikes)
-                .Object(o => o.IconVariants, v => v
-                    .Properties(p => p
-                        .Keyword(k => k.IconVariants.BaseUrl)
-                        .Keyword(k => k.IconVariants.Small)
-                        .Keyword(k => k.IconVariants.Medium)
-                        .Keyword(k => k.IconVariants.Large)))
                 .IntegerNumber(i => i.R)
                 .IntegerNumber(i => i.G)
                 .IntegerNumber(i => i.B)

@@ -59,12 +59,6 @@ public class ChannelRepository : IChannelRepository
             .Properties<ChannelSearchIndex>(p => p
                 .Keyword(k => k.ChannelId)
                 .Keyword(k => k.Slug)
-                .Object(o => o.IconVariants, v => v
-                    .Properties(p => p
-                        .Keyword(k => k.IconVariants.BaseUrl)
-                        .Keyword(k => k.IconVariants.Small)
-                        .Keyword(k => k.IconVariants.Medium)
-                        .Keyword(k => k.IconVariants.Large)))
                 .Text(k => k.Description)
                 .Date(d => d.CreatedDate)
                 .LongNumber(k => k.TotalViews)
