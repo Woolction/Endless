@@ -40,8 +40,8 @@ public class UserUpdateHandler : IRequestHandler<UserUpdateCommand, Result<UserU
             .Select(user => new
             {
                 u = user,
-                image = user.UserMeta.Image,
-                variants = user.UserMeta.Image.Variants,
+                image = user.Meta.Image,
+                variants = user.Meta.Image.Variants,
                 dto = new UserUpdateDto(
                     user.Id, user.Name, "@" + user.Slug,
                     user.Description ?? "", user.RegistryData,

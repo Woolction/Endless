@@ -51,13 +51,13 @@ public class FollowController : ControllerBase
                     user.Email, user.Role.ToString(),
                     new ImageDto(
                         new ImageVariantsDto(
-                            user.UserMeta.Image.BaseUrl,
-                            user.UserMeta.Image.Variants
+                            user.Meta.Image.BaseUrl,
+                            user.Meta.Image.Variants
                                 .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
                                 .ToList()),
-                        user.UserMeta.Image.R,
-                        user.UserMeta.Image.G,
-                        user.UserMeta.Image.B),
+                        user.Meta.Image.R,
+                        user.Meta.Image.G,
+                        user.Meta.Image.B),
                     user.TotalLikes, user.Comments.Count, user.Contents.Count, user.Followers.Count,
                     user.Following.Count, user.OwnedChannels.Count, user.SubscripedChannels.Count))
             .AsNoTracking()

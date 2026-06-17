@@ -52,13 +52,13 @@ public class CommentController : ControllerBase
                     comment.Commentator.Role.ToString(),
                     new ImageDto(
                         new ImageVariantsDto(
-                            comment.Commentator.UserMeta.Image.BaseUrl,
-                            comment.Commentator.UserMeta.Image.Variants
+                            comment.Commentator.Meta.Image.BaseUrl,
+                            comment.Commentator.Meta.Image.Variants
                                 .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
                                 .ToList()),
-                        comment.Commentator.UserMeta.Image.R,
-                        comment.Commentator.UserMeta.Image.G,
-                        comment.Commentator.UserMeta.Image.B),
+                        comment.Commentator.Meta.Image.R,
+                        comment.Commentator.Meta.Image.G,
+                        comment.Commentator.Meta.Image.B),
                     comment.Commentator.TotalLikes,
                     comment.Commentator.Comments.Count, comment.Commentator.Contents.Count,
                     comment.Commentator.Followers.Count, comment.Commentator.Following.Count,
@@ -90,13 +90,13 @@ public class CommentController : ControllerBase
                     user.Description ?? "", user.RegistryData, user.Email,
                     user.Role.ToString(), new ImageDto(
                         new ImageVariantsDto(
-                            user.UserMeta.Image.BaseUrl,
-                            user.UserMeta.Image.Variants
+                            user.Meta.Image.BaseUrl,
+                            user.Meta.Image.Variants
                                 .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
                                 .ToList()),
-                        user.UserMeta.Image.R,
-                        user.UserMeta.Image.G,
-                        user.UserMeta.Image.B),
+                        user.Meta.Image.R,
+                        user.Meta.Image.G,
+                        user.Meta.Image.B),
                     user.TotalLikes, user.Comments.Count, user.Contents.Count, user.Followers.Count,
                     user.Following.Count, user.OwnedChannels.Count, user.SubscripedChannels.Count))
             .AsNoTracking()

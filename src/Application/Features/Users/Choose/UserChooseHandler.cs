@@ -28,13 +28,13 @@ public class UserChooseHandler : IRequestHandler<UserChooseQuery, Result<UserDto
                 userDto.Role.ToString(),
                 new ImageDto(
                     new ImageVariantsDto(
-                        userDto.UserMeta.Image.BaseUrl,
-                        userDto.UserMeta.Image.Variants
+                        userDto.Meta.Image.BaseUrl,
+                        userDto.Meta.Image.Variants
                             .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
                             .ToList()),
-                    userDto.UserMeta.Image.R,
-                    userDto.UserMeta.Image.G,
-                    userDto.UserMeta.Image.B),
+                    userDto.Meta.Image.R,
+                    userDto.Meta.Image.G,
+                    userDto.Meta.Image.B),
                 userDto.TotalLikes, userDto.Comments.Count, userDto.Contents.Count, userDto.Followers.Count,
                 userDto.Following.Count, userDto.OwnedChannels.Count, userDto.SubscripedChannels.Count))
             .AsNoTracking()

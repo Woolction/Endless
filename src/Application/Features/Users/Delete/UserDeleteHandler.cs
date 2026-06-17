@@ -24,7 +24,7 @@ public class UserDeleteHandler : IRequestHandler<UserDeleteCommand, Result<Null>
     {
         var user = await context.Users
             .Where(user => user.Id == cmd.UserId)
-            .Select(user => new { user, iconsPath = user.UserMeta.Image.BaseUrl })
+            .Select(user => new { user, iconsPath = user.Meta.Image.BaseUrl })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (user == null)
