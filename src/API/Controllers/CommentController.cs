@@ -83,33 +83,30 @@ public class CommentController : ControllerBase
     {
         Guid currentUserId = this.GetIDFromClaim();
 
-        var currentUser = await context.Users
-            .Select(user => new
-            {
-                u = user,
-                uResponse = new UserDto(
+        UserDto? userDto = await context.Users
+            .Where(user => user.Id == currentUserId)
+            .Select(user => new UserDto(
                     user.Id, user.Name, "@" + user.Slug,
                     user.Description ?? "", user.RegistryData, user.Email,
                     user.Role.ToString(), new ImageDto(
                         new ImageVariantsDto(
-                            user.UserMeta.IconBase,
-                            user.UserMeta.Small,
-                            user.UserMeta.Medium,
-                            user.UserMeta.Large),
-                        user.UserMeta.R,
-                        user.UserMeta.G,
-                        user.UserMeta.B), user.TotalLikes,
-                    user.Comments.Count, user.Contents.Count, user.Followers.Count,
-                    user.Following.Count, user.OwnedChannels.Count, user.SubscripedChannels.Count)
-            })
+                            user.UserMeta.Image.BaseUrl,
+                            user.UserMeta.Image.Variants
+                                .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
+                                .ToList()),
+                        user.UserMeta.Image.R,
+                        user.UserMeta.Image.G,
+                        user.UserMeta.Image.B),
+                    user.TotalLikes, user.Comments.Count, user.Contents.Count, user.Followers.Count,
+                    user.Following.Count, user.OwnedChannels.Count, user.SubscripedChannels.Count))
             .AsNoTracking()
-            .FirstOrDefaultAsync(user => user.u.Id == currentUserId);
+            .FirstOrDefaultAsync();
 
         Content? content = await context.Contents
             .AsNoTracking()
             .FirstOrDefaultAsync(content => content.Id == ContentId);
 
-        if (currentUser is null || currentUser.u is null)
+        if (userDto is null)
             return NotFound("User not found");
         if (content is null)
             return NotFound("Content not found");
@@ -130,7 +127,7 @@ public class CommentController : ControllerBase
             newComment.Id, ContentId);
 
         return Created($"api/comment/{newComment.Id}", new CommentSendedDto(
-            newComment.GetCommentDto(), currentUser.uResponse));
+            newComment.GetCommentDto(), userDto));
     }
 
     [HttpPost("{CommentId}")]

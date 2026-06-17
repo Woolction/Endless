@@ -1,8 +1,6 @@
-using Application.Features.Rows.Contents;
 using Microsoft.AspNetCore.Authorization;
 using Application.Features.Contents.Dtos;
 using Microsoft.EntityFrameworkCore;
-using Application.Features.Images;
 using Application.Features.Images;
 using Application.Interfaces.Db;
 using Microsoft.AspNetCore.Mvc;
@@ -35,31 +33,29 @@ public class SavingController : ControllerBase
 
         User? currentUser = await context.Users.FindAsync(currentUserId);
         var content = await context.Contents
-            .Include(c => c.VideoMeta)
-            .Select(content => new
-            {
-                c = content,
-                cResponse = new ContentDto(
+            .Where(content => content.Id == ContentId)
+            .Select(content => new ContentDto(
                     content.Id, content.ChannelId, content.CreatorId,
                     content.Title, content.Slug, content.Description,
                     content.CreatedDate, content.ContentType.ToString(),
                     content.VideoMeta.DurationSeconds, content.VideoMeta.VideoUrl,
                     new ImageDto(
                         new ImageVariantsDto(
-                            content.VideoMeta.PhotoBase,
-                            content.VideoMeta.Small,
-                            content.VideoMeta.Medium,
-                            content.VideoMeta.Large),
-                        content.VideoMeta.R,
-                        content.VideoMeta.G,
-                        content.VideoMeta.B),
-                    content.Savers.Count, content.Likers.Count, content.Comments.Count, content.DisLikers.Count, content.ViewsCount)
-            })
-            .FirstOrDefaultAsync(content => content.c.Id == ContentId);
+                            content.VideoMeta.Image.BaseUrl,
+                            content.VideoMeta.Image.Variants
+                                .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
+                                .ToList()),
+                        content.VideoMeta.Image.R,
+                        content.VideoMeta.Image.G,
+                        content.VideoMeta.Image.B),
+                    content.Savers.Count + 1, content.Likers.Count, content.Comments.Count,
+                    content.DisLikers.Count, content.ViewsCount))
+            .AsNoTracking()
+            .FirstOrDefaultAsync();
 
         if (currentUser is null)
             return NotFound("User not found");
-        if (content is null || content.c is null)
+        if (content is null)
             return NotFound("Content not found");
 
         SavedContent savedContent = new()
@@ -77,7 +73,7 @@ public class SavingController : ControllerBase
           currentUserId, ContentId);
 
         return Created($"api/saving/user/{savedContent.UserId}/content/{savedContent.ContentId}",
-            content.cResponse);
+            content);
     }
 
     [HttpGet("user/{UserId}/content/{ContentId}")]

@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Application.Features.Channels.Dtos;
-using Application.Features.Rows.Contents;
 using Microsoft.EntityFrameworkCore;
-using Application.Features.Images;
 using Application.Features.Images;
 using Application.Interfaces.Db;
 using Microsoft.AspNetCore.Mvc;
@@ -118,21 +116,24 @@ public class ChannelOwnersController : ControllerBase
             currentUserId, UserId, ChannelId);
 
         return Created($"api/ChannelOwners/user/{UserId}/Channel/{ChannelId}",
-            await context.Channels.Select(channel => new ChannelDto(
-                channel.Id, channel.Name, "@" + channel.Slug,
-                channel.Description ?? "", channel.CreatedDate,
-                new ImageDto(
-                    new ImageVariantsDto(
-                        channel.ChannelMeta.IconBase,
-                        channel.ChannelMeta.Small,
-                        channel.ChannelMeta.Medium,
-                        channel.ChannelMeta.Large),
-                    channel.ChannelMeta.R,
-                    channel.ChannelMeta.G,
-                    channel.ChannelMeta.B),
-                0, 0, channel.Owners.Count,
-                channel.TotalLikes, channel.TotalViews))
-            .FirstAsync(Channel => Channel.Id == ChannelId));
+            await context.Channels
+                .Where(channel => channel.Id == ChannelId)
+                .Select(channel => new ChannelDto(
+                    channel.Id, channel.Name, "@" + channel.Slug,
+                    channel.Description ?? "", channel.CreatedDate,
+                    new ImageDto(
+                        new ImageVariantsDto(
+                            channel.ChannelMeta.Image.BaseUrl,
+                            channel.ChannelMeta.Image.Variants
+                                .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
+                                .ToList()),
+                        channel.ChannelMeta.Image.R,
+                        channel.ChannelMeta.Image.G,
+                        channel.ChannelMeta.Image.B),
+                channel.Subscribers.Count, channel.Contents.Count,
+                channel.Owners.Count, channel.TotalLikes, channel.TotalViews))
+                .AsNoTracking()
+                .FirstAsync());
     }
 
     [Authorize(Policy = nameof(UserRole.Creator))]

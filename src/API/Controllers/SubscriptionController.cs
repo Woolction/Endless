@@ -1,10 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
-using Application.Features.Rows.Contents;
 using Application.Features.Channels.Dtos;
 using Microsoft.EntityFrameworkCore;
 using Application.Features.Images;
 using Application.Interfaces.Db;
-using Application.Features.Images;
 using Microsoft.AspNetCore.Mvc;
 using Application.Utilities;
 using Domain.Common.Enums;
@@ -35,29 +33,27 @@ public class SubscriptionController : ControllerBase
 
         User? currentUser = await context.Users.FindAsync(currentUserId);
         var channel = await context.Channels
-            .Select(channel => new
-            {
-                c = channel,
-                dto = new ChannelDto(
+            .Where(channel => channel.Id == ChannelId)
+            .Select(channel => new ChannelDto(
                     channel.Id, channel.Name, "@" + channel.Slug,
                     channel.Description ?? "", channel.CreatedDate,
                     new ImageDto(
                         new ImageVariantsDto(
-                            channel.ChannelMeta.IconBase,
-                            channel.ChannelMeta.Small,
-                            channel.ChannelMeta.Medium,
-                            channel.ChannelMeta.Large),
-                        channel.ChannelMeta.R,
-                        channel.ChannelMeta.G,
-                        channel.ChannelMeta.B), channel.Subscribers.Count,
-                    0, 0, channel.TotalLikes, channel.TotalViews)
-            })
+                            channel.ChannelMeta.Image.BaseUrl,
+                            channel.ChannelMeta.Image.Variants
+                                .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
+                                .ToList()),
+                        channel.ChannelMeta.Image.R,
+                        channel.ChannelMeta.Image.G,
+                        channel.ChannelMeta.Image.B),
+                    channel.Subscribers.Count + 1,
+                    0, 0, channel.TotalLikes, channel.TotalViews))
             .AsNoTracking()
-            .FirstOrDefaultAsync(channel => channel.c.Id == ChannelId);
+            .FirstOrDefaultAsync();
 
         if (currentUser is null)
             return NotFound("User not found");
-        if (channel is null || channel.c is null)
+        if (channel is null)
             return NotFound("channel not found");
 
         ChannelSubscription ChannelSubscription = new()
@@ -76,7 +72,7 @@ public class SubscriptionController : ControllerBase
           currentUserId, ChannelId);
 
         return Created($"api/subscription/user/{currentUserId}/channel/{ChannelId}",
-            channel.dto);
+            channel);
     }
 
     [HttpGet("user/{UserId}/channel/{ChannelId}")]
