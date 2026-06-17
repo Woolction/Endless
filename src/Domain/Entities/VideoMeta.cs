@@ -17,15 +17,6 @@ public class VideoMeta
     public Image Image { get; set; } = new() { BaseUrl = "/storage/images/content" };
 
 
-    public string PhotoBase { get; set; } = "/storage/content-previews";
-    public string Small { get; set; } = string.Empty;
-    public string? Medium { get; set; }
-    public string? Large { get; set; }
-
-    public int R { get; set; }
-    public int G { get; set; }
-    public int B { get; set; }
-
     public void SetVideo(string videoUrl, int durationSeconds)
     {
         VideoUrl = videoUrl;
