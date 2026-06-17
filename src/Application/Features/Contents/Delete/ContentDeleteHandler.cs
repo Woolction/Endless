@@ -34,32 +34,33 @@ public class ContentDeleteHandler : IRequestHandler<ContentDeleteCommand, Result
             return Result<Null>.Failure(403, "You doesn't owner the Content");
         }
 
-        Content? content = await context.Contents
-            .Include(c => c.VideoMeta)
-            .FirstOrDefaultAsync(c => c.Id == cmd.ContentId, cancellationToken: cancellationToken);
+        var content = await context.Contents
+            .Where(content => content.Id == cmd.ContentId)
+            .Select(content => new
+            {
+                content,
+                videoPath = content.VideoMeta.VideoUrl,
+                previewPath = content.VideoMeta.Image.BaseUrl
+            })
+            .FirstOrDefaultAsync(cancellationToken: cancellationToken);
 
         if (content == null)
             return Result<Null>.Failure(404, "Content not found");
 
         // for local storage
-        string path = content.VideoMeta.VideoUrl;
 
-        if (!string.IsNullOrEmpty(path))
+        if (!string.IsNullOrEmpty(content.videoPath))
         {
-            string? directoryName = Path.GetDirectoryName(path);
+            string? directoryName = Path.GetDirectoryName(content.videoPath);
 
             if (directoryName != null)
                 Directory.Delete(directoryName, true);
         }
 
-        path = content.VideoMeta.PhotoBase;
+        if (!string.IsNullOrEmpty(content.previewPath) && Directory.Exists(content.previewPath))
+            Directory.Delete(content.previewPath, true);
 
-        if (!string.IsNullOrEmpty(path) && Directory.Exists(path))
-        {
-            Directory.Delete(path, true);
-        }
-
-        context.Contents.Remove(content);
+        context.Contents.Remove(content.content);
 
         await context.SaveChangesAsync();
 

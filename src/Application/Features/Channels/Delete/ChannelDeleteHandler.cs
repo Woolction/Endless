@@ -32,33 +32,38 @@ public class ChannelDeleteHandler : IRequestHandler<ChannelDeleteCommand, Result
 
         if (currentOwner == null)
         {
-            logger.LogWarning("User {UserId} tried to delete Channel {ChannelId} without permission",
+            logger.LogWarning("User {UserId} tried to delete channel {ChannelId} without permission",
                 cmd.UserId, cmd.ChannelId);
 
-            return Result<Null>.Failure(403, "You doesn't owner the Channel");
+            return Result<Null>.Failure(403, "You doesn't owner the channel");
         }
 
         if (currentOwner.OwnerRole != ChannelOwnerRole.Admin)
         {
-            logger.LogWarning("Delete denied for user {UserId} on Channel {ChannelId}",
+            logger.LogWarning("Delete denied for user {UserId} on channel {ChannelId}",
                 cmd.UserId, cmd.ChannelId);
 
             return Result<Null>.Failure(403, "You do not have sufficient rights");
         }
 
-        Channel? Channel = await context.Channels.FindAsync(
-            cmd.ChannelId, cancellationToken);
+        var channel = await context.Channels
+            .Where(channel => channel.Id == cmd.ChannelId)
+            .Select(channel => new { iconsPath = channel.ChannelMeta.Image.BaseUrl, channel })
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (Channel == null)
-            return Result<Null>.Failure(404, "Channel not found");
+        if (channel == null)
+            return Result<Null>.Failure(404, "channel not found");
 
-        context.Channels.Remove(Channel);
+        if (!string.IsNullOrEmpty(channel.iconsPath) && Directory.Exists(channel.iconsPath))
+            Directory.Delete(channel.iconsPath, true);
+
+        context.Channels.Remove(channel.channel);
 
         await context.SaveChangesAsync();
 
         await channelRepository.DeleteSearchIndex(cmd.ChannelId, cancellationToken);
 
-        logger.LogInformation("Channel {ChannelId} deleted", cmd.ChannelId);
+        logger.LogInformation("channel {ChannelId} deleted", cmd.ChannelId);
 
         return Result<Null>.Success(204, new Null());
     }
