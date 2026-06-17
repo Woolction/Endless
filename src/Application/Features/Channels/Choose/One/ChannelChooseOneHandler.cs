@@ -1,10 +1,8 @@
-using Application.Features.Rows.Contents;
 using Application.Features.Channels.Dtos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Application.Features.Images;
 using Application.Interfaces.Db;
-using Application.Features.Images;
 using MediatR;
 
 namespace Application.Features.Channels.Choose.One;
@@ -30,16 +28,15 @@ public class ChannelChooseOneHandler : IRequestHandler<ChannelChooseOneQuery, Re
                 channel.Description ?? "", channel.CreatedDate,
                 new ImageDto(
                     new ImageVariantsDto(
-                        channel.ChannelMeta.IconBase,
-                        channel.ChannelMeta.Small,
-                        channel.ChannelMeta.Medium,
-                        channel.ChannelMeta.Large),
-                    channel.ChannelMeta.R,
-                    channel.ChannelMeta.G,
-                    channel.ChannelMeta.B),
-                channel.Subscribers.Count,
-                channel.Contents.Count, channel.Owners.Count,
-                channel.TotalLikes, channel.TotalViews))
+                        channel.ChannelMeta.Image.BaseUrl,
+                        channel.ChannelMeta.Image.Variants
+                            .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
+                            .ToList()),
+                    channel.ChannelMeta.Image.R,
+                    channel.ChannelMeta.Image.G,
+                    channel.ChannelMeta.Image.B),
+                channel.Subscribers.Count, channel.Contents.Count,
+                channel.Owners.Count, channel.TotalLikes, channel.TotalViews))
             .FirstOrDefaultAsync(cancellationToken);
 
         if (channelDto == null)

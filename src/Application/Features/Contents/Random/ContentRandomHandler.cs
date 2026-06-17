@@ -1,10 +1,8 @@
 using Application.Features.Contents.Dtos;
-using Application.Features.Rows.Contents;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Application.Features.Images;
 using Application.Interfaces.Db;
-using Application.Features.Images;
 using MediatR;
 
 namespace Application.Features.Contents.Random;
@@ -34,32 +32,32 @@ public class ContentRandomHandler : IRequestHandler<ContentRandomQuery, Result<C
                 c.Channel == null ?
                 new ImageDto(
                     new ImageVariantsDto(
-                        c.Creator!.UserMeta.IconBase,
-                        c.Creator!.UserMeta.Small,
-                        c.Creator!.UserMeta.Medium,
-                        c.Creator!.UserMeta.Large),
-                    c.Creator!.UserMeta.R,
-                    c.Creator!.UserMeta.G,
-                    c.Creator!.UserMeta.B) :
+                        c.Creator!.UserMeta.Image.BaseUrl,
+                        c.Creator!.UserMeta.Image.Variants
+                            .Select(v => new ImageVariantDto(v.Url, v.Height, v.Width))
+                            .ToList()),
+                    c.Creator!.UserMeta.Image.R,
+                    c.Creator!.UserMeta.Image.G,
+                    c.Creator!.UserMeta.Image.B) :
                 new ImageDto(
                     new ImageVariantsDto(
-                        c.Channel.ChannelMeta.IconBase,
-                        c.Channel.ChannelMeta.Small,
-                        c.Channel.ChannelMeta.Medium,
-                        c.Channel.ChannelMeta.Large),
-                    c.Channel.ChannelMeta.R,
-                    c.Channel.ChannelMeta.G,
-                    c.Channel.ChannelMeta.B),
+                        c.Channel.ChannelMeta.Image.BaseUrl,
+                        c.Channel.ChannelMeta.Image.Variants
+                            .Select(v => new ImageVariantDto(v.Url, v.Height, v.Width))
+                            .ToList()),
+                    c.Channel.ChannelMeta.Image.R,
+                    c.Channel.ChannelMeta.Image.G,
+                    c.Channel.ChannelMeta.Image.B),
                 c.Title, c.Slug, c.Description, c.CreatedDate, c.ContentType.ToString(),
                 c.VideoMeta.DurationSeconds, c.VideoMeta.VideoUrl, new ImageDto(
                     new ImageVariantsDto(
-                        c.VideoMeta.PhotoBase,
-                        c.VideoMeta.Small,
-                        c.VideoMeta.Medium,
-                        c.VideoMeta.Large),
-                    c.VideoMeta.R,
-                    c.VideoMeta.G,
-                    c.VideoMeta.B),
+                        c.VideoMeta.Image.BaseUrl,
+                        c.VideoMeta.Image.Variants
+                            .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
+                            .ToList()),
+                    c.VideoMeta.Image.R,
+                    c.VideoMeta.Image.G,
+                    c.VideoMeta.Image.B),
                 c.ViewsCount))
             .Take(25)
             .ToArrayAsync(cancellationToken);

@@ -1,9 +1,7 @@
-using Application.Features.Rows.Contents;
 using Application.Features.Contents.Dtos;
 using Application.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Application.Features.Images;
 using Application.Features.Images;
 using Application.Interfaces.Db;
 using Domain.Entities;
@@ -94,36 +92,39 @@ public class ContentRecommendationHandler : IRequestHandler<ContentRecommendatio
             {
                 dynamic owner = (c.Channel == null ? c.Creator : c.Channel)!;
 
+                ImageDto imageDto = c.Channel == null ?
+                    new ImageDto(
+                        new ImageVariantsDto(
+                            c.Creator!.UserMeta.Image.BaseUrl,
+                            c.Creator.UserMeta.Image.Variants
+                                .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
+                                .ToList()),
+                        c.Creator.UserMeta.Image.R,
+                        c.Creator.UserMeta.Image.G,
+                        c.Creator.UserMeta.Image.B) :
+                    new ImageDto(
+                        new ImageVariantsDto(
+                            c.Channel.ChannelMeta.Image.BaseUrl,
+                            c.Channel.ChannelMeta.Image.Variants
+                                .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
+                                .ToList()),
+                        c.Channel.ChannelMeta.Image.R,
+                        c.Channel.ChannelMeta.Image.G,
+                        c.Channel.ChannelMeta.Image.B);
+
                 return new ContentFeedDto(
-                    c.Id, c.ChannelId, c.CreatorId, owner.Name, owner.Slug, owner.GetType() == typeof(User) ?
-                    new ImageDto(
-                        new ImageVariantsDto(
-                            owner.UserMeta.IconBase,
-                            owner.UserMeta.Small,
-                            owner.UserMeta.Medium,
-                            owner.UserMeta.Large),
-                        owner.UserMeta.R,
-                        owner.UserMeta.G,
-                        owner.UserMeta.B) :
-                    new ImageDto(
-                        new ImageVariantsDto(
-                            owner.ChannelMeta.IconBase,
-                            owner.ChannelMeta.Small,
-                            owner.ChannelMeta.Medium,
-                            owner.ChannelMeta.Large),
-                        owner.ChannelMeta.R,
-                        owner.ChannelMeta.G,
-                        owner.ChannelMeta.B),
+                    c.Id, c.ChannelId, c.CreatorId,
+                    owner.Name, owner.Slug, imageDto,
                     c.Title, c.Slug, c.Description, c.CreatedDate, c.ContentType.ToString(),
                     c.VideoMeta.DurationSeconds, c.VideoMeta.VideoUrl, new ImageDto(
                         new ImageVariantsDto(
-                            c.VideoMeta.PhotoBase,
-                            c.VideoMeta.Small,
-                            c.VideoMeta.Medium,
-                            c.VideoMeta.Large),
-                        c.VideoMeta.R,
-                        c.VideoMeta.G,
-                        c.VideoMeta.B),
+                            c.VideoMeta.Image.BaseUrl,
+                            c.VideoMeta.Image.Variants
+                                .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
+                                .ToList()),
+                        c.VideoMeta.Image.R,
+                        c.VideoMeta.Image.G,
+                        c.VideoMeta.Image.B),
                     c.ViewsCount);
             })
             .OrderBy(_ => System.Random.Shared.NextDouble())

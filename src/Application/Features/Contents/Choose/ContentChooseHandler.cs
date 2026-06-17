@@ -1,8 +1,6 @@
-using Application.Features.Rows.Contents;
 using Application.Features.Contents.Dtos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Application.Features.Images;
 using Application.Features.Images;
 using Application.Interfaces.Db;
 using MediatR;
@@ -25,19 +23,22 @@ public class ContentChooseHandler : IRequestHandler<ContentChooseQuery, Result<C
         ContentDto? changedContent = await context.Contents
             .AsNoTracking()
             .Where(content => content.Id == query.ContentId)
-            .Select(content => new ContentDto(content.Id, content.ChannelId, content.CreatorId,
+            .Select(content => new ContentDto(
+                    content.Id, content.ChannelId, content.CreatorId,
                     content.Title, content.Slug, content.Description,
                     content.CreatedDate, content.ContentType.ToString(),
-                    content.VideoMeta.DurationSeconds, content.VideoMeta.VideoUrl, new ImageDto(
+                    content.VideoMeta.DurationSeconds, content.VideoMeta.VideoUrl,
+                    new ImageDto(
                         new ImageVariantsDto(
-                            content.VideoMeta.PhotoBase,
-                            content.VideoMeta.Small,
-                            content.VideoMeta.Medium,
-                            content.VideoMeta.Large),
-                        content.VideoMeta.R,
-                        content.VideoMeta.G,
-                        content.VideoMeta.B),
-                    content.Savers.Count, content.Likers.Count, content.Comments.Count, content.DisLikers.Count, content.ViewsCount))
+                            content.VideoMeta.Image.BaseUrl,
+                            content.VideoMeta.Image.Variants
+                                .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
+                                .ToList()),
+                        content.VideoMeta.Image.R,
+                        content.VideoMeta.Image.G,
+                        content.VideoMeta.Image.B),
+                    content.Savers.Count + 1, content.Likers.Count, content.Comments.Count,
+                    content.DisLikers.Count, content.ViewsCount))
             .FirstOrDefaultAsync(cancellationToken);
 
         if (changedContent == null)
