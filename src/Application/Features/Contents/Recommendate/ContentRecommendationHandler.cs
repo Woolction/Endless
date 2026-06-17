@@ -34,9 +34,9 @@ public class ContentRecommendationHandler : IRequestHandler<ContentRecommendatio
             .Where(c => c.RandomKey > r)
             .Include(c => c.VideoMeta)
             .Include(c => c.Channel)
-                .ThenInclude(ch => ch.ChannelMeta)
+                .ThenInclude(ch => ch.Meta)
             .Include(c => c.Creator)
-                .ThenInclude(u => u.UserMeta)
+                .ThenInclude(u => u.Meta)
             .Take(300)
             .ToListAsync(cancellationToken);
 
@@ -47,9 +47,9 @@ public class ContentRecommendationHandler : IRequestHandler<ContentRecommendatio
                 .Where(c => c.RandomKey < r && c.VideoMeta != null)
                 .Include(c => c.VideoMeta)
                 .Include(c => c.Channel)
-                    .ThenInclude(ch => ch.ChannelMeta)
+                    .ThenInclude(ch => ch.Meta)
                 .Include(c => c.Creator)
-                    .ThenInclude(u => u.UserMeta)
+                    .ThenInclude(u => u.Meta)
                 .Take(300 - candidates.Count)
                 .ToListAsync(cancellationToken);
 
@@ -95,22 +95,22 @@ public class ContentRecommendationHandler : IRequestHandler<ContentRecommendatio
                 ImageDto imageDto = c.Channel == null ?
                     new ImageDto(
                         new ImageVariantsDto(
-                            c.Creator!.UserMeta.Image.BaseUrl,
-                            c.Creator.UserMeta.Image.Variants
+                            c.Creator!.Meta.Image.BaseUrl,
+                            c.Creator.Meta.Image.Variants
                                 .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
                                 .ToList()),
-                        c.Creator.UserMeta.Image.R,
-                        c.Creator.UserMeta.Image.G,
-                        c.Creator.UserMeta.Image.B) :
+                        c.Creator.Meta.Image.R,
+                        c.Creator.Meta.Image.G,
+                        c.Creator.Meta.Image.B) :
                     new ImageDto(
                         new ImageVariantsDto(
-                            c.Channel.ChannelMeta.Image.BaseUrl,
-                            c.Channel.ChannelMeta.Image.Variants
+                            c.Channel.Meta.Image.BaseUrl,
+                            c.Channel.Meta.Image.Variants
                                 .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
                                 .ToList()),
-                        c.Channel.ChannelMeta.Image.R,
-                        c.Channel.ChannelMeta.Image.G,
-                        c.Channel.ChannelMeta.Image.B);
+                        c.Channel.Meta.Image.R,
+                        c.Channel.Meta.Image.G,
+                        c.Channel.Meta.Image.B);
 
                 return new ContentFeedDto(
                     c.Id, c.ChannelId, c.CreatorId,

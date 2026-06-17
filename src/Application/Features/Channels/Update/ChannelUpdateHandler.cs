@@ -36,8 +36,8 @@ public class ChannelUpdateHandler : IRequestHandler<ChannelUpdateCommand, Result
             .Select(channel => new
             {
                 c = channel,
-                image = channel.ChannelMeta.Image,
-                variants = channel.ChannelMeta.Image.Variants,
+                image = channel.Meta.Image,
+                variants = channel.Meta.Image.Variants,
                 dto = new ChannelUpdateDto(
                     channel.Id, channel.Name, "@" + channel.Slug,
                     channel.Description ?? "", channel.CreatedDate, "Processing...")

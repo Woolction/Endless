@@ -48,7 +48,7 @@ public class ChannelDeleteHandler : IRequestHandler<ChannelDeleteCommand, Result
 
         var channel = await context.Channels
             .Where(channel => channel.Id == cmd.ChannelId)
-            .Select(channel => new { iconsPath = channel.ChannelMeta.Image.BaseUrl, channel })
+            .Select(channel => new { iconsPath = channel.Meta.Image.BaseUrl, channel })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (channel == null)

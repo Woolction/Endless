@@ -28,13 +28,13 @@ public class ChannelChooseOneHandler : IRequestHandler<ChannelChooseOneQuery, Re
                 channel.Description ?? "", channel.CreatedDate,
                 new ImageDto(
                     new ImageVariantsDto(
-                        channel.ChannelMeta.Image.BaseUrl,
-                        channel.ChannelMeta.Image.Variants
+                        channel.Meta.Image.BaseUrl,
+                        channel.Meta.Image.Variants
                             .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
                             .ToList()),
-                    channel.ChannelMeta.Image.R,
-                    channel.ChannelMeta.Image.G,
-                    channel.ChannelMeta.Image.B),
+                    channel.Meta.Image.R,
+                    channel.Meta.Image.G,
+                    channel.Meta.Image.B),
                 channel.Subscribers.Count, channel.Contents.Count,
                 channel.Owners.Count, channel.TotalLikes, channel.TotalViews))
             .FirstOrDefaultAsync(cancellationToken);

@@ -8,7 +8,7 @@ public class Channel
     public string? Description { get; set; }
     public DateTime CreatedDate { get; set; }
 
-    public ChannelMeta ChannelMeta { get; set; } = new();
+    public ChannelMeta Meta { get; set; } = new();
 
     public long TotalViews { get; set; }
     public long TotalLikes { get; set; }

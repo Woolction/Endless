@@ -32,22 +32,22 @@ public class ContentRandomHandler : IRequestHandler<ContentRandomQuery, Result<C
                 c.Channel == null ?
                 new ImageDto(
                     new ImageVariantsDto(
-                        c.Creator!.UserMeta.Image.BaseUrl,
-                        c.Creator!.UserMeta.Image.Variants
+                        c.Creator!.Meta.Image.BaseUrl,
+                        c.Creator!.Meta.Image.Variants
                             .Select(v => new ImageVariantDto(v.Url, v.Height, v.Width))
                             .ToList()),
-                    c.Creator!.UserMeta.Image.R,
-                    c.Creator!.UserMeta.Image.G,
-                    c.Creator!.UserMeta.Image.B) :
+                    c.Creator!.Meta.Image.R,
+                    c.Creator!.Meta.Image.G,
+                    c.Creator!.Meta.Image.B) :
                 new ImageDto(
                     new ImageVariantsDto(
-                        c.Channel.ChannelMeta.Image.BaseUrl,
-                        c.Channel.ChannelMeta.Image.Variants
+                        c.Channel.Meta.Image.BaseUrl,
+                        c.Channel.Meta.Image.Variants
                             .Select(v => new ImageVariantDto(v.Url, v.Height, v.Width))
                             .ToList()),
-                    c.Channel.ChannelMeta.Image.R,
-                    c.Channel.ChannelMeta.Image.G,
-                    c.Channel.ChannelMeta.Image.B),
+                    c.Channel.Meta.Image.R,
+                    c.Channel.Meta.Image.G,
+                    c.Channel.Meta.Image.B),
                 c.Title, c.Slug, c.Description, c.CreatedDate, c.ContentType.ToString(),
                 c.VideoMeta.DurationSeconds, c.VideoMeta.VideoUrl, new ImageDto(
                     new ImageVariantsDto(

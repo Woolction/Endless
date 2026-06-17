@@ -64,7 +64,7 @@ public class EndlessContext : DbContext, IAppDbContext
         EntityTypeBuilder<UserMeta> userMetaBuilder = builder.Entity<UserMeta>();
         userMetaBuilder
             .HasOne(c => c.User)
-            .WithOne(c => c.UserMeta)
+            .WithOne(c => c.Meta)
             .HasForeignKey<UserMeta>(c => c.UserId);
         userMetaBuilder
             .HasOne(u => u.Image)
@@ -113,7 +113,7 @@ public class EndlessContext : DbContext, IAppDbContext
         EntityTypeBuilder<ChannelMeta> ChannelMetaBuilder = builder.Entity<ChannelMeta>();
         ChannelMetaBuilder
             .HasOne(c => c.Channel)
-            .WithOne(c => c.ChannelMeta)
+            .WithOne(c => c.Meta)
             .HasForeignKey<ChannelMeta>(c => c.ChannelId);
         ChannelMetaBuilder
             .HasOne(c => c.Image)
