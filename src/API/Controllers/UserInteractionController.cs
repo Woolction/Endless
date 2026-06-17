@@ -37,10 +37,10 @@ public class UserInteractionController : ControllerBase
 
         User? currentUser = await context.Users.FindAsync(currentUserId);
         Content? content = await context.Contents
-            .Include(content => content.VideoMeta)
+            .Include(content => content.Meta)
             .FirstOrDefaultAsync(content => content.Id == ContentId);
 
-        if (currentUser == null || content == null || content.VideoMeta == null)
+        if (currentUser == null || content == null || content.Meta == null)
             return NotFound("User or Content or Meta not found");
 
         UserInteractionContent? userInteraction = await context.UserInteractionContents

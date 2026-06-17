@@ -265,7 +265,7 @@ public class EndlessContext : DbContext, IAppDbContext
         EntityTypeBuilder<VideoMeta> videoMetaBuilder = builder.Entity<VideoMeta>();
         videoMetaBuilder
             .HasOne(v => v.Content)
-            .WithOne(c => c.VideoMeta)
+            .WithOne(c => c.Meta)
             .HasForeignKey<VideoMeta>(v => v.ContentId);
         videoMetaBuilder
             .HasOne(v => v.Image)

@@ -112,6 +112,6 @@ public class ContentCreateHandler : IRequestHandler<ContentCreateCommand, Result
             content.Id, content.ChannelId, content.CreatorId,
             content.Title, content.Slug, content.Description,
             content.CreatedDate, content.ContentType.ToString(), 0,
-            content.VideoMeta.VideoUrl, "Created"));
+            content.Meta.VideoUrl, "Created"));
     }
 }

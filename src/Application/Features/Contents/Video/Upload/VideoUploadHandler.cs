@@ -90,7 +90,7 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
         var context = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
         Content content = await context.Contents
-            .Include(c => c.VideoMeta)
+            .Include(c => c.Meta)
                 .ThenInclude(m => m.Image)
                     .ThenInclude(i => i.Variants)
             .FirstAsync(c => c.Id == message.ContentId, cancellationToken: token);
@@ -99,29 +99,29 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
 
         // for local storage
 
-        if (Directory.Exists(content.VideoMeta.Image.BaseUrl))
-            Directory.Delete(content.VideoMeta.Image.BaseUrl, true);
+        if (Directory.Exists(content.Meta.Image.BaseUrl))
+            Directory.Delete(content.Meta.Image.BaseUrl, true);
 
         await imageAnalyzer.SetImageVariants(
-            content.VideoMeta.Image, imageVariants, token);
+            content.Meta.Image, imageVariants, token);
 
         /* old
-        if (Directory.Exists(content.VideoMeta.PhotoBase))
-            Directory.Delete(content.VideoMeta.PhotoBase, true);
+        if (Directory.Exists(content.Meta.PhotoBase))
+            Directory.Delete(content.Meta.PhotoBase, true);
 
-        content.VideoMeta.SetPhoto(
+        content.Meta.SetPhoto(
             imageVariants.BaseUrl, imageVariants.Small, imageVariants.Medium, imageVariants.Large);
         await imageAnalyzer.SetAverageColor(
-            Path.Combine(imageVariants.BaseUrl, imageVariants.Small), content.VideoMeta.SetColor, token);*/
+            Path.Combine(imageVariants.BaseUrl, imageVariants.Small), content.Meta.SetColor, token);*/
 
         // set video
         // for local storage
-        string? directoryName = Path.GetDirectoryName(content.VideoMeta.VideoUrl);
+        string? directoryName = Path.GetDirectoryName(content.Meta.VideoUrl);
 
         if (directoryName != null)
             Directory.Delete(directoryName, true);
 
-        content.VideoMeta.SetVideo(
+        content.Meta.SetVideo(
             videoUrl, (int)duration);
 
         await context.SaveChangesAsync();
@@ -129,7 +129,7 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
         // publish to upserting search index
         await publisher.Publish(
             new SearchIndexUpsertMessage(nameof(Content),
-                JsonSerializer.Serialize(new ContentSearchIndex(content, content.VideoMeta, content.VideoMeta.Image, content.VideoMeta.Image.Variants))), token);
+                JsonSerializer.Serialize(new ContentSearchIndex(content, content.Meta, content.Meta.Image, content.Meta.Image.Variants))), token);
 
         // delete the files
         if (!string.IsNullOrEmpty(message.ImagePath) && File.Exists(message.ImagePath))

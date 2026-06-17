@@ -36,7 +36,7 @@ public class ContentUpdateHandler : IRequestHandler<ContentUpdateCommand, Result
             .Where(content =>
                 content.Id == request.ContentId &&
                 content.CreatorId == request.UserId)
-            .Include(c => c.VideoMeta)
+            .Include(c => c.Meta)
             .Select(content => new
             {
                 c = content,
@@ -84,7 +84,7 @@ public class ContentUpdateHandler : IRequestHandler<ContentUpdateCommand, Result
             content.c.Id, content.c.ChannelId, content.c.CreatorId,
             content.c.Title, content.c.Slug, content.c.Description,
             content.c.CreatedDate, content.c.ContentType.ToString(),
-            content.c.VideoMeta.DurationSeconds, content.c.VideoMeta.VideoUrl, "Process...");
+            content.c.Meta.DurationSeconds, content.c.Meta.VideoUrl, "Process...");
 
         return Result<ContentUpdateDto>.Success(200, contentDto);
     }

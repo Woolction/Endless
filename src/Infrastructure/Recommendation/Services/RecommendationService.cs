@@ -6,16 +6,16 @@ namespace Recommendation.Services;
 
 public class RecommendationService : IRecommendationService
 {
-    public float Recommend(UserGenreVector[] userGenres, Content content, VideoMeta? videoMeta, ContentGenreVector[] contentGenres, int vectorsCount)
+    public float Recommend(UserGenreVector[] userGenres, Content content, VideoMeta? meta, ContentGenreVector[] contentGenres, int vectorsCount)
     {
         float similarity = VectorManager.CosineSimilarity(
             userGenres, contentGenres, vectorsCount, x => x.Value, b => b.FinalVector);
 
-        float trending = CalculateTrending(content, videoMeta);
+        float trending = CalculateTrending(content, meta);
 
         float freshness = CalculateFreshness(content);
 
-        float quality = CalculateQuality(content, videoMeta);
+        float quality = CalculateQuality(content, meta);
 
         return
             0.55f * similarity +
@@ -24,7 +24,7 @@ public class RecommendationService : IRecommendationService
             0.10f * quality;
     }
 
-    private float CalculateTrending(Content content, VideoMeta? videoMeta)
+    private float CalculateTrending(Content content, VideoMeta? meta)
     {
         float hours =
             (float)(DateTime.UtcNow - content.CreatedDate).TotalHours;
@@ -39,7 +39,7 @@ public class RecommendationService : IRecommendationService
             WilsonScore(content.Likers.Count, content.ViewsCount);
 
         float watchScore =
-            videoMeta == null ? 0 : videoMeta.AverageWatchRatio;
+            meta == null ? 0 : meta.AverageWatchRatio;
 
         return viewsScore * likeScore * watchScore;
     }
@@ -58,12 +58,12 @@ public class RecommendationService : IRecommendationService
         return freshness;
     }
 
-    private float CalculateQuality(Content content, VideoMeta? videoMeta)
+    private float CalculateQuality(Content content, VideoMeta? meta)
     {
         float likeScore =
             WilsonScore(content.Likers.Count, content.ViewsCount);
 
-        float average = videoMeta == null ? 0 : videoMeta.AverageWatchRatio;
+        float average = meta == null ? 0 : meta.AverageWatchRatio;
 
         return
             0.4f * likeScore +

@@ -32,7 +32,7 @@ public class ContentRecommendationHandler : IRequestHandler<ContentRecommendatio
         var candidates = await context.Contents
             .AsNoTracking()
             .Where(c => c.RandomKey > r)
-            .Include(c => c.VideoMeta)
+            .Include(c => c.Meta)
             .Include(c => c.Channel)
                 .ThenInclude(ch => ch.Meta)
             .Include(c => c.Creator)
@@ -44,8 +44,8 @@ public class ContentRecommendationHandler : IRequestHandler<ContentRecommendatio
         {
             var extra = await context.Contents
                 .AsNoTracking()
-                .Where(c => c.RandomKey < r && c.VideoMeta != null)
-                .Include(c => c.VideoMeta)
+                .Where(c => c.RandomKey < r && c.Meta != null)
+                .Include(c => c.Meta)
                 .Include(c => c.Channel)
                     .ThenInclude(ch => ch.Meta)
                 .Include(c => c.Creator)
@@ -68,7 +68,7 @@ public class ContentRecommendationHandler : IRequestHandler<ContentRecommendatio
 
         IEnumerable<ContentRecoScore> recommended = candidates
             .Select(c => new ContentRecoScore(
-                c, recommendation.Recommend(userGenres, c, c.VideoMeta, context.ContentVectors
+                c, recommendation.Recommend(userGenres, c, c.Meta, context.ContentVectors
                     .Include(cG => cG.Genre)
                     .OrderBy(cG => cG.Genre!.Order)
                     .Where(cG => cG.ContentId == c.Id)
@@ -116,15 +116,15 @@ public class ContentRecommendationHandler : IRequestHandler<ContentRecommendatio
                     c.Id, c.ChannelId, c.CreatorId,
                     owner.Name, owner.Slug, imageDto,
                     c.Title, c.Slug, c.Description, c.CreatedDate, c.ContentType.ToString(),
-                    c.VideoMeta.DurationSeconds, c.VideoMeta.VideoUrl, new ImageDto(
+                    c.Meta.DurationSeconds, c.Meta.VideoUrl, new ImageDto(
                         new ImageVariantsDto(
-                            c.VideoMeta.Image.BaseUrl,
-                            c.VideoMeta.Image.Variants
+                            c.Meta.Image.BaseUrl,
+                            c.Meta.Image.Variants
                                 .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
                                 .ToList()),
-                        c.VideoMeta.Image.R,
-                        c.VideoMeta.Image.G,
-                        c.VideoMeta.Image.B),
+                        c.Meta.Image.R,
+                        c.Meta.Image.G,
+                        c.Meta.Image.B),
                     c.ViewsCount);
             })
             .OrderBy(_ => System.Random.Shared.NextDouble())

@@ -49,15 +49,15 @@ public class ContentRandomHandler : IRequestHandler<ContentRandomQuery, Result<C
                     c.Channel.Meta.Image.G,
                     c.Channel.Meta.Image.B),
                 c.Title, c.Slug, c.Description, c.CreatedDate, c.ContentType.ToString(),
-                c.VideoMeta.DurationSeconds, c.VideoMeta.VideoUrl, new ImageDto(
+                c.Meta.DurationSeconds, c.Meta.VideoUrl, new ImageDto(
                     new ImageVariantsDto(
-                        c.VideoMeta.Image.BaseUrl,
-                        c.VideoMeta.Image.Variants
+                        c.Meta.Image.BaseUrl,
+                        c.Meta.Image.Variants
                             .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
                             .ToList()),
-                    c.VideoMeta.Image.R,
-                    c.VideoMeta.Image.G,
-                    c.VideoMeta.Image.B),
+                    c.Meta.Image.R,
+                    c.Meta.Image.G,
+                    c.Meta.Image.B),
                 c.ViewsCount))
             .Take(25)
             .ToArrayAsync(cancellationToken);

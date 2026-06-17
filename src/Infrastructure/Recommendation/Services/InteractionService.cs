@@ -9,13 +9,13 @@ public class InteractionService : IInteractionService
     //call when user exits the video
     public void Interaction(UserGenreVector[] userVectors, Content content, ContentGenreVector[] contentVectors, UserInteractionContent interaction, int Count)
     {
-        VideoMeta videoMeta = content.VideoMeta!;
+        VideoMeta meta = content.Meta!;
 
-        if (videoMeta.DurationSeconds == 0)
+        if (meta.DurationSeconds == 0)
             return;
 
         float watchRatio =
-            (float)interaction.WatchTimeSeconds / videoMeta.DurationSeconds;
+            (float)interaction.WatchTimeSeconds / meta.DurationSeconds;
 
         watchRatio = MathF.Min(watchRatio, 1f);
 
@@ -73,21 +73,21 @@ public class InteractionService : IInteractionService
 
     private void UpdateWatchStats(Content content, int watchTimeSeconds)
     {
-        VideoMeta videoMeta = content.VideoMeta;
+        VideoMeta meta = content.Meta;
 
         content.ViewsCount++;
 
         float watchRatio =
-            (float)watchTimeSeconds / videoMeta.DurationSeconds;
+            (float)watchTimeSeconds / meta.DurationSeconds;
 
         watchRatio = MathF.Min(watchRatio, 1f);
 
-        videoMeta.AverageWatchTimeSeconds =
-            (int)(videoMeta.AverageWatchTimeSeconds * content.ViewsCount + watchTimeSeconds)
+        meta.AverageWatchTimeSeconds =
+            (int)(meta.AverageWatchTimeSeconds * content.ViewsCount + watchTimeSeconds)
             / (int)(content.ViewsCount);
 
-        videoMeta.AverageWatchRatio =
-            (videoMeta.AverageWatchRatio * content.ViewsCount + watchRatio)
+        meta.AverageWatchRatio =
+            (meta.AverageWatchRatio * content.ViewsCount + watchRatio)
             / (content.ViewsCount);
     }
 }

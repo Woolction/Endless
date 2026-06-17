@@ -39,8 +39,8 @@ public class ContentDeleteHandler : IRequestHandler<ContentDeleteCommand, Result
             .Select(content => new
             {
                 content,
-                videoPath = content.VideoMeta.VideoUrl,
-                previewPath = content.VideoMeta.Image.BaseUrl
+                videoPath = content.Meta.VideoUrl,
+                previewPath = content.Meta.Image.BaseUrl
             })
             .FirstOrDefaultAsync(cancellationToken: cancellationToken);
 

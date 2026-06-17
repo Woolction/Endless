@@ -39,16 +39,16 @@ public class LikingController : ControllerBase
                     content.Id, content.ChannelId, content.CreatorId,
                     content.Title, content.Slug, content.Description,
                     content.CreatedDate, content.ContentType.ToString(),
-                    content.VideoMeta.DurationSeconds, content.VideoMeta.VideoUrl,
+                    content.Meta.DurationSeconds, content.Meta.VideoUrl,
                     new ImageDto(
                         new ImageVariantsDto(
-                            content.VideoMeta.Image.BaseUrl,
-                            content.VideoMeta.Image.Variants
+                            content.Meta.Image.BaseUrl,
+                            content.Meta.Image.Variants
                                 .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
                                 .ToList()),
-                        content.VideoMeta.Image.R,
-                        content.VideoMeta.Image.G,
-                        content.VideoMeta.Image.B),
+                        content.Meta.Image.R,
+                        content.Meta.Image.G,
+                        content.Meta.Image.B),
                     content.Savers.Count, content.Likers.Count + 1, content.Comments.Count,
                     content.DisLikers.Count, content.ViewsCount))
             .AsNoTracking()
