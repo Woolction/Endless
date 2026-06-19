@@ -102,6 +102,10 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
         if (Directory.Exists(content.Meta.Image.BaseUrl))
             Directory.Delete(content.Meta.Image.BaseUrl, true);
 
+        await context.ImageVariants
+            .Where(v => v.ImageId == content.Meta.Image.Id)
+            .ExecuteDeleteAsync(token);
+
         await imageAnalyzer.SetImageVariants(
             content.Meta.Image, imageVariants, token);
 

@@ -57,7 +57,7 @@ public class ImageUploadHandler : IRequestHandler<ImageUploadMessage, Result<Nul
                 return Result<Null>.Failure(500, "user not found");
             }
 
-            await UploadUserIcon(context, meta, iconVariants, token);
+            await UploadIcon(context, meta.Image, iconVariants, token);
 
             await publisher.Publish(
                 new SearchIndexUpsertMessage(nameof(User),
@@ -79,7 +79,7 @@ public class ImageUploadHandler : IRequestHandler<ImageUploadMessage, Result<Nul
                 return Result<Null>.Failure(500, "channel not found");
             }
 
-            await UploadChannelIcon(context, meta, iconVariants, token);
+            await UploadIcon(context, meta.Image, iconVariants, token);
 
             // publish to upserting search index
             await publisher.Publish(
@@ -94,15 +94,19 @@ public class ImageUploadHandler : IRequestHandler<ImageUploadMessage, Result<Nul
         return Result<Null>.Success(200, new Null());
     }
 
-    private async Task UploadUserIcon(IAppDbContext context, UserMeta meta, ImageVariantsDto iconVariants, CancellationToken token)
+    private async Task UploadIcon(IAppDbContext context, Image image, ImageVariantsDto iconVariants, CancellationToken token)
     {
         // delete old data
 
-        if (Directory.Exists(meta.Image.BaseUrl))
-            Directory.Delete(meta.Image.BaseUrl, true);
+        if (Directory.Exists(image.BaseUrl))
+            Directory.Delete(image.BaseUrl, true);
+
+        await context.ImageVariants
+            .Where(v => v.ImageId == image.Id)
+            .ExecuteDeleteAsync(token);
 
         await imageAnalyzer.SetImageVariants(
-            meta.Image, iconVariants, token);
+            image, iconVariants, token);
 
         /* old
         if (Directory.Exists(meta.IconBase))
@@ -113,29 +117,6 @@ public class ImageUploadHandler : IRequestHandler<ImageUploadMessage, Result<Nul
 
         await imageAnalyzer.SetAverageColor(
             Path.Combine(iconVariants.BaseUrl, iconVariants.Small), meta.SetColor, token);*/
-
-        await context.SaveChangesAsync();
-    }
-
-    private async Task UploadChannelIcon(IAppDbContext context, ChannelMeta meta, ImageVariantsDto iconVariants, CancellationToken token)
-    {
-        // delete old data
-
-        if (Directory.Exists(meta.Image.BaseUrl))
-            Directory.Delete(meta.Image.BaseUrl, true);
-
-        await imageAnalyzer.SetImageVariants(
-            meta.Image, iconVariants, token);
-
-        /* old 
-        if (Directory.Exists(meta.IconBase))
-            Directory.Delete(meta.IconBase, true);
-
-        meta.SetPhoto(
-            iconVariants.BaseUrl, iconVariants.Small, iconVariants.Medium, iconVariants.Large);
-        await imageAnalyzer.SetAverageColor(
-            Path.Combine(iconVariants.BaseUrl, iconVariants.Small), meta.SetColor, token);
-        */
 
         await context.SaveChangesAsync();
     }
