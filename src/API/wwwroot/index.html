@@ -146,15 +146,13 @@
 
             const data = await res.json();
 
-            const icon = data.userDto.icon.variants;
+            const avatar = data.userDto.icon;
 
-            userIcon.src = icon.baseUrl + "/" + icon.medium;
+            userIcon.src = avatar.variants[0].url;
 
-            userIcon.srcset = `
-               ${icon.baseUrl}/${icon.small} 64w,    
-               ${icon.baseUrl}/${icon.medium} 128w,    
-               ${icon.baseUrl}/${icon.large} 256w
-               `;
+            userIcon.srcset = avatar.variants
+                .map(v => `${v.url} ${v.width}w`)
+                .join(", ");
 
             userIcon.sizes = "40px";
         }
