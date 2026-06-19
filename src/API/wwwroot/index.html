@@ -148,7 +148,7 @@
 
             const avatar = data.userDto.icon;
 
-            userIcon.src = avatar.variants[0].url;
+            userIcon.src = avatar.variants[0]?.url;
 
             userIcon.srcset = avatar.variants
                 .map(v => `${v.url} ${v.width}w`)
@@ -313,17 +313,17 @@
                 const title = v.title.length > 72 ? v.title.substring(0, 72) + "..." : v.title;
                 
                 const preview = v.photo;
-                const preview_largest =  preview.variants[0].url;
+                const preview_largest =  preview.variants[0]?.url;
 
                 console.log(largest.width);
 
-                const preview_srcset =  preview.variants
+                const preview_srcset = preview.variants
                     .map(v => `${v.url} ${v.width}w`)
                     .join(", ");
 
                 const icon = v.ownerIcon;
 
-                const icon_largest = icon.variants[0].url;
+                const icon_largest = icon.variants[0]?.url;
 
                 const icon_srcset = icon.variants
                     .map(v => `${v.url} ${v.width}w`)
