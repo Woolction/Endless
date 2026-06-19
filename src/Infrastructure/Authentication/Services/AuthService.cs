@@ -12,15 +12,12 @@ namespace Authentication.Services;
 
 public class AuthService : IAuthService
 {
-    private readonly IAppDbContext context;
-
     private readonly JwtOptions jwtOptions;
     private readonly IRandomService randomService;
     private readonly SymmetricSecurityKey securetyKey;
 
-    public AuthService(IAppDbContext context, IOptions<JwtOptions> options, IRandomService randomService)
+    public AuthService(IOptions<JwtOptions> options, IRandomService randomService)
     {
-        this.context = context;
         this.randomService = randomService;
 
         //jwt configuration and get security key
@@ -65,8 +62,6 @@ public class AuthService : IAuthService
             Token = token,
             ValidityPeriod = DateTime.UtcNow.AddDays(jwtOptions.ExpireMinutes)
         };
-
-        await context.SaveChangesAsync();
 
         return token;
     }
