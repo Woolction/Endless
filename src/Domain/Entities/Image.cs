@@ -12,11 +12,6 @@ public class Image
 
     public List<ImageVariant> Variants { get; set; } = [];
 
-    public void SetVariants(List<ImageVariant> variants)
-    {
-        Variants = variants;
-    }
-
     public void SetColor(int r, int g, int b)
     {
         R = r;

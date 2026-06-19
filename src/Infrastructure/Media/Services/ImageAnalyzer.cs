@@ -6,6 +6,7 @@ using SixLabors.ImageSharp.Advanced;
 using Microsoft.Extensions.Logging;
 using Application.Features.Images;
 using SixLabors.ImageSharp;
+using Microsoft.EntityFrameworkCore;
 
 namespace Media.Services;
 
@@ -17,19 +18,13 @@ public class ImageAnalyzer : IImageAnalyzer
         this.logger = logger;
     }
 
-    public async Task SetImageVariants(Domain.Entities.Image image, ImageVariantsDto variantsDto, CancellationToken token)
+    public async Task SetImageVariants(Domain.Entities.Image image, ImageDto variantsDto, CancellationToken token)
     {
-        List<Domain.Entities.ImageVariant> variants = [];
-
         for (int i = 0; i < variantsDto.Variants.Count; i++)
         {
             var variantDto = variantsDto.Variants[i];
 
-            if (i == 0)
-                await SetAverageColor(
-                    variantDto.Url, image.SetColor, token);
-
-            variants.Add(new Domain.Entities.ImageVariant()
+            image.Variants.Add(new Domain.Entities.ImageVariant()
             {
                 Image = image,
                 Url = variantDto.Url,
@@ -38,7 +33,9 @@ public class ImageAnalyzer : IImageAnalyzer
             });
         }
 
-        image.SetVariants(variants);
+        if (variantsDto.Variants.Count > 0)
+            await SetAverageColor(
+                variantsDto.Variants[^1].Url, image.SetColor, token);
     }
 
     public async Task SetAverageColor(string photoUrl, Action<int, int, int> setColor, CancellationToken token = default)
@@ -82,7 +79,7 @@ public class ImageAnalyzer : IImageAnalyzer
             R, G, B, Path.GetFileNameWithoutExtension(photoUrl));
     }
 
-    public async Task<ImageVariantsDto> GenerateImageVariantsDto(string imagePath, string folder, (int w, int h)[] sizes, int quality = 80, CancellationToken token = default)
+    public async Task<ImageDto> GenerateImageVariantsDto(string imagePath, string folder, (int w, int h)[] sizes, int quality = 80, CancellationToken token = default)
     {
         using var image = await Image.LoadAsync(imagePath, token);
 
@@ -123,7 +120,7 @@ public class ImageAnalyzer : IImageAnalyzer
                 new ImageVariantDto(output, w, h));
         }
 
-        return new ImageVariantsDto(
-            folder, variants);
+        return new ImageDto(
+            folder, variants, 0, 0, 0);
     }
 }
