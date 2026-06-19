@@ -1,6 +1,6 @@
-using Application.Features.Users.Update;
+using Application.Features.Users.Dtos;
 
 namespace Application.Features.Authentications.Dtos;
 
 public record class AuthDto(
-    UserUpdateDto UserDto, string Token, string RefreshToken);
+    UserDto UserDto, string Token, string RefreshToken);
