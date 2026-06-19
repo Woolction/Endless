@@ -94,20 +94,18 @@ public class ContentRecommendationHandler : IRequestHandler<ContentRecommendatio
 
                 ImageDto imageDto = c.Channel == null ?
                     new ImageDto(
-                        new ImageVariantsDto(
-                            c.Creator!.Meta.Image.BaseUrl,
-                            c.Creator.Meta.Image.Variants
-                                .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
-                                .ToList()),
+                        c.Creator!.Meta.Image.BaseUrl,
+                        c.Creator.Meta.Image.Variants
+                            .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
+                            .ToList(),
                         c.Creator.Meta.Image.R,
                         c.Creator.Meta.Image.G,
                         c.Creator.Meta.Image.B) :
                     new ImageDto(
-                        new ImageVariantsDto(
-                            c.Channel.Meta.Image.BaseUrl,
-                            c.Channel.Meta.Image.Variants
-                                .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
-                                .ToList()),
+                        c.Channel.Meta.Image.BaseUrl,
+                        c.Channel.Meta.Image.Variants
+                            .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
+                            .ToList(),
                         c.Channel.Meta.Image.R,
                         c.Channel.Meta.Image.G,
                         c.Channel.Meta.Image.B);
@@ -117,11 +115,10 @@ public class ContentRecommendationHandler : IRequestHandler<ContentRecommendatio
                     owner.Name, owner.Slug, imageDto,
                     c.Title, c.Slug, c.Description, c.CreatedDate, c.ContentType.ToString(),
                     c.Meta.DurationSeconds, c.Meta.VideoUrl, new ImageDto(
-                        new ImageVariantsDto(
-                            c.Meta.Image.BaseUrl,
-                            c.Meta.Image.Variants
-                                .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
-                                .ToList()),
+                        c.Meta.Image.BaseUrl,
+                        c.Meta.Image.Variants
+                            .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
+                            .ToList(),
                         c.Meta.Image.R,
                         c.Meta.Image.G,
                         c.Meta.Image.B),

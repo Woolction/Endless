@@ -51,11 +51,10 @@ public class CommentController : ControllerBase
                     comment.Commentator.RegistryData, comment.Commentator.Email,
                     comment.Commentator.Role.ToString(),
                     new ImageDto(
-                        new ImageVariantsDto(
-                            comment.Commentator.Meta.Image.BaseUrl,
-                            comment.Commentator.Meta.Image.Variants
-                                .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
-                                .ToList()),
+                        comment.Commentator.Meta.Image.BaseUrl,
+                        comment.Commentator.Meta.Image.Variants
+                            .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
+                            .ToList(),
                         comment.Commentator.Meta.Image.R,
                         comment.Commentator.Meta.Image.G,
                         comment.Commentator.Meta.Image.B),
@@ -89,11 +88,10 @@ public class CommentController : ControllerBase
                     user.Id, user.Name, "@" + user.Slug,
                     user.Description ?? "", user.RegistryData, user.Email,
                     user.Role.ToString(), new ImageDto(
-                        new ImageVariantsDto(
-                            user.Meta.Image.BaseUrl,
-                            user.Meta.Image.Variants
-                                .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
-                                .ToList()),
+                        user.Meta.Image.BaseUrl,
+                        user.Meta.Image.Variants
+                            .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
+                            .ToList(),
                         user.Meta.Image.R,
                         user.Meta.Image.G,
                         user.Meta.Image.B),

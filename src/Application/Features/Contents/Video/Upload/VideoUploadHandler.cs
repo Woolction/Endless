@@ -35,7 +35,7 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
 
     public async Task<Result<Null>> Handle(VideoUploadMessage message, CancellationToken token)
     {
-        ImageVariantsDto imageVariants = new();
+        ImageDto? imageDto = null;
 
         string videoUrl = string.Empty;
         double duration = 0;
@@ -44,7 +44,7 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
         {
             logger.LogInformation("save photo");
 
-            imageVariants = await Storage.SaveImageVariants(
+            imageDto = await Storage.SaveImageVariants(
                 message.ImagePath, message.Slug, [(1280, 720), (960, 540), (640, 360)],
                 80, message.ImageOwner, message.ImageType, token);
         }
@@ -67,7 +67,7 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
             {
                 logger.LogInformation("get photo from video:");
 
-                imageVariants = await ffmpegService.GetPhotoFromVideo(
+                imageDto = await ffmpegService.GetPhotoFromVideo(
                     message.VideoPath, height, timeSeconds, message.Slug,
                     [(640, 360), (960, 540), (1280, 720)], 80, ImageOwner.Content,
                     ImageType.Preview, token: token);
@@ -106,8 +106,9 @@ public class VideoUploadHandler : IRequestHandler<VideoUploadMessage, Result<Nul
             .Where(v => v.ImageId == content.Meta.Image.Id)
             .ExecuteDeleteAsync(token);
 
-        await imageAnalyzer.SetImageVariants(
-            content.Meta.Image, imageVariants, token);
+        if (imageDto != null)
+            await imageAnalyzer.SetImageVariants(
+                content.Meta.Image, imageDto, token);
 
         /* old
         if (Directory.Exists(content.Meta.PhotoBase))

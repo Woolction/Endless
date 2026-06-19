@@ -10,5 +10,5 @@ public interface IFfmpegService
     Task<double> GetVideoDuration(string videoPath, CancellationToken token = default);
     Task<int> GetVideoHeight(string videoPath, CancellationToken token = default);
     Task<int> GetVideoFps(string videoPath, CancellationToken token = default);
-    Task<ImageVariantsDto> GetPhotoFromVideo(string videoPath, int height, double timeSeconds, string imageName, (int w, int h)[] sizes, int quality, ImageOwner imageOwner, ImageType imageType, CancellationToken token = default);
+    Task<ImageDto> GetPhotoFromVideo(string videoPath, int height, double timeSeconds, string imageName, (int w, int h)[] sizes, int quality, ImageOwner imageOwner, ImageType imageType, CancellationToken token = default);
 }

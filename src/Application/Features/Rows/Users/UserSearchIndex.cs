@@ -15,7 +15,7 @@ public class UserSearchIndex
     public DateTime RegistryData;
     public int Role;
 
-    public ImageVariantsDto Avatar { get; set; } = new ();
+    public ImageDto? Avatar { get; set; }
 
     public int R { get; set; }
     public int G { get; set; }
@@ -31,6 +31,12 @@ public class UserSearchIndex
         Email = user.Email;
         Description = user.Description;
         TotalLikes = user.TotalLikes;
+
+        Avatar = new(
+            image.BaseUrl, variants
+                .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
+                .ToList(),
+            image.R, image.G, image.B);
 
         for (int i = 0; i < variants.Count; i++)
         {

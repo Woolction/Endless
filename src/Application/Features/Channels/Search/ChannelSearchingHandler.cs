@@ -32,12 +32,7 @@ public class ChannelSearchingHandler : IRequestHandler<ChannelSearchQuery, Resul
         SearchedChannelDto[] channelDtos = result.SearchedChannels.Select(c => new SearchedChannelDto(new ChannelDto(
             c.SearchedChannel.ChannelId, c.SearchedChannel.Name, c.SearchedChannel.Slug,
             c.SearchedChannel.Description, c.SearchedChannel.CreatedDate,
-            new ImageDto(
-                c.SearchedChannel.Icon,
-                c.SearchedChannel.R,
-                c.SearchedChannel.G,
-                c.SearchedChannel.B),
-            0, 0, 0, c.SearchedChannel.TotalLikes,
+            c.SearchedChannel.Icon, 0, 0, 0, c.SearchedChannel.TotalLikes,
             c.SearchedChannel.TotalViews), c.Score)).ToArray();
 
         if (channelDtos.Length < 1)

@@ -20,7 +20,7 @@ public class ContentSearchIndex
     public int AverageWatchTimeSeconds { get; set; }
 
     public string ContentUrl { get; set; } = string.Empty;
-    public ImageVariantsDto Preview { get; set; } = new ();
+    public ImageDto? Preview { get; set; }
 
     public int R { get; set; }
     public int G { get; set; }
@@ -46,6 +46,11 @@ public class ContentSearchIndex
         {
             ContentUrl = videoMeta.VideoUrl;
 
+            Preview = new(
+                image.BaseUrl, variants
+                    .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
+                    .ToList(),
+                image.R, image.G, image.B);
 
             for (int i = 0; i < variants.Count; i++)
             {

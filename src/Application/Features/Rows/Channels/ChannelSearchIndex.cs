@@ -13,7 +13,7 @@ public class ChannelSearchIndex
     public long TotalViews { get; set; }
     public long TotalLikes { get; set; }
 
-    public ImageVariantsDto Icon { get; set; } = new ();
+    public ImageDto? Icon { get; set; }
 
     public int R { get; set; }
     public int G { get; set; }
@@ -29,6 +29,12 @@ public class ChannelSearchIndex
         Slug = channel.Slug;
         Description = channel.Description;
         CreatedDate = channel.CreatedDate;
+
+        Icon = new(
+            image.BaseUrl, variants
+                .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
+                .ToList(),
+            image.R, image.G, image.B);
 
         for (int i = 0; i < variants.Count; i++)
         {

@@ -27,11 +27,10 @@ public class ChannelChooseOneHandler : IRequestHandler<ChannelChooseOneQuery, Re
                 channel.Id, channel.Name, "@" + channel.Slug,
                 channel.Description ?? "", channel.CreatedDate,
                 new ImageDto(
-                    new ImageVariantsDto(
-                        channel.Meta.Image.BaseUrl,
-                        channel.Meta.Image.Variants
-                            .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
-                            .ToList()),
+                    channel.Meta.Image.BaseUrl,
+                    channel.Meta.Image.Variants
+                        .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
+                        .ToList(),
                     channel.Meta.Image.R,
                     channel.Meta.Image.G,
                     channel.Meta.Image.B),

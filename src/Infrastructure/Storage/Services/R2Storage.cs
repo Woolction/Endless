@@ -83,7 +83,7 @@ public class R2Storage : IStorage
         return $"/storage/{keyPrefix}/master.m3u8";
     }
 
-    public Task<ImageVariantsDto> SaveImageVariants(string photoPath, string photoName, (int w, int h)[] sizes, int quality, ImageOwner imageOwner, ImageType imageType = ImageType.Preview, CancellationToken token = default)
+    public Task<ImageDto> SaveImageVariants(string photoPath, string photoName, (int w, int h)[] sizes, int quality, ImageOwner imageOwner, ImageType imageType = ImageType.Preview, CancellationToken token = default)
     {
         string folder = Path.Combine($"/storage/images/{imageOwner.ToString().ToLower()}-{imageType.ToString().ToLower()}", photoName);
         Directory.CreateDirectory(folder);

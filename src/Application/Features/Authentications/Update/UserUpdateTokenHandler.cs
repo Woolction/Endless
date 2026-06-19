@@ -32,11 +32,10 @@ public class UserUpdateTokenHandler : IRequestHandler<RefreshTokenCommand, Resul
                     user.Description ?? "", user.RegistryData, user.Email,
                     user.Role.ToString(),
                     new ImageDto(
-                        new ImageVariantsDto(
-                            user.Meta.Image.BaseUrl,
-                            user.Meta.Image.Variants
-                                .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
-                                .ToList()),
+                        user.Meta.Image.BaseUrl,
+                        user.Meta.Image.Variants
+                            .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
+                            .ToList(),
                         user.Meta.Image.R,
                         user.Meta.Image.G,
                         user.Meta.Image.B),

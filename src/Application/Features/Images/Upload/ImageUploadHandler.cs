@@ -33,7 +33,7 @@ public class ImageUploadHandler : IRequestHandler<ImageUploadMessage, Result<Nul
 
     public async Task<Result<Null>> Handle(ImageUploadMessage message, CancellationToken token)
     {
-        ImageVariantsDto iconVariants = await Storage.SaveImageVariants(
+        ImageDto iconVariants = await Storage.SaveImageVariants(
             message.PhotoPath, message.Slug, [(256, 256), (128, 128), (64, 64)],
             85, message.Owner, message.Type, token);
 
@@ -94,7 +94,7 @@ public class ImageUploadHandler : IRequestHandler<ImageUploadMessage, Result<Nul
         return Result<Null>.Success(200, new Null());
     }
 
-    private async Task UploadIcon(IAppDbContext context, Image image, ImageVariantsDto iconVariants, CancellationToken token)
+    private async Task UploadIcon(IAppDbContext context, Image image, ImageDto iconVariants, CancellationToken token)
     {
         // delete old data
 

@@ -29,11 +29,10 @@ public class ContentChooseHandler : IRequestHandler<ContentChooseQuery, Result<C
                     content.CreatedDate, content.ContentType.ToString(),
                     content.Meta.DurationSeconds, content.Meta.VideoUrl,
                     new ImageDto(
-                        new ImageVariantsDto(
-                            content.Meta.Image.BaseUrl,
-                            content.Meta.Image.Variants
-                                .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
-                                .ToList()),
+                        content.Meta.Image.BaseUrl,
+                        content.Meta.Image.Variants
+                            .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
+                            .ToList(),
                         content.Meta.Image.R,
                         content.Meta.Image.G,
                         content.Meta.Image.B),

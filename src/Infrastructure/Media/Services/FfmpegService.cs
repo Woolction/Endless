@@ -179,7 +179,7 @@ public class FfmpegService : IFfmpegService
         return Math.Round(seconds);
     }
 
-    public async Task<ImageVariantsDto> GetPhotoFromVideo(string videoPath, int height, double timeSeconds, string imageName, (int w, int h)[] sizes, int quality, ImageOwner imageOwner, ImageType imageType, CancellationToken token = default)
+    public async Task<ImageDto> GetPhotoFromVideo(string videoPath, int height, double timeSeconds, string imageName, (int w, int h)[] sizes, int quality, ImageOwner imageOwner, ImageType imageType, CancellationToken token = default)
     {
         string folder = Path.Combine($"/storage/images/{imageOwner.ToString().ToLower()}-{imageType.ToString().ToLower()}", imageName);
         Directory.CreateDirectory(folder);
@@ -213,8 +213,8 @@ public class FfmpegService : IFfmpegService
                 new ImageVariantDto(output, w, h));
         }
 
-        return new ImageVariantsDto(
-            folder, variants);
+        return new ImageDto(
+            folder, variants, 0, 0, 0);
     }
 
     private string GetBitrate(int height, int fps)
