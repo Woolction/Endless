@@ -311,17 +311,29 @@
                 card.className = "video-card";
 
                 const title = v.title.length > 72 ? v.title.substring(0, 72) + "..." : v.title;
-                const p = v.photo.variants;
+                
+                const preview = v.photo;
+                const preview_largest =  preview.variants[0].url;
+
+                console.log(largest.width);
+
+                const preview_srcset =  preview.variants
+                    .map(v => `${v.url} ${v.width}w`)
+                    .join(", ");
+
+                const icon = v.ownerIcon;
+
+                const icon_largest = icon.variants[0].url;
+
+                const icon_srcset = icon.variants
+                    .map(v => `${v.url} ${v.width}w`)
+                    .join(", ");
 
                 card.innerHTML = `
                 <div class="thumbnail-wrapper">
                     <img class="photo-preview"
-                        src="${p.baseUrl}/${p.medium}"
-                        srcset="
-                            ${p.baseUrl}/${p.small} 640w,
-                            ${p.baseUrl}/${p.medium} 960w,
-                            ${p.baseUrl}/${p.large} 1280w
-                        "
+                        src="${preview_largest}"
+                        srcset="${preview_srcset}"
                         sizes="
                             (max-width: 736px) 100vw,
                             (max-width: 1430px) 50vw,
