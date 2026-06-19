@@ -332,6 +332,6 @@ public class EndlessContext : DbContext, IAppDbContext
 
         EntityTypeBuilder<ImageVariant> imageVariantBuilder = builder.Entity<ImageVariant>();
         imageVariantBuilder
-            .HasKey(v => v.ImageId);
+            .HasKey(v => v.Id);
     }
 }
