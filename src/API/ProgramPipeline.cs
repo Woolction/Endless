@@ -14,6 +14,8 @@ using Persistence;
 using Messaging;
 using Storage;
 using Media;
+using Persistence.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace API;
 
@@ -105,8 +107,8 @@ public static class ProgramPipeline
 
             using var scope = app.Services.CreateScope();
 
-            //EndlessContext context = scope.ServiceProvider.GetRequiredService<EndlessContext>();
-            //context.Database.Migrate();
+            EndlessContext context = scope.ServiceProvider.GetRequiredService<EndlessContext>();
+            context.Database.Migrate();
         }
         else
         {
