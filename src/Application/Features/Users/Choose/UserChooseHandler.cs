@@ -21,22 +21,22 @@ public class UserChooseHandler : IRequestHandler<UserChooseQuery, Result<UserDto
     public async Task<Result<UserDto>> Handle(UserChooseQuery query, CancellationToken cancellationToken)
     {
         var userDto = await context.Users
-            .Where(userDto => userDto.Id == query.UserId)
-            .Select(userDto => new UserDto(
-                userDto.Id, userDto.Name, "@" + userDto.Slug,
-                userDto.Description ?? "", userDto.RegistryData, userDto.Email,
-                userDto.Role.ToString(),
+            .Where(user => user.Id == query.UserId)
+            .Select(user => new UserDto(
+                user.Id, user.Name, "@" + user.Slug,
+                user.Description ?? "", user.RegistryData, user.Email,
+                user.Role.ToString(),
                 new ImageDto(
                     new ImageVariantsDto(
-                        userDto.Meta.Image.BaseUrl,
-                        userDto.Meta.Image.Variants
+                        user.Meta.Image.BaseUrl,
+                        user.Meta.Image.Variants
                             .Select(v => new ImageVariantDto(v.Url, v.Width, v.Height))
                             .ToList()),
-                    userDto.Meta.Image.R,
-                    userDto.Meta.Image.G,
-                    userDto.Meta.Image.B),
-                userDto.TotalLikes, userDto.Comments.Count, userDto.Contents.Count, userDto.Followers.Count,
-                userDto.Following.Count, userDto.OwnedChannels.Count, userDto.SubscripedChannels.Count))
+                    user.Meta.Image.R,
+                    user.Meta.Image.G,
+                    user.Meta.Image.B),
+                user.TotalLikes, user.Comments.Count, user.Contents.Count, user.Followers.Count,
+                user.Following.Count, user.OwnedChannels.Count, user.SubscripedChannels.Count))
             .AsNoTracking()
             .FirstOrDefaultAsync(cancellationToken);
 
