@@ -2,6 +2,8 @@ namespace Domain.Entities;
 
 public class ImageVariant
 {
+    public Guid Id { get; set; }
+
     public Guid ImageId { get; set; }
     public Image? Image { get; set; }
     
