@@ -46,10 +46,16 @@ public class ContentRecommendationHandler : IRequestHandler<ContentRecommendatio
                 .AsNoTracking()
                 .Where(c => c.RandomKey < r && c.Meta != null)
                 .Include(c => c.Meta)
+                    .ThenInclude(m => m.Image)
+                        .ThenInclude(i => i.Variants)
                 .Include(c => c.Channel)
                     .ThenInclude(ch => ch.Meta)
+                        .ThenInclude(m => m.Image)
+                            .ThenInclude(i => i.Variants)
                 .Include(c => c.Creator)
                     .ThenInclude(u => u.Meta)
+                        .ThenInclude(m => m.Image)
+                            .ThenInclude(i => i.Variants)
                 .Take(300 - candidates.Count)
                 .ToListAsync(cancellationToken);
 

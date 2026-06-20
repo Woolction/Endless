@@ -313,9 +313,9 @@
                 const title = v.title.length > 72 ? v.title.substring(0, 72) + "..." : v.title;
                 
                 const preview = v.photo;
-                const preview_largest =  preview.variants[0]?.url;
+                const preview_largest =  preview.variants[0]?.url; 
 
-                console.log(largest.width);
+                console.log(preview_largest);
 
                 const preview_srcset = preview.variants
                     .map(v => `${v.url} ${v.width}w`)
